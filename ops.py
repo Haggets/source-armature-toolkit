@@ -22,7 +22,7 @@ class VAT_OT_armaturerename_source(bpy.types.Operator): #Converts armature schem
     bl_idname = "vat.armaturerename_source"
     bl_label = "Original scheme"
     
-    @classmethod #Same as before
+    @classmethod
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         return (vatproperties.target_armature is not None and vatproperties.sfm_armature is False and vatproperties.scheme is not False)
@@ -37,10 +37,11 @@ class VAT_OT_constraintsymmetry_create(bpy.types.Operator):
     bl_idname = "vat.constraintsymmetry_create"
     bl_label = "Roll Corrected Symmetry"
     
-    @classmethod #Same as before
+    @classmethod
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        return (vatproperties.target_armature is not None)
+        return (vatproperties.target_armature is not None and functions.ConstraintSymmetry.loc == "" and functions.ConstraintSymmetry.rot == "")
+
 
     def execute(self, context):
         vatproperties = bpy.context.scene.vatproperties
@@ -72,7 +73,7 @@ class VAT_OT_weightarmature_create(bpy.types.Operator):
     @classmethod #Same as before
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        return (vatproperties.target_armature is not None)
+        return (vatproperties.target_armature is not None) # and functions.WeightArmature.weightarmature is ""
 
     def execute(self, context):
         functions.WeightArmature.execute(0)
@@ -87,7 +88,7 @@ class VAT_OT_weightarmature_delete(bpy.types.Operator):
     @classmethod #Same as before
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        return (vatproperties.target_armature is not None)
+        return (vatproperties.target_armature is not None and functions.WeightArmature.weightarmature is not "")
 
     def execute(self, context):
         functions.WeightArmature.execute(1)

@@ -9,7 +9,6 @@ class VAT_PT_mainpanel(bpy.types.Panel): #Main panel that subpanels will use
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "data"
-    bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod 
     def poll(cls, context): #Won't show up unless there is a selected armature
@@ -79,6 +78,7 @@ class VAT_PT_weightarmature(bpy.types.Panel): #Weight Armature panel
         col = layout.column()
         row = layout.row()
         row.operator("vat.weightarmature_create", text="Generate")
+        row.operator("vat.weightarmature_delete", text="Delete")
         box = layout.box()
         box.label(text="Meant for weight creation", icon='INFO')
         box.label(text="Allows more spread out", icon='INFO')
