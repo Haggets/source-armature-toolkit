@@ -2,14 +2,15 @@ import bpy
 from . import functions
 
 class VAT_properties(bpy.types.PropertyGroup): #Defines global properties the plugin will use
+    ''' #Not currently working, meant to only filter objects that are armatures
     def targetpoll(cls, context):
-        return bpy.types.Armature is None
-    
+        return bpy.types.Armature
+    '''
     target_armature : bpy.props.PointerProperty(type = bpy.types.Object, name = "Armature", update = functions.SchemeType.execute)
     
     sfm_armature : bpy.props.BoolProperty(name = "Source Filmmaker (SFM) armature")
     
-    scheme : bpy.props.BoolProperty(name = "Current naming scheme", default = 0)
+    scheme : bpy.props.IntProperty(name = "Current naming scheme", default = 0)
     
     affected_side : bpy.props.EnumProperty(
         name = "Affected side", 
