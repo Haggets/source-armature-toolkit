@@ -422,9 +422,10 @@ class WeightArmature: #Creates duplicate armature for more spread out weighting
 
 class InverseKinematics: #Adds IK to the armature
     
-    #Constraint checks
+    #Constraint check
+    ik_constraint = ""
     leftik = ""
-    rightik = ""
+    rightik =""
 
     op = 0
     bonelist = []
@@ -435,65 +436,58 @@ class InverseKinematics: #Adds IK to the armature
         prefix = Prefixes.current
 
         #Cleans list
-        bonelist = []
+        InverseKinematics.bonelist = []
 
-        if bone.startswith("L_") or bone.endswith("_L"):
-            try:
-                InverseKinematics.leftik = armature.pose.bones[prefix + bone].constraints['IK']
-            except:
-                InverseKinematics.leftik = ""
+        try:
+            InverseKinematics.ik_constraint = armature.pose.bones[prefix + bone].constraints['IK']
+        except:
+            InverseKinematics.ik_constraint = ""
 
-        elif bone.startswith("R_") or bone.endswith("_R"):
-            try:
-                InverseKinematics.rightik = armature.pose.bones[prefix + + bone_name].constraints['IK']
-            except:
-                InverseKinematics.rightik = ""
-
-    def IK(bone_name, action):
+    def IK(bone, action):
         vatproperties = bpy.context.scene.vatproperties
         armature = bpy.data.objects[vatproperties.target_armature.name]
         prefix = Prefixes.current
 
-        InverseKinematics.getconstraint(bone_name)
+        InverseKinematics.getconstraint(bone)
 
         #Creation
         if action == 0:
+            InverseKinematics.op = 0
 
             #Left IK
-            if InverseKinematics.leftik == "":
+            if InverseKinematics.ik_constraint == "":
                 if bone.startswith("L_") or bone.endswith("_L"):
-                    leftik = armature.pose.bones[prefix + "L_" + bone_name].constraints.new('IK')
-                    leftik.chain_count = 3
+                    ik = armature.pose.bones[prefix + bone].constraints.new('IK')
+                    ik.chain_count = 3
+                elif bone.startswith("R_") or bone.endswith("_R"):
+                    ik = armature.pose.bones[prefix + bone].constraints.new('IK')
+                    ik.chain_count = 3
             else:
-                InverseKinematics.bonelist.append(bone.name)
-
-            #Right IK
-            if InverseKinematics.rightik == "":
-                if bone.startswith("R_") or bone.endswith("_R"):
-                    rightik = armature.pose.bones[prefix + "L_" + bone_name].constraints.new('IK')
-                    rightik.chain_count = 3
-            else:
-                InverseKinematics.bonelist.append(bone.name)
+                InverseKinematics.bonelist.append(bone)
 
         #Deletion
         elif action == 1:
+            InverseKinematics.op = 1
 
             #Left IK
-            if InverseKinematics.leftik != "":
+            if InverseKinematics.ik_constraint != "":
                 if bone.startswith("L_") or bone.endswith("_L"):
-                    armature.pose.bones[prefix + bone_name].constraints.remove(InverseKinematics.leftik)
+                    armature.pose.bones[prefix + bone].constraints.remove(InverseKinematics.ik_constraint)
+                elif bone.startswith("R_") or bone.endswith("_R"):
+                    armature.pose.bones[prefix + bone].constraints.remove(InverseKinematics.ik_constraint)
             else:
-                InverseKinematics.bonelist.append(bone.name)
-
-            #Right IK
-            if InverseKinematics.rightik != "":
-                if bone.startswith("R_") or bone.endswith("_R"):
-                    armature.pose.bones[prefix + bone_name].constraints.remove(InverseKinematics.rightik)
-            else:
-                InverseKinematics.bonelist.append(bone.name)
+                InverseKinematics.bonelist.append(bone)
 
     def execute(action):
-        vatproperties = bpy.context.scene.vatproperties
-
-        for bone in BoneList.symmetrical_bones.count("Hand") != 0:
-            InverseKinematics.IK(bone, action)
+        for bone in BoneList.symmetrical_bones:
+            if bone.count("Hand") != 0 or bone.count("Foot") != 0:
+                InverseKinematics.IK(bone, action)
+        
+        #If constraints could not be applied
+        if InverseKinematics.bonelist != []:
+            if InverseKinematics.op == 0:
+                print("IK constraints already exist for:")
+                print(InverseKinematics.bonelist)
+            elif InverseKinematics.op == 1:
+                print("IK constraints not found for:")
+                print(InverseKinematics.bonelist)
