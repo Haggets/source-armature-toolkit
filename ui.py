@@ -16,11 +16,24 @@ class VAT_PT_mainpanel(bpy.types.Panel): #Main panel that subpanels will use
 
     def draw(self, context):
         layout = self.layout
-        scene = context.scene
-        vatproperties = scene.vatproperties
+        vatproperties = bpy.context.scene.vatproperties
         
         layout.prop(vatproperties, "target_armature") #Armature that will be affected by the utilities
-        layout.prop(vatproperties, "sfm_armature") #Limits certain utilities that won't have purpose if it's a SFM armature
+        if vatproperties.target_armature != None:
+            if vatproperties.custom_scheme_enabled == True and vatproperties.custom_scheme_prefix != "":
+                layout.label(text="Type: Custom Prefix Armature")
+            elif vatproperties.scheme == -1:
+                layout.label(text="Type: Unknown Armature")
+            elif vatproperties.sfm_armature == False:
+                layout.label(text="Type: Default Source Armature")
+            elif vatproperties.sfm_armature == True:
+                layout.label(text="Type: Source Filmmaker Armature")
+        else:
+            layout.label(text="No Armature...")
+
+        layout.prop(vatproperties, "custom_scheme_enabled")
+        if vatproperties.custom_scheme_enabled == True:
+            layout.prop(vatproperties, "custom_scheme_prefix")
         
 class VAT_PT_armaturerename(bpy.types.Panel): #Armature rename panel
     bl_label = "Armature Renaming"

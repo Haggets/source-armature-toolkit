@@ -12,6 +12,10 @@ class VAT_properties(bpy.types.PropertyGroup): #Defines global properties the pl
     
     scheme : bpy.props.IntProperty(name = "Current naming scheme", default = 0)
     
+    custom_scheme_enabled : bpy.props.BoolProperty(name = "Enable custom prefix", default = 0) 
+
+    custom_scheme_prefix : bpy.props.StringProperty(name = "Prefix", default = "")
+
     affected_side : bpy.props.EnumProperty(
         name = "Affected side", 
         description = "Select affected side", 
