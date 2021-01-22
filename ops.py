@@ -130,7 +130,27 @@ class VAT_OT_rigifyretarget_create(bpy.types.Operator):
     bl_idname = "vat.rigifyretarget_create"
     bl_label = "Custom Animation Ready Armature"
 
+    @classmethod #Same as before
+    def poll(cls, context):
+        vatproperties = bpy.context.scene.vatproperties
+        return (vatproperties.target_armature is not None) # and functions.WeightArmature.weightarmature is ""
+
+    def execute(self, context):
+        functions.RigifyRetarget.execute(0)
+
+        return{'FINISHED'}
+
 class VAT_OT_rigifyretarget_delete(bpy.types.Operator):
     """Deletes generated armature"""
     bl_idname = "vat.rigifyretarget_delete"
     bl_label = "Animation Ready Armature Removal"
+
+    @classmethod #Same as before
+    def poll(cls, context):
+        vatproperties = bpy.context.scene.vatproperties
+        return (vatproperties.target_armature is not None) # and functions.WeightArmature.weightarmature is ""
+
+    def execute(self, context):
+        functions.RigifyRetarget.execute(1)
+
+        return{'FINISHED'}
