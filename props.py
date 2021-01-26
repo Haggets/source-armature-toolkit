@@ -4,7 +4,7 @@ from . import functions
 class VAT_properties(bpy.types.PropertyGroup): #Defines global properties the plugin will use
     ''' #Not currently working, meant to only filter objects that are armatures
     def targetpoll(cls, context):
-        return bpy.types.Armature
+        return bpy.types.ArmatureModifier
     '''
     target_armature : bpy.props.PointerProperty(type = bpy.types.Object, name = "Armature", update = functions.SchemeType.execute)
     
