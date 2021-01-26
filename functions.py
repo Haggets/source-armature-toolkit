@@ -55,6 +55,9 @@ class BoneList: #Lists of bones used for other operations
                     vatproperties.scheme = 1
                     BoneList.symmetrical_bones.append(bone.replace("ValveBiped.Bip01_", ""))
 
+                elif bone.startswith("ValveBiped.hlp_"):
+                    BoneList.helper_bones.append(bone.replace("ValveBiped.hlp_", ""))
+
                 elif bone.startswith("ValveBiped.Bip01_"): #Central
                     BoneList.central_bones.append(bone.replace("ValveBiped.Bip01_", ""))
                     
@@ -377,12 +380,14 @@ class WeightArmature: #Creates duplicate armature for more spread out weighting
 
             for bone in BoneList.symmetrical_bones:
                 parent = armature.pose.bones[prefix + bone].parent.name
+
                 if parent.count("Hand") != 0:
                     if bone.count("Finger0") != 0:
                         pass
                     else:
                         x = armature.pose.bones[prefix + bone].head.x
                         z = armature.pose.bones[prefix + bone].head.z
+
                         armature.data.edit_bones[parent].tail.xz = x, z
                 else:
                     loc = armature.pose.bones[prefix + bone].head
@@ -406,6 +411,7 @@ class WeightArmature: #Creates duplicate armature for more spread out weighting
                 if bone.count("Finger12") != 0 or bone.count("Finger22") != 0 or bone.count("Finger32") != 0 or bone.count("Finger42") != 0:
                     x = armature.pose.bones[prefix + bone].tail.x
                     z = armature.pose.bones[prefix + bone].tail.z
+
                     if bone.startswith("L_") or bone.endswith("_L"):
                         armature.data.edit_bones[prefix + bone].tail.xz = x-0.1, z-0.5
                     elif bone.startswith("R_") or bone.endswith("_R"):
@@ -414,7 +420,22 @@ class WeightArmature: #Creates duplicate armature for more spread out weighting
                 if bone.count("Finger02") != 0:
                     y = armature.pose.bones[prefix + bone].tail.y
                     z = armature.pose.bones[prefix + bone].tail.z
+
                     armature.data.edit_bones[prefix + bone].tail.yz = y-0.8, z-0.4
+
+                #Helper bones
+                if bone.count("Knee") != 0:
+                    y = armature.pose.bones[prefix + bone].tail.y
+
+                    armature.data.edit_bones[prefix + bone].tail.y = y-5
+
+                if bone.count("Elbow") != 0:
+                    y = armature.pose.bones[prefix + bone].tail.y
+
+                    armature.data.edit_bones[prefix + bone].tail.y = y+5
+
+                if bone.count("Ulna") != 0:
+                    pass
 
             for bone in BoneList.central_bones:
                 if bone == "Pelvis": #No parent
@@ -560,6 +581,7 @@ class RigifyRetarget: #Creates animation ready rig
                     else:
                         x = armature.pose.bones[prefix + bone].head.x
                         z = armature.pose.bones[prefix + bone].head.z
+
                         armature.data.edit_bones[parent].tail.xz = x, z
                 else:
                     loc = armature.pose.bones[prefix + bone].head
@@ -583,6 +605,7 @@ class RigifyRetarget: #Creates animation ready rig
                 if bone.count("Finger12") != 0 or bone.count("Finger22") != 0 or bone.count("Finger32") != 0 or bone.count("Finger42") != 0:
                     x = armature.pose.bones[prefix + bone].tail.x
                     z = armature.pose.bones[prefix + bone].tail.z
+
                     if bone.startswith("L_") or bone.endswith("_L"):
                         armature.data.edit_bones[prefix + bone].tail.xz = x-0.1, z-0.5
                     elif bone.startswith("R_") or bone.endswith("_R"):
@@ -591,6 +614,7 @@ class RigifyRetarget: #Creates animation ready rig
                 if bone.count("Finger02") != 0:
                     y = armature.pose.bones[prefix + bone].tail.y
                     z = armature.pose.bones[prefix + bone].tail.z
+
                     armature.data.edit_bones[prefix + bone].tail.yz = y-0.8, z-0.4
 
             for bone in BoneList.central_bones:
@@ -622,8 +646,10 @@ class RigifyRetarget: #Creates animation ready rig
                     armature.data.edit_bones.remove(bone)
 
             #Rigify portion
+            bpy.ops.pose.rigify_layer_init()
             prefix = Prefixes.current
 
+            #Creates layers
             for i in range(0,19):
                 armature.data.rigify_layers.add()
 
@@ -663,13 +689,15 @@ class RigifyRetarget: #Creates animation ready rig
                 elif bone.startswith("R_") or bone.endswith("_R"):
                     ebone.tail.xyz = x+3, y-2, z+4
 
-                #Rigify parameters
+            #For some dumb reason, the newly added bone is not added to the armature data until the user changes modes at least once, i know no other way around it. If you do please let me know
+            bpy.ops.object.mode_set(mode='OBJECT')
+            bpy.ops.object.mode_set(mode='EDIT')
 
-                #For some really dumb reason, the newly added bone is not added to the armature data until the user changes modes at least once, i know no other way around it. If you do please let me know
-                bpy.ops.object.mode_set(mode='OBJECT')
+            #Rigify parameters
+            for bone in new_pelvis:
                 pbone = armature.pose.bones[prefix + bone]
                 dbone = armature.data.bones[prefix + bone]
-                bpy.ops.object.mode_set(mode='EDIT')
+                
 
                 pbone.rigify_type = "basic.super_copy"
                 pbone.rigify_parameters.make_control = False

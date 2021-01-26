@@ -10,7 +10,7 @@ class VAT_OT_armaturerename_blender(bpy.types.Operator): #Converts armature sche
     @classmethod #Checks if an armature is selected and it is not an SFM one, since it doesn't need it
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        return (vatproperties.target_armature is not None and vatproperties.sfm_armature is False and vatproperties.scheme is not True)
+        return (vatproperties.target_armature is not None and vatproperties.scheme == 0)
     
     def execute(self, context):
         functions.ArmatureRename.execute(1)
@@ -25,7 +25,7 @@ class VAT_OT_armaturerename_source(bpy.types.Operator): #Converts armature schem
     @classmethod
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        return (vatproperties.target_armature is not None and vatproperties.sfm_armature is False and vatproperties.scheme is not False)
+        return (vatproperties.target_armature is not None and vatproperties.scheme >= 1)
     
     def execute(self, context):
         functions.ArmatureRename.execute(0)
@@ -40,7 +40,7 @@ class VAT_OT_constraintsymmetry_create(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        return (vatproperties.target_armature is not None and functions.ConstraintSymmetry.loc == "" and functions.ConstraintSymmetry.rot == "")
+        return (vatproperties.target_armature is not None)
 
 
     def execute(self, context):
