@@ -8,6 +8,8 @@ class Prefixes: #Self explanatory
     default = "ValveBiped.Bip01_"
     sfm = "bip_"
     helper = "hlp_"
+    helper2 = "ValveBiped.hlp_" #Rarely used as far as i'm aware
+    attachment = "ValveBiped.attachment_"
     other = "ValveBiped."
 
 class BoneList: #Lists of bones used for other operations
@@ -47,17 +49,25 @@ class BoneList: #Lists of bones used for other operations
                 vatproperties.sfm_armature = False
                 Prefixes.current = "ValveBiped.Bip01_"
 
+                #Usual prefix
                 if bone.startswith("ValveBiped.Bip01_L_") or bone.startswith("ValveBiped.Bip01_R_"): #Symmetrical
                     vatproperties.scheme = 0
                     BoneList.symmetrical_bones.append(bone.replace("ValveBiped.Bip01_", ""))
 
+                #Strange L4D2 helper prefix, must be differentiated from the usual helper bone with "s."
+                elif bone.startswith("ValveBiped.hlp_"):
+                    BoneList.helper_bones.append(bone.replace("ValveBiped.hlp_", "s."))
+
+                #Attachment bone prefix. They are supposed to be in other bones instead
+                elif bone.startswith("ValveBiped.attachment"):
+                    BoneList.other_bones.append(bone.replace("ValveBiped.attachment_", "a."))
+
+                #Blender prefix
                 elif bone.endswith("_L") or bone.endswith("_R"):
                     vatproperties.scheme = 1
                     BoneList.symmetrical_bones.append(bone.replace("ValveBiped.Bip01_", ""))
 
-                elif bone.startswith("ValveBiped.hlp_"):
-                    BoneList.helper_bones.append(bone.replace("ValveBiped.hlp_", ""))
-
+                #Central bones prefix
                 elif bone.startswith("ValveBiped.Bip01_"): #Central
                     BoneList.central_bones.append(bone.replace("ValveBiped.Bip01_", ""))
                     
@@ -87,6 +97,7 @@ class BoneList: #Lists of bones used for other operations
             #Unknown armature
             vatproperties.scheme = -1
 
+        print("")
         print(BoneList.symmetrical_bones)
         print(BoneList.central_bones)
         print(BoneList.helper_bones)
@@ -371,6 +382,11 @@ class WeightArmature: #Creates duplicate armature for more spread out weighting
 
             armature = bpy.data.objects[WeightArmature.weightarmature.name]
             prefix = Prefixes.current
+            
+            #Variables used to store certain bones that require additional position tweaking
+            ulna = []
+            wrist = []
+            bicep = []
 
             #Bone connection
             bpy.ops.object.mode_set(mode='OBJECT')
@@ -381,61 +397,65 @@ class WeightArmature: #Creates duplicate armature for more spread out weighting
             for bone in BoneList.symmetrical_bones:
                 parent = armature.pose.bones[prefix + bone].parent.name
 
+                #Makes it so the hand bone is not pointing towards the thumb and is instead facing straight
                 if parent.count("Hand") != 0:
-                    if bone.count("Finger0") != 0:
+                    if bone.count("Finger0"):
                         pass
                     else:
-                        x = armature.pose.bones[prefix + bone].head.x
-                        z = armature.pose.bones[prefix + bone].head.z
-
-                        armature.data.edit_bones[parent].tail.xz = x, z
+                        pbone = armature.pose.bones[prefix + bone].head
+                        
+                        armature.data.edit_bones[parent].tail.xz = pbone.x, pbone.z
+                        armature.data.edit_bones[parent].length = 3
                 else:
                     loc = armature.pose.bones[prefix + bone].head
                     armature.data.edit_bones[parent].tail = loc
 
                 #Additional bone tweaking
-                if bone.count("Hand") != 0:
-                    y = armature.pose.bones[prefix + bone].head.y
-                    armature.data.edit_bones[prefix + bone].tail.y = y
 
+                #Extends toe tip to be where the actual tip should be
                 if bone.count("Toe") != 0:
-                    x = armature.pose.bones[prefix + bone].head.x
-                    y = armature.pose.bones[prefix + bone].head.y
-                    z = armature.pose.bones[prefix + bone].head.z
+                    pbone = armature.pose.bones[prefix + bone].head
 
                     if bone.startswith("L_") or bone.endswith("_L"):
-                        armature.data.edit_bones[prefix + bone].tail = x+0.5, y-2.5, z
+                        armature.data.edit_bones[prefix + bone].tail = pbone.x+0.5, pbone.y-2.5, pbone.z
                     elif bone.startswith("R_") or bone.endswith("_R"):
-                        armature.data.edit_bones[prefix + bone].tail = x-0.5, y-2.5, z
+                        armature.data.edit_bones[prefix + bone].tail = pbone.x-0.5, pbone.y-2.5, pbone.z
 
+                #Extends the length of the finger's tips to be closer to where the actual finger tip should be
                 if bone.count("Finger12") != 0 or bone.count("Finger22") != 0 or bone.count("Finger32") != 0 or bone.count("Finger42") != 0:
-                    x = armature.pose.bones[prefix + bone].tail.x
-                    z = armature.pose.bones[prefix + bone].tail.z
+                    pbone = armature.pose.bones[prefix + bone].tail
 
                     if bone.startswith("L_") or bone.endswith("_L"):
-                        armature.data.edit_bones[prefix + bone].tail.xz = x-0.1, z-0.5
+                        armature.data.edit_bones[prefix + bone].tail.xz = pbone.x-0.1, pbone.z-0.5
                     elif bone.startswith("R_") or bone.endswith("_R"):
-                        armature.data.edit_bones[prefix + bone].tail.xz = x+0.1, z-0.5
+                        armature.data.edit_bones[prefix + bone].tail.xz = pbone.x+0.1, pbone.z-0.5
 
+                #Same thing as before but with different location
                 if bone.count("Finger02") != 0:
-                    y = armature.pose.bones[prefix + bone].tail.y
-                    z = armature.pose.bones[prefix + bone].tail.z
+                    pbone = armature.pose.bones[prefix + bone].tail
 
-                    armature.data.edit_bones[prefix + bone].tail.yz = y-0.8, z-0.4
+                    armature.data.edit_bones[prefix + bone].tail.yz = pbone.y-0.8, pbone.z-0.4
 
                 #Helper bones
                 if bone.count("Knee") != 0:
-                    y = armature.pose.bones[prefix + bone].tail.y
+                    pbone = armature.pose.bones[prefix + bone].tail
 
-                    armature.data.edit_bones[prefix + bone].tail.y = y-5
+                    armature.data.edit_bones[prefix + bone].tail.y = pbone.y-5
 
                 if bone.count("Elbow") != 0:
-                    y = armature.pose.bones[prefix + bone].tail.y
+                    pbone = armature.pose.bones[prefix + bone].tail
 
-                    armature.data.edit_bones[prefix + bone].tail.y = y+5
+                    armature.data.edit_bones[prefix + bone].tail.y = pbone.y+5
 
+                #Other helper bones that need additional tweaking on their positioning
                 if bone.count("Ulna") != 0:
-                    pass
+                    ulna.append(bone)
+                
+                if bone.count("Wrist") != 0:
+                    wrist.append(bone)
+
+                if bone.count("Bicep") != 0:
+                    bicep.append(bone)
 
             for bone in BoneList.central_bones:
                 if bone == "Pelvis": #No parent
@@ -444,14 +464,72 @@ class WeightArmature: #Creates duplicate armature for more spread out weighting
                     parent = armature.pose.bones[prefix + bone].parent.name
                     loc = armature.pose.bones[prefix + bone].head
                     armature.data.edit_bones[parent].tail = loc
-
+                    
                 #Additional bone tweaking
                 if bone == "Head1":
-                    x = armature.pose.bones[prefix + bone].head.x
-                    y = armature.pose.bones[prefix + bone].head.y
-                    z = armature.pose.bones[prefix + bone].head.z
+                    pbone = armature.pose.bones[prefix + bone].head
+                    
+                    armature.data.edit_bones[prefix + bone].tail = pbone.x, pbone.y, pbone.z+6
 
-                    armature.data.edit_bones[prefix + bone].tail = x, y, z+6
+            #Tweaks positioning of some helper bones
+            if bicep != []:
+                for bone in BoneList.symmetrical_bones:
+                    if bone.count("Forearm") != 0:
+                        if bone.startswith("L_") or bone.endswith("_L"):
+                            loc_l = armature.pose.bones[prefix + bone].head
+                        elif bone.startswith("R_") or bone.endswith("_R"):
+                            loc_r = armature.pose.bones[prefix + bone].head
+                for bicep in bicep:
+                    if bicep.startswith("L_") or bone.endswith("_L"):
+                        armature.data.edit_bones[prefix + bicep].tail = loc_l
+                    elif bicep.startswith("R_") or bone.endswith("_R"):
+                        armature.data.edit_bones[prefix + bicep].tail = loc_r
+
+            if ulna != [] or wrist != []:
+                prefix = Prefixes.current
+
+                #Obtains hand head location
+                for bone in BoneList.symmetrical_bones:
+                    if bone.count("Hand") != 0:
+                        if bone.startswith("L_") or bone.endswith("_L"):
+                            loc_l = armature.pose.bones[prefix + bone].head
+                        elif bone.startswith("R_") or bone.endswith("_R"):
+                            loc_r = armature.pose.bones[prefix + bone].head
+
+                if ulna != [] and wrist != []:
+                    for ulna in ulna:
+                        if bone.startswith("L_") or bone.endswith("_L"):
+                            armature.data.edit_bones[prefix + ulna].tail = loc_l
+                            loc2_l = armature.pose.bones[prefix + ulna].tail
+                        elif bone.startswith("R_") or bone.endswith("_R"):
+                            armature.data.edit_bones[prefix + ulna].tail = loc_r
+                            loc2_r = armature.pose.bones[prefix + ulna].tail
+
+                        length = armature.pose.bones[prefix + ulna].length
+                        armature.data.edit_bones[prefix + ulna].length = length / 1.5
+
+                    for wrist in wrist:
+                        if bone.startswith("L_") or bone.endswith("_L"):                      
+                            armature.data.edit_bones[prefix + wrist].head = loc2_l
+                            armature.data.edit_bones[prefix + wrist].tail = loc_l
+                        elif bone.startswith("R_") or bone.endswith("_R"):
+                            armature.data.edit_bones[prefix + wrist].head = loc2_r
+                            armature.data.edit_bones[prefix + wrist].tail = loc_r
+
+            if BoneList.other_bones != []:
+                for bone in BoneList.other_bones:
+
+                    #Removes weapon bones since they're not meant for the character weighting
+                    #Also removes attachment bones for the same reason
+                    if bone.count("weapon") != 0:
+                        prefix = Prefixes.other
+                        bone = armature.data.edit_bones[prefix + bone]
+                        armature.data.edit_bones.remove(bone)
+                    elif bone.startswith("a."):
+                        prefix = Prefixes.attachment
+                        bone = armature.data.edit_bones[prefix + bone.replace("a.", "")]
+                        armature.data.edit_bones.remove(bone)
+
 
             #Final touches to the armature
             armature.data.display_type = 'OCTAHEDRAL'
@@ -579,43 +657,34 @@ class RigifyRetarget: #Creates animation ready rig
                     if bone.count("Finger0") != 0:
                         pass
                     else:
-                        x = armature.pose.bones[prefix + bone].head.x
-                        z = armature.pose.bones[prefix + bone].head.z
+                        pbone = armature.pose.bones[prefix + bone].head
 
-                        armature.data.edit_bones[parent].tail.xz = x, z
+                        armature.data.edit_bones[parent].tail.xz = pbone.x, pbone.z
                 else:
                     loc = armature.pose.bones[prefix + bone].head
                     armature.data.edit_bones[parent].tail = loc
 
                 #Additional bone tweaking
-                if bone.count("Hand") != 0:
-                    y = armature.pose.bones[prefix + bone].head.y
-                    armature.data.edit_bones[prefix + bone].tail.y = y
-
                 if bone.count("Toe") != 0:
-                    x = armature.pose.bones[prefix + bone].head.x
-                    y = armature.pose.bones[prefix + bone].head.y
-                    z = armature.pose.bones[prefix + bone].head.z
+                    pbone = armature.pose.bones[prefix + bone].head
 
                     if bone.startswith("L_") or bone.endswith("_L"):
-                        armature.data.edit_bones[prefix + bone].tail = x+0.5, y-2.5, z
+                        armature.data.edit_bones[prefix + bone].tail = pbone.x+0.5, pbone.y-2.5, pbone.z
                     elif bone.startswith("R_") or bone.endswith("_R"):
-                        armature.data.edit_bones[prefix + bone].tail = x-0.5, y-2.5, z
+                        armature.data.edit_bones[prefix + bone].tail = pbone.x-0.5, pbone.y-2.5, pbone.z
 
                 if bone.count("Finger12") != 0 or bone.count("Finger22") != 0 or bone.count("Finger32") != 0 or bone.count("Finger42") != 0:
-                    x = armature.pose.bones[prefix + bone].tail.x
-                    z = armature.pose.bones[prefix + bone].tail.z
+                    pbone = armature.pose.bones[prefix + bone].tail
 
                     if bone.startswith("L_") or bone.endswith("_L"):
-                        armature.data.edit_bones[prefix + bone].tail.xz = x-0.1, z-0.5
+                        armature.data.edit_bones[prefix + bone].tail.xz = pbone.x-0.1, pbone.z-0.5
                     elif bone.startswith("R_") or bone.endswith("_R"):
-                        armature.data.edit_bones[prefix + bone].tail.xz = x+0.1, z-0.5
+                        armature.data.edit_bones[prefix + bone].tail.xz = pbone.x+0.1, pbone.z-0.5
 
                 if bone.count("Finger02") != 0:
-                    y = armature.pose.bones[prefix + bone].tail.y
-                    z = armature.pose.bones[prefix + bone].tail.z
+                    pbone = armature.pose.bones[prefix + bone].tail
 
-                    armature.data.edit_bones[prefix + bone].tail.yz = y-0.8, z-0.4
+                    armature.data.edit_bones[prefix + bone].tail.yz = pbone.y-0.8, pbone.z-0.4
 
             for bone in BoneList.central_bones:
                 if bone == "Pelvis": #No parent
@@ -626,11 +695,9 @@ class RigifyRetarget: #Creates animation ready rig
                     armature.data.edit_bones[parent].tail = loc
 
                 if bone == "Head1":
-                    x = armature.pose.bones[prefix + bone].head.x
-                    y = armature.pose.bones[prefix + bone].head.y
-                    z = armature.pose.bones[prefix + bone].head.z
+                    pbone = armature.pose.bones[prefix + bone].head
 
-                    armature.data.edit_bones[prefix + bone].tail = x, y, z+6
+                    armature.data.edit_bones[prefix + bone].tail = pbone.x, pbone.y, pbone.z+6
 
             #Deletes unimportant bones 
             if BoneList.helper_bones != []:
@@ -664,9 +731,7 @@ class RigifyRetarget: #Creates animation ready rig
                 armature.data.rigify_layers[i].group = group
 
             #Creates 2 pelvis bones for whatever Rigify does with em
-            x = armature.pose.bones[prefix + "Pelvis"].head.x
-            y = armature.pose.bones[prefix + "Pelvis"].head.y
-            z = armature.pose.bones[prefix + "Pelvis"].head.z
+            pbone = armature.pose.bones[prefix + "Pelvis"].head
 
             new_pelvis = []
 
@@ -681,13 +746,11 @@ class RigifyRetarget: #Creates animation ready rig
             for bone in new_pelvis:
                 ebone = armature.data.edit_bones.new(prefix + bone)
 
-                ebone.head = armature.pose.bones[prefix + "Pelvis"].head
-
                 #New pelvis bone positioning
                 if bone.startswith("L_") or bone.endswith("_L"):
-                    ebone.tail.xyz = x-3, y-2, z+4
+                    ebone.tail.xyz = pbone.x-3, pbone.y-2, pbone.z+4
                 elif bone.startswith("R_") or bone.endswith("_R"):
-                    ebone.tail.xyz = x+3, y-2, z+4
+                    ebone.tail.xyz = pbone.x+3, pbone.y-2, pbone.z+4
 
             #For some dumb reason, the newly added bone is not added to the armature data until the user changes modes at least once, i know no other way around it. If you do please let me know
             bpy.ops.object.mode_set(mode='OBJECT')
