@@ -6,11 +6,7 @@ class VAT_properties(bpy.types.PropertyGroup): #Defines global properties the pl
     def targetpoll(cls, context):
         return bpy.types.ArmatureModifier
     '''
-    target_armature : bpy.props.PointerProperty(type = bpy.types.Object, name = "Armature", update = functions.SchemeType.execute)
-    
-    sfm_armature : bpy.props.BoolProperty(name = "Source Filmmaker (SFM) armature")
-    
-    scheme : bpy.props.IntProperty(name = "Current naming scheme", default = 0)
+    target_armature : bpy.props.PointerProperty(type = bpy.types.Object, name = "Armature", update = functions.create_armature)
     
     custom_scheme_enabled : bpy.props.BoolProperty(name = "Enable custom prefix", default = 0) 
 

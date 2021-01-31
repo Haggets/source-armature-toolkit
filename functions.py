@@ -1,150 +1,149 @@
 import bpy
-
-class Prefixes: #Self explanatory
-
-    current = ""
-
-    #Prefix variables for reference
-    default = "ValveBiped.Bip01_"
-    sfm = "bip_"
+class Prefixes: #Container for other prefixes
     helper = "hlp_"
-    helper2 = "ValveBiped.hlp_" #Rarely used as far as i'm aware
+    helper2 = "ValveBiped.hlp_"
     attachment = "ValveBiped.attachment_"
     other = "ValveBiped."
 
-class BoneList: #Lists of bones used for other operations
+def create_armature(self, context): #Creates new armature class if selected object is an armature
+    global vatproperties
+    vatproperties = bpy.context.scene.vatproperties
+    if vatproperties.target_armature != "":
+        if vatproperties.target_armature.type == 'ARMATURE':
+            global arm
+            arm = Armature(vatproperties.target_armature)
 
-    #List of bones that will be filled with the armature's
-    symmetrical_bones = [] #L/R
-    central_bones = [] #Head, spine...
-    helper_bones = [] #Knee, wrist...
-    other_bones = [] #Jacket, attachments...
-    custom_bones = [] #User made bones with no, or other prefix
+class Armature: #Armature base
 
-    def getbones():
+    def __init__(self, armature):
+        #Basic armature information
+        self.name = armature.name
+        self.name_full = armature
+        self.name_real = armature.data.name
+        self.scheme = -1
+        self.sfm = False
+        self.prefix = ""
+
+        #Bone information
+        self.full_bonelist = []
+        self.symmetrical_bones = []
+        self.central_bones = []
+        self.helper_bones = []
+        self.other_bones = []
+        self.custom_bones = []
+
+        #Functions executed to gather previous information
+        self.getbones()
+        self.getscheme()
+        
+    def getbones(self):
+        armature = bpy.data.objects[self.name]
+
+        if self.name != "":
+            self.full_bonelist = armature.data.bones.keys()
+
+            for bone in self.full_bonelist:
+
+                #Custom prefixes
+                if vatproperties.custom_scheme_enabled == True and vatproperties.custom_scheme_prefix != "":
+                    self.prefix = vatproperties.custom_scheme_prefix
+
+                    if bone.startswith(self.prefix + bone.count("L_") == 0 or bone.count("R_") == 0 or bone.count("_L") == 0 or bone.count("_R") == 0):
+                        if bone.count("L_") == 0 or bone.count("R_") == 0:
+                            self.scheme = 3
+                        elif bone.count("_L") == 0 or bone.count("L_") == 0:
+                            self.scheme = 3
+                        self.symmetrical_bones.append(bone.replace(self.prefix, ""))
+
+                    elif bone.startswith(self.prefix):
+                        self.central_bones.append(bone.replace(self.prefix, ""))
+
+                #Source and Blender prefixes
+                if bone.startswith("ValveBiped."):
+                    vatproperties.sfm_armature = False
+                    self.prefix = "ValveBiped.Bip01_"
+
+                    #Usual prefix
+                    if bone.startswith(self.prefix + "L_") or bone.startswith(self.prefix + "R_"): #Symmetrical
+                        self.scheme = 0
+                        self.symmetrical_bones.append(bone.replace(self.prefix, ""))
+
+                    #Strange L4D2 helper prefix, must be differentiated from the usual helper bone with "s."
+                    elif bone.startswith("ValveBiped.hlp_"):
+                        self.helper_bones.append(bone.replace("ValveBiped.hlp_", "s."))
+
+                    #Attachment bone prefix. They are supposed to be in other bones instead
+                    elif bone.startswith("ValveBiped.attachment"):
+                        self.other_bones.append(bone.replace("ValveBiped.attachment_", "a."))
+
+                    #Blender prefix
+                    elif bone.endswith("_L") or bone.endswith("_R"):
+                        self.scheme = 1
+                        self.symmetrical_bones.append(bone.replace("ValveBiped.Bip01_", ""))
+
+                    #Central bones prefix
+                    elif bone.startswith("ValveBiped.Bip01_"): #Central
+                        self.central_bones.append(bone.replace("ValveBiped.Bip01_", ""))
+                        
+                    else: #Other
+                        self.other_bones.append(bone.replace("ValveBiped.", ""))
+
+                #SFM prefix
+                elif bone.startswith("bip_"): # Central
+                    vatproperties.sfm_armature = True
+                    self.scheme = 2
+                    self.sfm = True
+                    self.prefix = "bip_"
+
+                    if bone.endswith("_L") or bone.endswith("_R"): #Symmetrical
+                        self.symmetrical_bones.append(bone.replace("bip_", ""))
+
+                    else:
+                        self.central_bones.append(bone.replace("bip_", ""))
+
+                #Helper prefix
+                elif bone.startswith("hlp_"): #Helper
+                    self.helper_bones.append(bone.replace(Prefixes.helper, ""))
+
+                #No/Different prefix
+                else:
+                    self.custom_bones.append(bone)
+
+            if self.symmetrical_bones == [] and self.central_bones == [] and self.other_bones == []:
+                #Unknown armature
+                self.scheme = -1
+
+            print("Symmetrical bones:", self.symmetrical_bones)
+            print("Central bones:", self.central_bones)
+            print("Helper bones:", self.helper_bones)
+            print("Other bones:", self.other_bones)
+            print("Custom bones:", self.custom_bones)
+
+    def getscheme(self):
         vatproperties = bpy.context.scene.vatproperties
-        armature = bpy.data.objects[vatproperties.target_armature.name]
+        armature = bpy.data.objects[self.name]
 
-        #Cleans bone list
-        BoneList.symmetrical_bones = []
-        BoneList.central_bones = []
-        BoneList.helper_bones = []
-        BoneList.other_bones = []
-        BoneList.custom_bones = []
-
-        full_bonelist = armature.data.bones.keys() #Gets all bones available in the armature
-
-        #Checks wether or not they're central, symmetrical, helper, other, or custom bones, then removes their prefix/suffix and adds them into a group
-        for bone in full_bonelist:
-
-            if vatproperties.custom_scheme_enabled == True and vatproperties.custom_scheme_prefix != "":
-                if bone.startswith(custom_scheme_prefix + bone.count("L_") == 0 or bone.count("R_") == 0 or bone.count("_L") == 0 or bone.count("_R") == 0):
-                    vatproperties.scheme = 3
-                    BoneList.symmetrical_bones.append(bone.replace(custom_scheme_prefix, ""))
-                elif bone.startswith(custom_scheme_prefix):
-                    BoneList.central_bones.append(bone.replace(custom_scheme_prefix, ""))
-
-            #Source and Blender prefixes
-            if bone.startswith("ValveBiped."):
-                vatproperties.sfm_armature = False
-                Prefixes.current = "ValveBiped.Bip01_"
-
-                #Usual prefix
-                if bone.startswith("ValveBiped.Bip01_L_") or bone.startswith("ValveBiped.Bip01_R_"): #Symmetrical
+        for bone in self.symmetrical_bones:
+            #If not an SFM armature, check if the armature has the Source or Blender armature
+            if self.sfm == False:
+                bone = self.prefix + bone
+                if bone.startswith("ValveBiped.Bip01_L_") or bone.startswith("ValveBiped.Bip01_R_"):
                     vatproperties.scheme = 0
-                    BoneList.symmetrical_bones.append(bone.replace("ValveBiped.Bip01_", ""))
-
-                #Strange L4D2 helper prefix, must be differentiated from the usual helper bone with "s."
-                elif bone.startswith("ValveBiped.hlp_"):
-                    BoneList.helper_bones.append(bone.replace("ValveBiped.hlp_", "s."))
-
-                #Attachment bone prefix. They are supposed to be in other bones instead
-                elif bone.startswith("ValveBiped.attachment"):
-                    BoneList.other_bones.append(bone.replace("ValveBiped.attachment_", "a."))
-
-                #Blender prefix
                 elif bone.endswith("_L") or bone.endswith("_R"):
                     vatproperties.scheme = 1
-                    BoneList.symmetrical_bones.append(bone.replace("ValveBiped.Bip01_", ""))
-
-                #Central bones prefix
-                elif bone.startswith("ValveBiped.Bip01_"): #Central
-                    BoneList.central_bones.append(bone.replace("ValveBiped.Bip01_", ""))
-                    
-                else: #Other
-                    BoneList.other_bones.append(bone.replace("ValveBiped.", ""))
-
-            #SFM prefix
-            elif bone.startswith("bip_"): # Central
-                vatproperties.sfm_armature = True
-                vatproperties.scheme = 2
-                Prefixes.current = "bip_"
-
-                if bone.endswith("_L") or bone.endswith("_R"): #Symmetrical
-                    BoneList.symmetrical_bones.append(bone.replace("bip_", ""))
-
-                else:
-                    BoneList.central_bones.append(bone.replace("bip_", ""))
-
-            #Helper prefix
-            elif bone.startswith("hlp_"): #Helper
-                BoneList.helper_bones.append(bone.replace("hlp_", ""))
-            #No/Different prefix
-            else:
-                BoneList.custom_bones.append(bone)
-
-        if BoneList.symmetrical_bones == [] and BoneList.central_bones == [] and BoneList.other_bones == []:
-            #Unknown armature
-            vatproperties.scheme = -1
-
-        print("")
-        print(BoneList.symmetrical_bones)
-        print(BoneList.central_bones)
-        print(BoneList.helper_bones)
-        print(BoneList.other_bones)
-        print(BoneList.custom_bones)
-
-class SchemeType: #Scheme type that's currently being used by the armature
-
-    def getscheme(bone):
-        vatproperties = bpy.context.scene.vatproperties
-        armature = bpy.data.objects[vatproperties.target_armature.name]
-
-        #If not an SFM armature, check if the armature has the Source or Blender armature
-        if vatproperties.sfm_armature == False:
-            bone = Prefixes.current + bone
-            if bone.startswith("ValveBiped.Bip01_L_") or bone.startswith("ValveBiped.Bip01_R_"):
-                vatproperties.scheme = 0
-            elif bone.endswith("_L") or bone.endswith("_R"):
-                vatproperties.scheme = 1
-
-    def execute(self, context):
-        vatproperties = bpy.context.scene.vatproperties
-
-        if vatproperties.target_armature != None:
-            BoneList.getbones()
-            for bone in BoneList.symmetrical_bones:
-                SchemeType.getscheme(bone)
                 
-            if vatproperties.sfm_armature == False:
-                if vatproperties.scheme == 0:
-                    print("Current Scheme: Source")
-                elif vatproperties.scheme == 1:
-                    print("Current Scheme: Blender")
-            if vatproperties.sfm_armature == True:
-                print("Current Scheme: Source (SFM)")
+        if self.sfm == False:
+            if vatproperties.scheme == 0:
+                print("Current Scheme: Source")
+            elif vatproperties.scheme == 1:
+                print("Current Scheme: Blender")
+        elif vatproperties.sfm_armature == True:
+            print("Current Scheme: Source (SFM)")
+                
+def armature_rename(scheme):
 
-class ArmatureRename: #Scheme changer
-    
-    def rename(bone, scheme, helper): #Which bone, to which scheme and if it's a helper bone
-        vatproperties = bpy.context.scene.vatproperties
-        armature = bpy.data.armatures[vatproperties.target_armature.data.name]
-
-        #Current or helper prefix
-        if helper == 1:
-            prefix = Prefixes.helper
-        else:
-            prefix = Prefixes.current
+    def rename(bone): #Which bone, to which scheme and if it's a helper bone
+        armature = bpy.data.armatures[arm.name_real]
 
         #To which scheme
         if scheme == 1: #Source -> Blender
@@ -152,23 +151,32 @@ class ArmatureRename: #Scheme changer
                 armature.bones[prefix + bone].name = prefix + bone.replace("L_", "") + "_L"
             elif bone.startswith("R_"):
                 armature.bones[prefix + bone].name = prefix + bone.replace("R_", "") + "_R"
-            vatproperties.scheme = 1
+            arm.scheme = 1
         elif scheme == 0: #Blender -> Source
             if bone.endswith("_L"):
                 armature.bones[prefix + bone].name = prefix + "L_" + bone.replace("_L", "")
             elif bone.endswith("_R"):
                 armature.bones[prefix + bone].name = prefix + "R_" + bone.replace("_R", "")
-            vatproperties.scheme = 0
-                
-    def execute(scheme):
-        for bone in BoneList.symmetrical_bones:
-                ArmatureRename.rename(bone, scheme, 0)
-            
-        if BoneList.helper_bones != []:
-            for bone in BoneList.helper_bones:
-                ArmatureRename.rename(bone, scheme, 1)
+            arm.scheme = 0
 
-        BoneList.getbones() #Refreshes bone list
+    prefix = arm.prefix
+    for bone in arm.symmetrical_bones:
+        rename(bone)
+        
+    if arm.helper_bones != []:
+        for bone in arm.helper_bones:
+            if bone.startswith("s."):
+                #Their prefix is usually already in the end so they're left alone
+                if bone.endswith("_L") or bone.endswith("_R"):
+                    pass
+                else:
+                    prefix = Prefixes.helper2
+                    rename(bone.replace("s.", ""))
+            else:
+                prefix = Prefixes.helper
+                rename(bone)
+
+    arm.getbones() #Refreshes bone list
             
 class ConstraintSymmetry: #Adds loc/rot constraints to the armature
 
