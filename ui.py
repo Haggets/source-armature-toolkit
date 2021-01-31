@@ -2,6 +2,7 @@ import bpy
 from bpy.types import (Panel, Menu)
 from . import __init__
 from . import ops
+from . import functions
 
 class VAT_PT_mainpanel(bpy.types.Panel): #Main panel that subpanels will use
     bl_label = "Valve Armature Toolkit"
@@ -22,11 +23,11 @@ class VAT_PT_mainpanel(bpy.types.Panel): #Main panel that subpanels will use
         if vatproperties.target_armature != None:
             if vatproperties.custom_scheme_enabled == True and vatproperties.custom_scheme_prefix != "":
                 layout.label(text="Type: Custom Prefix Armature")
-            elif vatproperties.scheme == -1:
+            elif functions.arm.scheme == -1:
                 layout.label(text="Type: Unknown Armature")
-            elif vatproperties.sfm_armature == False:
+            elif functions.arm.sfm == False:
                 layout.label(text="Type: Default Source Armature")
-            elif vatproperties.sfm_armature == True:
+            elif functions.arm.sfm == True:
                 layout.label(text="Type: Source Filmmaker Armature")
         else:
             layout.label(text="No Armature...")

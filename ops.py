@@ -10,10 +10,10 @@ class VAT_OT_armaturerename_blender(bpy.types.Operator): #Converts armature sche
     @classmethod #Checks if an armature is selected and it is not an SFM one, since it doesn't need it
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        return (vatproperties.target_armature is not None and vatproperties.scheme == 0)
+        return (vatproperties.target_armature != "" and functions.arm.sfm == False and functions.arm.scheme == 0 or functions.arm.scheme == 3)
     
     def execute(self, context):
-        functions.ArmatureRename.execute(1)
+        functions.armature_rename(1)
         
         return{'FINISHED'}
     
@@ -25,10 +25,10 @@ class VAT_OT_armaturerename_source(bpy.types.Operator): #Converts armature schem
     @classmethod
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        return (vatproperties.target_armature is not None and vatproperties.scheme >= 1)
+        return (vatproperties.target_armature != "" and functions.arm.sfm == False and functions.arm.scheme == 1 or functions.arm.scheme == 4)
     
     def execute(self, context):
-        functions.ArmatureRename.execute(0)
+        functions.armature_rename(0)
         
         return{'FINISHED'}
     
