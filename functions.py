@@ -1,11 +1,12 @@
 import bpy
+
 class Prefixes: #Container for other prefixes
     helper = "hlp_"
     helper2 = "ValveBiped.hlp_"
     attachment = "ValveBiped.attachment_"
     other = "ValveBiped."
 
-def create_armature(self, context): #Creates new armature class if selected object is an armature
+def create_armature(self, context): #Creates new armature class
     global vatproperties
     vatproperties = bpy.context.scene.vatproperties
     if vatproperties.target_armature != "":
@@ -20,7 +21,9 @@ class Armature: #Armature base
         self.name = armature.name
         self.name_full = armature
         self.name_real = armature.data.name
-        self.scheme = -1
+
+        #Armature type, scheme and prefix
+        self.scheme = -1 #-1 = No armature, 0 = Source, 1 = Blender, 2 = SFM, 3 = Custom 1, 4 = Custom 2
         self.sfm = False
         self.prefix = ""
 
@@ -32,6 +35,10 @@ class Armature: #Armature base
         self.other_bones = []
         self.custom_bones = []
 
+        #Additional information
+        self.symmetry_left = False
+        self.symmetry_right = False
+
         #Functions executed to gather previous information
         self.getbones()
         self.getscheme()
@@ -40,6 +47,15 @@ class Armature: #Armature base
         armature = bpy.data.objects[self.name]
 
         if self.name != "":
+
+            #Cleans bone list
+            self.full_bonelist = []
+            self.symmetrical_bones = []
+            self.central_bones = []
+            self.helper_bones = []
+            self.other_bones = []
+            self.custom_bones = []
+
             self.full_bonelist = armature.data.bones.keys()
 
             for bone in self.full_bonelist:
@@ -139,10 +155,10 @@ class Armature: #Armature base
                 print("Current Scheme: Blender")
         elif vatproperties.sfm_armature == True:
             print("Current Scheme: Source (SFM)")
-                
-def armature_rename(scheme):
 
-    def rename(bone): #Which bone, to which scheme and if it's a helper bone
+def armature_rename(scheme): #Bone prefix/suffix repositioning
+
+    def rename(bone):
         armature = bpy.data.armatures[arm.name_real]
 
         #To which scheme
@@ -177,192 +193,163 @@ def armature_rename(scheme):
                 rename(bone)
 
     arm.getbones() #Refreshes bone list
-            
-class ConstraintSymmetry: #Adds loc/rot constraints to the armature
 
+def constraint_symmetry(action, side): #Creates symmetry by using constraints, keeping corrected roll value
+    
     #Constraint checks
     loc = ""
     rot = ""
 
     #Variables for end report
-    op = 0
     loc_bonelist = []
     rot_bonelist = []
 
     def getconstraint(bone):
-        vatproperties = bpy.context.scene.vatproperties
-        armature = bpy.data.objects[vatproperties.target_armature.name]
-        prefix = Prefixes.current
+        armature = bpy.data.objects[arm.name]
+
+        nonlocal loc
+        nonlocal rot
+        nonlocal loc_bonelist
+        nonlocal rot_bonelist
 
         try:
-            ConstraintSymmetry.loc = armature.pose.bones[prefix + bone].constraints['Constraint Symmetry Location']
+            loc = armature.pose.bones[prefix + bone].constraints['Constraint Symmetry Location']
         except:
-            ConstraintSymmetry.loc = ""
+            loc = ""
         try:
-            ConstraintSymmetry.rot = armature.pose.bones[prefix + bone].constraints['Constraint Symmetry Rotation']
+            rot = armature.pose.bones[prefix + bone].constraints['Constraint Symmetry Rotation']
         except:
-            ConstraintSymmetry.rot = ""
+            rot = ""
 
-    def constraint(bone, side, action, helper): #Creates or deletes constraints based on action
-        vatproperties = bpy.context.scene.vatproperties
-        armature = bpy.data.objects[vatproperties.target_armature.name]
-
-        #Cleans bone list
-        ConstraintSymmetry.loc_bonelist = []
-        ConstraintSymmetry.rot_bonelist = []
-
-        ConstraintSymmetry.getconstraint(bone) #Checks for already existing constraints
-
-        if helper == 1:
-            prefix = Prefixes.helper
-        else:
-            prefix = Prefixes.current
+    def constraint(bone): 
+        armature = bpy.data.objects[arm.name]
+        
+        getconstraint(bone) #Checks for already existing constraints
+        
+        nonlocal loc
+        nonlocal rot
+        nonlocal loc_bonelist
+        nonlocal rot_bonelist
 
         #Creation
         if action == 0:
-            ConstraintSymmetry.op = 0
-
-            #Left side
-            if vatproperties.affected_side == 'OP1':
-
-                #Location
-                if ConstraintSymmetry.loc == "":
+            
+            #Location
+            if loc == "":
+                if side == 'OP1':
                     if bone.startswith("L_") or bone.endswith("_L"):
                         loc = armature.pose.bones[prefix + bone].constraints.new('COPY_LOCATION')
+                        arm.symmetry_left = True
+                elif side == 'OP2':
+                    if bone.startswith("R_") or bone.endswith("_R"):
+                        loc = armature.pose.bones[prefix + bone].constraints.new('COPY_LOCATION')
+                        arm.symmetry_right = True
 
-                        #Constraint parameters
-                        loc.name = "Constraint Symmetry Location"
-                        loc.target = armature
-                        loc.invert_x = True
+                if loc != "":
+                    #Constraint parameters
+                    loc.name = "Constraint Symmetry Location"
+                    loc.target = armature
+                    loc.invert_x = True
+                    if side == 'OP1':
                         if bone.startswith("L_"):
                             loc.subtarget = prefix + "R_" + bone.replace("L_", "")
                         elif bone.endswith("_L"):
                             loc.subtarget = prefix + bone.replace("_L", "") + "_R"
-                else:
-                    ConstraintSymmetry.loc_bonelist.append(bone)
-
-                #Rotation
-                if ConstraintSymmetry.rot == "":
-                    if bone.startswith("L_") or bone.endswith("_L"):
-                        rot = armature.pose.bones[prefix + bone].constraints.new('COPY_ROTATION')
-
-                        #Constraint parameters
-                        rot.name = "Constraint Symmetry Rotation"
-                        rot.target = armature
-                        rot.target_space = 'LOCAL'
-                        rot.owner_space = 'LOCAL'
-                        rot.invert_y = True
-                        rot.invert_x = True
-                        if bone.startswith("L_"):
-                            rot.subtarget = prefix + "R_" + bone.replace("L_", "")
-                        elif bone.endswith("_L"):
-                            rot.subtarget = prefix + bone.replace("_L", "") + "_R"
-                else:
-                    ConstraintSymmetry.rot_bonelist.append(bone)
-
-            #Right side
-            elif vatproperties.affected_side == 'OP2':
-
-                #Location
-                if ConstraintSymmetry.loc == "":
-                    if bone.startswith("R_") or bone.endswith("_R"):
-                        loc = armature.pose.bones[prefix + bone].constraints.new('COPY_LOCATION')
-                        
-                        #Constraint parameters
-                        loc.name = "Constraint Symmetry Location"
-                        loc.target = armature
-                        loc.invert_x = True
+                    elif side == 'OP2':
                         if bone.startswith("R_"):
                             loc.subtarget = prefix + "L_" + bone.replace("R_", "")
                         elif bone.startswith("_R"):
                             loc.subtarget = prefix + bone.replace("_R", "") + "_L"
-                else:
-                    ConstraintSymmetry.loc_bonelist.append(bone)
-                
-                #Rotation
-                if ConstraintSymmetry.rot == "":
+            else:
+                loc_bonelist.append(bone)
+
+            #Rotation
+            if rot == "":
+                if side == 'OP1':
+                    if bone.startswith("L_") or bone.endswith("_L"):
+                        rot = armature.pose.bones[prefix + bone].constraints.new('COPY_ROTATION')
+                        arm.symmetry_left = True
+                elif side == 'OP2':
                     if bone.startswith("R_") or bone.endswith("_R"):
                         rot = armature.pose.bones[prefix + bone].constraints.new('COPY_ROTATION')
-
-                        #Constraint parameters
-                        rot.name = "Constraint Symmetry Rotation"
-                        rot.target = armature
-                        rot.target_space = 'LOCAL'
-                        rot.owner_space = 'LOCAL'
-                        rot.invert_y = True
-                        rot.invert_x = True
+                        arm.symmetry_right = True
+                    
+                if rot != "":
+                    #Constraint parameters
+                    rot.name = "Constraint Symmetry Rotation"
+                    rot.target = armature
+                    rot.target_space = 'LOCAL'
+                    rot.owner_space = 'LOCAL'
+                    rot.invert_y = True
+                    rot.invert_x = True
+                    if side == 'OP1':
+                        if bone.startswith("L_"):
+                            rot.subtarget = prefix + "R_" + bone.replace("L_", "")
+                        elif bone.endswith("_L"):
+                            rot.subtarget = prefix + bone.replace("_L", "") + "_R"
+                    elif side == 'OP2':
                         if bone.startswith("R_"):
                             rot.subtarget = prefix + "L_" + bone.replace("R_", "")
                         elif bone.endswith("_R"):
                             rot.subtarget = prefix + bone.replace("_R", "") + "_L"
-                else:
-                    ConstraintSymmetry.rot_bonelist.append(bone)
-
+            else:
+                rot_bonelist.append(bone)
+            
         #Deletion
         elif action == 1:
-            vatproperties = bpy.context.scene.vatproperties
-            armature = bpy.data.objects[vatproperties.target_armature.name]
-            ConstraintSymmetry.op = 1
+            armature = bpy.data.objects[arm.name]
 
-            #Left side
-            if vatproperties.affected_side == 'OP1':
-
-                #Location
-                if ConstraintSymmetry.loc != "":
+            #Location
+            if loc != "":
+                if side == 'OP1':
                     if bone.startswith("L_") or bone.endswith("_L"):
-                        armature.pose.bones[prefix + bone].constraints.remove(ConstraintSymmetry.loc)
-                else:
-                    ConstraintSymmetry.loc_bonelist.append(bone)
+                        armature.pose.bones[prefix + bone].constraints.remove(loc)
+                        arm.symmetry_left = False
+                elif side == 'OP2':
+                    if bone.startswith("R_") or bone.endswith("_R"):
+                        armature.pose.bones[prefix + bone].constraints.remove(loc)
+                        arm.symmetry_right = False
+            else:
+                loc_bonelist.append(bone)
 
-                #Rotation
-                if ConstraintSymmetry.rot != "":
+            #Rotation
+            if rot != "":
+                if side == 'OP1':
                     if bone.startswith("L_") or bone.endswith("_L"):
-                        armature.pose.bones[prefix + bone].constraints.remove(ConstraintSymmetry.rot)
-                else:
-                   ConstraintSymmetry.rot_bonelist.append(bone)
-
-            #Right side
-            elif vatproperties.affected_side == 'OP2':
-
-                #Location
-                if ConstraintSymmetry.loc != "":
+                        armature.pose.bones[prefix + bone].constraints.remove(rot)
+                        arm.symmetry_left = False
+                elif side == 'OP2':
                     if bone.startswith("R_") or bone.endswith("_R"):
-                        armature.pose.bones[prefix + bone].constraints.remove(ConstraintSymmetry.loc)
-                else:
-                    ConstraintSymmetry.loc_bonelist.append(bone)
+                        armature.pose.bones[prefix + bone].constraints.remove(rot)
+                        arm.symmetry_right = False
+            else:
+                rot_bonelist.append(bone)
 
-                #Rotation
-                if ConstraintSymmetry.rot != "":
-                    if bone.startswith("R_") or bone.endswith("_R"):
-                        armature.pose.bones[prefix + bone].constraints.remove(ConstraintSymmetry.rot)
-                else:
-                    ConstraintSymmetry.rot_bonelist.append(bone)
+    prefix = arm.prefix
+    for bone in arm.symmetrical_bones:
+        constraint(bone)
 
-    def execute(action):
-        vatproperties = bpy.context.scene.vatproperties
-        for bone in BoneList.symmetrical_bones:
-            ConstraintSymmetry.constraint(bone, vatproperties.affected_side, action, 0)
+    if arm.helper_bones != []:
+        for bone in arm.helper_bones:
+            if bone.startswith("s."):
+                prefix = Prefixes.helper2
+                constraint(bone.replace("s.", ""))
+            else:
+                prefix = Prefixes.helper
+                constraint(bone)
 
-        if BoneList.helper_bones != []:
-            for bone in BoneList.helper_bones:
-                ConstraintSymmetry.constraint(bone, vatproperties.affected_side, action, 1)
-
-        #If constraints could not be applied
-        if ConstraintSymmetry.loc_bonelist != []:
-            if ConstraintSymmetry.op == 0:
-                print("Location constraints already exist for:")
-                print(ConstraintSymmetry.loc_bonelist)
-            elif ConstraintSymmetry.op == 1:
-                print("Location constraints not found for:")
-                print(ConstraintSymmetry.loc_bonelist)
-                
-        if ConstraintSymmetry.rot_bonelist != []:
-            if ConstraintSymmetry.op == 0:
-                print("Rotation constraints already exist for:")
-                print(ConstraintSymmetry.rot_bonelist)
-            elif ConstraintSymmetry.op == 1:
-                print("Rotation constraints not found for:")
-                print(ConstraintSymmetry.rot_bonelist)
+    #If constraints could not be applied
+    if loc_bonelist != []:
+        if action == 0:
+            print("Location constraints already exist for:", loc_bonelist)
+        elif action == 1:
+            print("Location constraints not found for:", loc_bonelist)
+        
+    if rot_bonelist != []:
+        if action == 0:
+            print("Rotation constraints already exist for:", rot_bonelist)
+        elif action == 1:
+            print("Rotation constraints not found for:", rot_bonelist)
 
 class WeightArmature: #Creates duplicate armature for more spread out weighting
 
