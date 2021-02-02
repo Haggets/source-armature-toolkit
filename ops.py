@@ -115,10 +115,11 @@ class VAT_OT_inversekinematics_create(bpy.types.Operator):
     @classmethod #Same as before
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        return (vatproperties.target_armature != None)
+        if vatproperties.target_armature != None:
+            return (functions.arm.inverse_kinematics == False)
 
     def execute(self, context):
-        functions.InverseKinematics.execute(0)
+        functions.inverse_kinematics(0)
         
         return{'FINISHED'}
 
@@ -130,10 +131,11 @@ class VAT_OT_inversekinematics_delete(bpy.types.Operator):
     @classmethod #Same as before
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        return (vatproperties.target_armature != None)
+        if vatproperties.target_armature != None:
+            return (functions.arm.inverse_kinematics == True)
 
     def execute(self, context):
-        functions.InverseKinematics.execute(1)
+        functions.inverse_kinematics(1)
         
         return{'FINISHED'}
     

@@ -5,7 +5,11 @@ class VAT_properties(bpy.types.PropertyGroup): #Defines global properties the pl
 
     #Thanks to Jeacom for 
     def armature_poll(self, object):
-        return object.type == 'ARMATURE'
+        #Generated armatures should not be part of the list
+        if object.name.endswith(".weight") or object.name.endswith(".anim"):
+            pass
+        else:
+            return object.type == 'ARMATURE'
         
     target_armature : bpy.props.PointerProperty(type=bpy.types.Object, name="Armature", description="Armature that will be used to perform operations on", poll=armature_poll, update=functions.create_armature)
     

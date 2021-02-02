@@ -55,8 +55,10 @@ class Armature: #Armature base
         #Functions executed to gather previous information
         self.getbones()
         self.getscheme()
+        self.getarmatures()
+        self.setgroups()
         
-    def getbones(self):
+    def getbones(self): #Builds bone table
         armature = bpy.data.objects[self.name]
 
         if self.name != "":
@@ -148,8 +150,7 @@ class Armature: #Armature base
             print("Other bones:", self.other_bones)
             print("Custom bones:", self.custom_bones)
 
-    def getscheme(self):
-        vatproperties = bpy.context.scene.vatproperties
+    def getscheme(self): #Gets current scheme
         armature = bpy.data.objects[self.name]
 
         for bone in self.symmetrical_bones:
@@ -169,6 +170,85 @@ class Armature: #Armature base
         elif self.sfm == True:
             print("Current Scheme: Source (SFM)")
 
+    def getarmatures(self): #Gets generated armatures for selected armature
+
+        def getweight_armature():
+            try:
+                self.weight_armature_name_full = bpy.data.objects[self.name + ".weight"]
+                self.weight_armature_name = self.weight_armature_name_full.name
+                self.weight_armature = True
+            except:
+                self.weight_armature = False
+        
+        def getanim_armature():
+            try:
+                bpy.data.objects[self.name + ".anim"]
+                self.animation_armature = True
+            except:
+                self.animation_armature = False
+
+        getweight_armature()
+        getanim_armature()
+
+    def setgroups(self): #Organizes bones by group
+        armature = bpy.data.objects[self.name]
+        prefix = self.prefix
+
+        #Creates groups and sets their color
+        for group, color in zip(["Center", "Left Arm", "Right Arm", "Left Leg", "Right Leg", "Helpers", "Others", "Custom"], ['THEME03', 'THEME01', 'THEME04', 'THEME01', 'THEME04', 'THEME09','THEME10', 'THEME06']):
+            armature.pose.bone_groups.new(name=group)
+            armature.pose.bone_groups[group].color_set = color
+            
+        #Symmetrical bones
+        for bone in self.symmetrical_bones:
+
+            #Legs
+            if bone.count("Thigh") != 0 or bone.count("Calf") != 0 or bone.count("Foot") != 0 or bone.count("Toe") != 0:
+                if bone.startswith("L_") or bone.endswith("_L"):
+                    armature.pose.bones[prefix + bone].bone_group_index = 3
+                elif bone.startswith("R_") or bone.endswith("_R"):
+                    armature.pose.bones[prefix + bone].bone_group_index = 4
+
+            #Arms
+            elif bone.count("Clavicle") != 0 or bone.count("UpperArm") or bone.count("Bicep") != 0 or bone.count("Forearm") != 0 or bone.count("Hand") != 0 or bone.count("Finger"):
+                if bone.startswith("L_") or bone.endswith("_L"):
+                    armature.pose.bones[prefix + bone].bone_group_index = 1
+                elif bone.startswith("R_") or bone.endswith("_R"):
+                    armature.pose.bones[prefix + bone].bone_group_index = 2
+
+            #Helper bones without helper prefixes
+            if bone.count("Knee") != 0 or bone.count("Ulna") != 0 or bone.count("Elbow") != 0 or bone.count("Wrist"):
+                armature.pose.bones[prefix + bone].bone_group_index = 5
+
+        #Central bones
+        for bone in self.central_bones:
+            armature.pose.bones[prefix + bone].bone_group_index = 0
+
+        #Helper bones
+        for bone in self.helper_bones:
+            if bone.startswith("s."):
+                    prefix = Prefixes.helper2
+                    armature.pose.bones[prefix + bone.replace("s.", "")].bone_group_index = 5
+            else:
+                prefix = Prefixes.helper
+                armature.pose.bones[prefix + bone].bone_group_index = 5
+
+        #Other bones
+        for bone in self.other_bones:
+            if bone.count("weapon") != 0:
+                prefix = Prefixes.other
+                armature.pose.bones[prefix + bone].bone_group_index = 6
+            elif bone.startswith("a."):
+                prefix = Prefixes.attachment
+                armature.pose.bones[prefix + bone.replace("a.", "")].bone_group_index = 6
+            else:
+                prefix = Prefixes.other
+                armature.pose.bones[prefix + bone].bone_group_index = 6
+
+        #Custom bones
+        for bone in self.custom_bones:
+            armature.pose.bones[prefix + bone].bone_group_index = 7
+            
 def armature_rename(scheme): #Bone prefix/suffix repositioning
 
     def rename(bone):
@@ -556,78 +636,70 @@ def weight_armature(action): #Creates duplicate armature for more spread out wei
     armature()
     print("Weight armature created!")
 
-class InverseKinematics: #Adds IK to the armature
+def inverse_kinematics(action): #Adds IK to the armature
     
     #Constraint checks
     ik_constraint = ""
-    leftik = ""
-    rightik =""
 
     #Variables for finish report
-    op = 0
     bonelist = []
 
     def getconstraint(bone):
-        vatproperties = bpy.context.scene.vatproperties
-        armature = bpy.data.objects[vatproperties.target_armature.name]
-        prefix = Prefixes.current
+        armature = bpy.data.objects[arm.name]
 
         #Cleans list
-        InverseKinematics.bonelist = []
+        nonlocal bonelist
+        bonelist = []
 
         try:
-            InverseKinematics.ik_constraint = armature.pose.bones[prefix + bone].constraints['IK']
+            ik_constraint = armature.pose.bones[prefix + bone].constraints['IK']
         except:
-            InverseKinematics.ik_constraint = ""
+            ik_constraint = ""
 
-    def IK(bone, action):
-        vatproperties = bpy.context.scene.vatproperties
-        armature = bpy.data.objects[vatproperties.target_armature.name]
-        prefix = Prefixes.current
+    def IK(bone):
+        armature = bpy.data.objects[arm.name]
 
-        InverseKinematics.getconstraint(bone)
+        getconstraint(bone)
 
         #Creation
         if action == 0:
-            InverseKinematics.op = 0
 
-            #Left IK
-            if InverseKinematics.ik_constraint == "":
+            if ik_constraint == "":
                 if bone.startswith("L_") or bone.endswith("_L"):
                     ik = armature.pose.bones[prefix + bone].constraints.new('IK')
                     ik.chain_count = 3
                 elif bone.startswith("R_") or bone.endswith("_R"):
                     ik = armature.pose.bones[prefix + bone].constraints.new('IK')
                     ik.chain_count = 3
+                arm.inverse_kinematics = True
             else:
-                InverseKinematics.bonelist.append(bone)
+                bonelist.append(bone)
 
         #Deletion
         elif action == 1:
-            InverseKinematics.op = 1
 
-            #Left IK
-            if InverseKinematics.ik_constraint != "":
+            if ik_constraint != "":
                 if bone.startswith("L_") or bone.endswith("_L"):
-                    armature.pose.bones[prefix + bone].constraints.remove(InverseKinematics.ik_constraint)
+                    armature.pose.bones[prefix + bone].constraints.remove(ik_constraint)
                 elif bone.startswith("R_") or bone.endswith("_R"):
-                    armature.pose.bones[prefix + bone].constraints.remove(InverseKinematics.ik_constraint)
+                    armature.pose.bones[prefix + bone].constraints.remove(ik_constraint)
+                arm.inverse_kinematics = False
             else:
-                InverseKinematics.bonelist.append(bone)
+                bonelist.append(bone)
 
-    def execute(action):
-        for bone in BoneList.symmetrical_bones:
-            if bone.count("Hand") != 0 or bone.count("Foot") != 0:
-                InverseKinematics.IK(bone, action)
-        
-        #If constraints could not be applied
-        if InverseKinematics.bonelist != []:
-            if InverseKinematics.op == 0:
-                print("IK constraints already exist for:")
-                print(InverseKinematics.bonelist)
-            elif InverseKinematics.op == 1:
-                print("IK constraints not found for:")
-                print(InverseKinematics.bonelist)
+    for bone in arm.symmetrical_bones:
+        prefix = arm.prefix
+        if bone.count("Hand") != 0 or bone.count("Foot") != 0:
+            IK(bone)
+    
+    #If constraints could not be applied
+    if bonelist != []:
+        if action == 0:
+            print("IK constraints already exist for:")
+            print(bonelist)
+        elif action == 1:
+            print("IK constraints not found for:")
+            print(bonelist)
 
 class RigifyRetarget: #Creates animation ready rig
 
