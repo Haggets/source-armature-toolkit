@@ -46,9 +46,17 @@ class VAT_PT_armaturerename(bpy.types.Panel): #Armature rename panel
     
     def draw(self, context):
         layout = self.layout
+        vatproperties = bpy.context.scene.vatproperties
+
         row = layout.row()
         row.operator("vat.armaturerename_blender", text="Convert")
         row.operator("vat.armaturerename_source", text="Restore")
+        col = layout.column()
+        if vatproperties.target_armature != None:
+            if functions.arm.scheme == 0:
+                col.label(text="Current: Source Scheme")
+            elif functions.arm.scheme == 1:
+                col.label(text="Current: Blender Scheme")
         box = layout.box()
         box.label(text="Meant for weight painting", icon='INFO')
         box.label(text="Allows for weight symmetry", icon='INFO')
@@ -72,6 +80,11 @@ class VAT_PT_constraintsymmetry(bpy.types.Panel): #Constraint Symmetry panel
         row.operator("vat.constraintsymmetry_delete", text="Delete")
         row = layout.row()
         row.prop(vatproperties, "affected_side", expand=True)
+        row = layout.row()
+        if vatproperties.target_armature != None:
+            if vatproperties.affected_side == 'OP1' and functions.arm.symmetry_right == True or vatproperties.affected_side == 'OP2' and functions.arm.symmetry_left == True:
+                row.label(text="Already applied on the opposite side")
+
         box = layout.box()
         box.label(text="Meant for armature reproportioning", icon='INFO')
         box.label(text="Allows for symmetry while keeping", icon='INFO')
