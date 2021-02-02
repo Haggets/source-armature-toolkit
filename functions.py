@@ -9,10 +9,9 @@ class Prefixes: #Container for other prefixes
 def create_armature(self, context): #Creates new armature class
     global vatproperties
     vatproperties = bpy.context.scene.vatproperties
-    if vatproperties.target_armature != "":
-        if vatproperties.target_armature.type == 'ARMATURE':
-            global arm
-            arm = Armature(vatproperties.target_armature)
+    if vatproperties.target_armature != None:
+        global arm
+        arm = Armature(vatproperties.target_armature)
 
 class Armature: #Armature base
 
@@ -35,9 +34,22 @@ class Armature: #Armature base
         self.other_bones = []
         self.custom_bones = []
 
-        #Additional information
+        #Additional information for operations
+
+        #Constraints
         self.symmetry_left = False
         self.symmetry_right = False
+        self.inverse_kinematics = False
+
+        #Weight armature
+        self.weight_armature = False
+        self.weight_armature_name = None
+        self.weight_armature_real = None
+
+        #Animation armature
+        self.animation_armature = False
+        self.animation_armature_name = None
+        self.animation_armature_real = None
 
         #Functions executed to gather previous information
         self.getbones()
@@ -153,7 +165,7 @@ class Armature: #Armature base
                 print("Current Scheme: Source")
             elif vatproperties.scheme == 1:
                 print("Current Scheme: Blender")
-        elif vatproperties.sfm_armature == True:
+        elif self.sfm == True:
             print("Current Scheme: Source (SFM)")
 
 def armature_rename(scheme): #Bone prefix/suffix repositioning
@@ -351,32 +363,29 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
         elif action == 1:
             print("Rotation constraints not found for:", rot_bonelist)
 
-class WeightArmature: #Creates duplicate armature for more spread out weighting
+def weight_armature(action): #Creates duplicate armature for more spread out weighting
 
-    #Name container of the created weight armature
-    weightarmature = ""
-
-    def armature(action): #Creates or deletes the weight armature
-        vatproperties = bpy.context.scene.vatproperties
-        real_armature = bpy.data.armatures[vatproperties.target_armature.data.name]
+    def armature(): #Creates or deletes the weight armature
+        real_armature = bpy.data.armatures[arm.name_real]
         
         #Creation
         if action == 0:
-            #Check for the armature datablock, to avoid copying it 
+            #Check for the armature datablock, to avoid having more than one copy 
             try:
-                real_weightarmature = bpy.data.armatures[vatproperties.target_armature.data.name + ".weight"]
+                arm.weight_armature_real = bpy.data.armatures[arm.name_real + ".weight"]
             except:
-                real_weightarmature = real_armature.copy()
-                real_weightarmature.name = vatproperties.target_armature.data.name + ".weight"
+                arm.weight_armature_real = real_armature.copy()
+                arm.weight_armature_real.name = arm.name_real + ".weight"
 
             #Creation and link to current scene
-            WeightArmature.weightarmature = bpy.data.objects.new(vatproperties.target_armature.name + ".weight", real_weightarmature)
+            arm.weight_armature_name = bpy.data.objects.new(arm.name + ".weight", arm.weight_armature_real)
+            arm.weight_armature = True
             collection = bpy.data.collections.new("Weight Armature")
-            collection.objects.link(WeightArmature.weightarmature)
+            collection.objects.link(arm.weight_armature_name)
             bpy.context.scene.collection.children.link(collection)
 
-            armature = bpy.data.objects[WeightArmature.weightarmature.name]
-            prefix = Prefixes.current
+            armature = bpy.data.objects[arm.name]
+            prefix = arm.prefix
             
             #Variables used to store certain bones that require additional position tweaking
             ulna = []
@@ -385,14 +394,14 @@ class WeightArmature: #Creates duplicate armature for more spread out weighting
 
             #Bone connection
             bpy.ops.object.mode_set(mode='OBJECT')
-            bpy.ops.object.select_all(action='DESELECT') #Apparently you're required to be in edit mode to use "data.edit_bones", else there will be no bone info given. Dumb
+            bpy.ops.object.select_all(action='DESELECT') #You're required to be in edit mode to use "data.edit_bones", else there will be no bone info given.
             armature.select_set(1)
             bpy.ops.object.mode_set(mode='EDIT')
 
-            for bone in BoneList.symmetrical_bones:
+            for bone in arm.symmetrical_bones:
                 parent = armature.pose.bones[prefix + bone].parent.name
 
-                #Makes it so the hand bone is not pointing towards the thumb and is instead facing straight
+                #Makes it so the hand bone is facing straight
                 if parent.count("Hand") != 0:
                     if bone.count("Finger0"):
                         pass
@@ -452,7 +461,7 @@ class WeightArmature: #Creates duplicate armature for more spread out weighting
                 if bone.count("Bicep") != 0:
                     bicep.append(bone)
 
-            for bone in BoneList.central_bones:
+            for bone in arm.central_bones:
                 if bone == "Pelvis": #No parent
                     pass
                 else:
@@ -460,7 +469,7 @@ class WeightArmature: #Creates duplicate armature for more spread out weighting
                     loc = armature.pose.bones[prefix + bone].head
                     armature.data.edit_bones[parent].tail = loc
                     
-                #Additional bone tweaking
+                #Extends head's length to be on par with actual head height
                 if bone == "Head1":
                     pbone = armature.pose.bones[prefix + bone].head
                     
@@ -468,7 +477,7 @@ class WeightArmature: #Creates duplicate armature for more spread out weighting
 
             #Tweaks positioning of some helper bones
             if bicep != []:
-                for bone in BoneList.symmetrical_bones:
+                for bone in arm.symmetrical_bones:
                     if bone.count("Forearm") != 0:
                         if bone.startswith("L_") or bone.endswith("_L"):
                             loc_l = armature.pose.bones[prefix + bone].head
@@ -481,10 +490,9 @@ class WeightArmature: #Creates duplicate armature for more spread out weighting
                         armature.data.edit_bones[prefix + bicep].tail = loc_r
 
             if ulna != [] or wrist != []:
-                prefix = Prefixes.current
 
                 #Obtains hand head location
-                for bone in BoneList.symmetrical_bones:
+                for bone in arm.symmetrical_bones:
                     if bone.count("Hand") != 0:
                         if bone.startswith("L_") or bone.endswith("_L"):
                             loc_l = armature.pose.bones[prefix + bone].head
@@ -511,9 +519,8 @@ class WeightArmature: #Creates duplicate armature for more spread out weighting
                             armature.data.edit_bones[prefix + wrist].head = loc2_r
                             armature.data.edit_bones[prefix + wrist].tail = loc_r
 
-            if BoneList.other_bones != []:
-                for bone in BoneList.other_bones:
-
+            if arm.other_bones != []:
+                for bone in arm.other_bones:
                     #Removes weapon bones since they're not meant for the character weighting
                     #Also removes attachment bones for the same reason
                     if bone.count("weapon") != 0:
@@ -535,10 +542,11 @@ class WeightArmature: #Creates duplicate armature for more spread out weighting
 
         #Deletion    
         elif action == 1:
-            bpy.data.objects.delete(WeightArmature.weightarmature.name)
+            bpy.data.objects.delete(arm.weightarmature_name)
+            arm.weight_armature = False
         
-    def execute(action):
-        WeightArmature.armature(action)
+    WeightArmature.armature(action)
+    print("Weight armature created!")
 
 class InverseKinematics: #Adds IK to the armature
     

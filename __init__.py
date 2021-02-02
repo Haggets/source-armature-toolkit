@@ -20,7 +20,7 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
         
-        bpy.types.Scene.vatproperties = bpy.props.PointerProperty(type= props.VAT_properties)
+        bpy.types.Scene.vatproperties = bpy.props.PointerProperty(type=props.VAT_properties)
     
 def unregister():
     for cls in classes:

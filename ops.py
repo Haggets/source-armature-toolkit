@@ -10,7 +10,8 @@ class VAT_OT_armaturerename_blender(bpy.types.Operator): #Converts armature sche
     @classmethod #Checks if an armature is selected and it is not an SFM one, since it doesn't need it
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        return (vatproperties.target_armature != None and functions.arm.scheme == 0 and functions.arm.sfm == False)
+        if vatproperties.target_armature != None:
+            return (functions.arm.scheme == 0 and functions.arm.sfm == False)
     
     def execute(self, context):
         functions.armature_rename(1)
@@ -25,7 +26,8 @@ class VAT_OT_armaturerename_source(bpy.types.Operator): #Converts armature schem
     @classmethod
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        return (vatproperties.target_armature != None and functions.arm.scheme == 1 and functions.arm.sfm == False)
+        if vatproperties.target_armature != None:
+            return (functions.arm.scheme == 1 and functions.arm.sfm == False)
     
     def execute(self, context):
         functions.armature_rename(0)
@@ -40,10 +42,11 @@ class VAT_OT_constraintsymmetry_create(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        if vatproperties.affected_side == 'OP1':
-            return (vatproperties.target_armature != None and functions.arm.symmetry_left == False and functions.arm.symmetry_right == False)
-        elif vatproperties.affected_side == 'OP2':
-            return (vatproperties.target_armature != None and functions.arm.symmetry_right == False and functions.arm.symmetry_left == False)
+        if vatproperties.target_armature != None:
+            if vatproperties.affected_side == 'OP1':
+                return (functions.arm.symmetry_left == False and functions.arm.symmetry_right == False)
+            elif vatproperties.affected_side == 'OP2':
+                return (functions.arm.symmetry_right == False and functions.arm.symmetry_left == False)
 
 
     def execute(self, context):
@@ -60,10 +63,11 @@ class VAT_OT_constraintsymmetry_delete(bpy.types.Operator):
     @classmethod #Same as before
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        if vatproperties.affected_side == 'OP1':
-            return (vatproperties.target_armature != None and functions.arm.symmetry_left == True)
-        elif vatproperties.affected_side == 'OP2':
-            return (vatproperties.target_armature != None and functions.arm.symmetry_right == True)
+        if vatproperties.target_armature != None:
+            if vatproperties.affected_side == 'OP1':
+                return (functions.arm.symmetry_left == True)
+            elif vatproperties.affected_side == 'OP2':
+                return (functions.arm.symmetry_right == True)
 
     def execute(self, context):
         vatproperties = bpy.context.scene.vatproperties
@@ -79,10 +83,11 @@ class VAT_OT_weightarmature_create(bpy.types.Operator):
     @classmethod #Same as before
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        return (vatproperties.target_armature != None) # and functions.WeightArmature.weightarmature is ""
+        if vatproperties.target_armature != None:
+            return (functions.arm.weight_armature == False)
 
     def execute(self, context):
-        functions.WeightArmature.execute(0)
+        functions.weight_armature(0)
 
         return{'FINISHED'}
 
@@ -94,10 +99,11 @@ class VAT_OT_weightarmature_delete(bpy.types.Operator):
     @classmethod #Same as before
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        return (vatproperties.target_armature != None)
+        if vatproperties.target_armature != None:
+            return (functions.arm.weight_armature == True)
 
     def execute(self, context):
-        functions.WeightArmature.execute(1)
+        functions.weight_armature(1)
 
         return{'FINISHED'}
 
