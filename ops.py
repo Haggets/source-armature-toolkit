@@ -147,10 +147,11 @@ class VAT_OT_rigifyretarget_create(bpy.types.Operator):
     @classmethod #Same as before
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        return (vatproperties.target_armature != None) # and functions.WeightArmature.weightarmature is ""
+        if vatproperties.target_armature != None:
+            return (functions.arm.animation_armature == False)
 
     def execute(self, context):
-        functions.RigifyRetarget.execute(0)
+        functions.anim_armature(0)
 
         return{'FINISHED'}
 
@@ -162,9 +163,10 @@ class VAT_OT_rigifyretarget_delete(bpy.types.Operator):
     @classmethod #Same as before
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        return (vatproperties.target_armature != None) # and functions.WeightArmature.weightarmature is ""
+        if vatproperties.target_armature != None:
+            return (functions.arm.animation_armature == True)
 
     def execute(self, context):
-        functions.RigifyRetarget.execute(1)
+        functions.anim_armature(1)
 
         return{'FINISHED'}
