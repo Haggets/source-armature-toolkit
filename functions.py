@@ -19,7 +19,7 @@ class Armature: #Armature base
         #Basic armature information
         self.name = armature.name
         self.name_full = armature
-        self.name_real = armature.data.name
+        self.name_real = armature.data
 
         #Armature type, scheme and prefix
         self.scheme = -1 #-1 = No armature, 0 = Source, 1 = Blender, 2 = SFM, 3 = Custom 1, 4 = Custom 2
@@ -188,7 +188,7 @@ class Armature: #Armature base
             try:
                 self.weight_armature_name_full = bpy.data.objects[self.name + ".weight"]
                 self.weight_armature_name = self.weight_armature_name_full.name
-                self.weight_armature_real = bpy.data.armatures[self.name_real + ".weight"]
+                self.weight_armature_real = bpy.data.armatures[self.name_real.name + ".weight"]
                 self.weight_armature = True
             except:
                 self.weight_armature = False
@@ -197,7 +197,7 @@ class Armature: #Armature base
             try:
                 self.animation_armature_name_full = bpy.data.objects[self.name + ".anim"]
                 self.animation_armature_name = self.animation_armature_name_full.name
-                self.animation_armature_real = bpy.data.armatures[self.name_real + ".anim"]
+                self.animation_armature_real = bpy.data.armatures[self.name_real.name + ".anim"]
                 self.animation_armature = True
             except:
                 self.animation_armature = False
@@ -335,7 +335,7 @@ class Armature: #Armature base
 def armature_rename(scheme): #Bone prefix/suffix repositioning
 
     def rename(bone):
-        armature = bpy.data.armatures[arm.name_real]
+        bpy.ops.object.mode_set(mode='OBJECT') #Forces object mode to avoid errors when being in edit mode
 
         #To which scheme
         if scheme == 1: #Source -> Blender
@@ -352,6 +352,7 @@ def armature_rename(scheme): #Bone prefix/suffix repositioning
             arm.scheme = 0
 
     prefix = arm.prefix
+    armature = bpy.data.armatures[arm.name_real.name]
     for bone in arm.symmetrical_bones:
         rename(bone)
         
@@ -369,6 +370,20 @@ def armature_rename(scheme): #Bone prefix/suffix repositioning
             else:
                 prefix = Prefixes.helper
                 rename(bone)
+
+    #Renames generated armatures to be on par with the original armature
+
+    #Renames weight armature
+    if arm.weight_armature == True:
+        armature = bpy.data.armatures[arm.weight_armature_real.name]
+        for bone in arm.symmetrical_bones:
+            rename(bone)
+
+    #Renames animation armature
+    if arm.animation_armature == True:
+        armature = bpy.data.armatures[arm.animation_armature_real.name]
+        for bone in arm.symmetrical_bones:
+            rename(bone)
 
     arm.get_bones() #Refreshes bone list
 
@@ -528,13 +543,15 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
             print("Rotation constraints not found for:", rot_bonelist)
 
 def generate_armature(type, action): #Creates or deletes the weight armature
-    real_armature = bpy.data.armatures[arm.name_real]
+    real_armature = bpy.data.armatures[arm.name_real.name]
     
     #Creation
     if action == 0:
+
+        #Weight armature datablock
         if type == "weight":
             arm.weight_armature_real = real_armature.copy()
-            arm.weight_armature_real.name = arm.name_real + ".weight"
+            arm.weight_armature_real.name = arm.name_real.name + ".weight"
 
             #Creation and link to current scene
             arm.weight_armature_name_full = bpy.data.objects.new(arm.name + ".weight", arm.weight_armature_real)
@@ -548,9 +565,11 @@ def generate_armature(type, action): #Creates or deletes the weight armature
             collection.objects.link(arm.weight_armature_name_full)
 
             armature = bpy.data.objects[arm.weight_armature_name]
+            
+        #Animation armature datablock
         elif type == "anim":
             arm.animation_armature_real = real_armature.copy()
-            arm.animation_armature_real.name = arm.name_real + ".anim"
+            arm.animation_armature_real.name = arm.name_real.name + ".anim"
 
             #Creation and link to current scene
             arm.animation_armature_name_full = bpy.data.objects.new(arm.name + ".anim", arm.animation_armature_real)
@@ -567,13 +586,18 @@ def generate_armature(type, action): #Creates or deletes the weight armature
 
         prefix = arm.prefix
         
-        #Variables used to store certain bones that require additional position tweaking
+        #Variables for certain bones that require additional position tweaking
         ulna = []
         wrist = []
         bicep = []
+        trapezius = []
+        quadricep = []
 
         ulna_present = 0
+        wrist_present = 0
         bicep_present = 0
+        trapezius_present = 0
+        quadricep_present = 0
 
         #Bone connection
         bpy.ops.object.mode_set(mode='OBJECT')
@@ -594,14 +618,31 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                     armature.data.edit_bones[parent].tail.xz = pbone.x, pbone.z
                     armature.data.edit_bones[parent].length = 3
             else:
-                loc = armature.pose.bones[prefix + bone].head
-                armature.data.edit_bones[parent].tail = loc
-                if bone.count("Thigh") != 0 or bone.count("Clavicle") != 0:
-                    pass
-                else:
-                    armature.data.edit_bones[prefix + bone].use_connect = True
 
-            #Additional bone tweaking
+                #Keeps only the bare minimum bones for Rigify and connects the rest
+                if type == "anim":
+                    if bone.count("Trapezius") != 0 or bone.count("Bicep") != 0 or bone.count("Elbow") != 0 or bone.count("Ulna") != 0 or bone.count("Wrist") != 0 or bone.count("Knee") != 0 or bone.count("Quadricep") != 0:
+                        ebone = armature.data.edit_bones[prefix + bone]
+                        armature.data.edit_bones.remove(ebone)
+                    else:
+                        loc = armature.pose.bones[prefix + bone].head
+                        armature.data.edit_bones[parent].tail = loc
+                else:
+                    loc = armature.pose.bones[prefix + bone].head
+                    armature.data.edit_bones[parent].tail = loc
+                    
+                #Bones that should not be connected to parent on weight armatures
+                if type == "weight":
+                    if bone.count("Thigh") != 0 or bone.count("Clavicle") != 0 or bone.count("Forearm") != 0 or bone.count("Hand") != 0 or bone.count("Elbow") != 0 or bone.count("Wrist") or bone.count("UpperArm") or bone.count("Calf") != 0 or bone.count("Knee") != 0:
+                        pass
+                    else:
+                        armature.data.edit_bones[prefix + bone].use_connect = True
+                #Bones that will not be connected to parent on anim armatures, the rest were deleted and would cause an error
+                elif type == "anim":
+                    if bone.count("Thigh") != 0 or bone.count("Clavicle") != 0 or bone.count("Trapezius") != 0 or bone.count("Bicep") != 0 or bone.count("Elbow") != 0 or bone.count("Ulna") != 0 or bone.count("Wrist") != 0 or bone.count("Knee") != 0 or bone.count("Quadricep") != 0:
+                        pass
+                    else:
+                        armature.data.edit_bones[prefix + bone].use_connect = True
 
             #Extends toe tip to be where the actual tip should be
             if bone.casefold().count("toe") != 0:
@@ -612,66 +653,50 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                 elif bone.startswith("R_") or bone.endswith("_R"):
                     armature.data.edit_bones[prefix + bone].tail = pbone.x-0.5, pbone.y-2.5, pbone.z
 
-            #Extends the length of the finger's tips to be closer to where the actual finger tip should be
-            if bone.count("Finger12") != 0 or bone.count("Finger22") != 0 or bone.count("Finger32") != 0 or bone.count("Finger42") != 0:
-                pbone = armature.pose.bones[prefix + bone].tail
+            if type == "weight":
+                #Helper bones
+                if bone.count("Knee") != 0:
+                    pbone = armature.pose.bones[prefix + bone].tail
 
-                if bone.startswith("L_") or bone.endswith("_L"):
-                    armature.data.edit_bones[prefix + bone].tail.xz = pbone.x-0.1, pbone.z-0.5
-                elif bone.startswith("R_") or bone.endswith("_R"):
-                    armature.data.edit_bones[prefix + bone].tail.xz = pbone.x+0.1, pbone.z-0.5
+                    armature.data.edit_bones[prefix + bone].tail.y = pbone.y-5
 
-            #Same thing as before but with different location
-            if bone.count("Finger02") != 0:
-                pbone = armature.pose.bones[prefix + bone].tail
+                if bone.count("Elbow") != 0:
+                    pbone = armature.pose.bones[prefix + bone].tail
 
-                armature.data.edit_bones[prefix + bone].tail.yz = pbone.y-0.8, pbone.z-0.4
+                    armature.data.edit_bones[prefix + bone].tail.y = pbone.y+5
 
-            #Helper bones
-            if bone.count("Knee") != 0:
-                pbone = armature.pose.bones[prefix + bone].tail
-
-                armature.data.edit_bones[prefix + bone].tail.y = pbone.y-5
-
-            if bone.count("Elbow") != 0:
-                pbone = armature.pose.bones[prefix + bone].tail
-
-                armature.data.edit_bones[prefix + bone].tail.y = pbone.y+5
-
-            #Other helper bones that need additional tweaking on their positioning
-            if bone.count("Ulna") != 0:
-                ulna.append(bone)
-                if bone.startswith("L_") or bone.endswith("_L"):
-                    ulna_l = armature.pose.bones[prefix + bone].head
-                elif bone.startswith("R_") or bone.endswith("_R"):
-                    ulna_r = armature.pose.bones[prefix + bone].head
-                ulna_present = 1
-            
-            if bone.count("Wrist") != 0:
-                wrist.append(bone)
-
-            if bone.count("Bicep") != 0:
-                bicep.append(bone)
-                if bone.startswith("L_") or bone.endswith("_L"):
-                    bicep_l = armature.pose.bones[prefix + bone].head
-                elif bone.startswith("R_") or bone.endswith("_R"):
-                    bicep_r = armature.pose.bones[prefix + bone].head
-                bicep_present = 1
-
-        #Avoids some bones not using bicep or ulna's location when they should
-        for bone in arm.symmetrical_bones:
-            if ulna_present == 1:
-                if bone.count("Forearm") != 0:
+                #Other helper bones that need additional tweaking on their positioning
+                if bone.count("Ulna") != 0:
+                    ulna.append(bone)
                     if bone.startswith("L_") or bone.endswith("_L"):
-                        armature.data.edit_bones[prefix + bone].tail = ulna_l
+                        ulna_l = armature.pose.bones[prefix + bone].head
                     elif bone.startswith("R_") or bone.endswith("_R"):
-                        armature.data.edit_bones[prefix + bone].tail = ulna_r
-            if bicep_present == 1:
-                if bone.count("UpperArm") != 0:
+                        ulna_r = armature.pose.bones[prefix + bone].head
+                    ulna_present = 1
+                
+                if bone.count("Wrist") != 0:
+                    wrist.append(bone)
+                    wrist_present = 1
+
+                if bone.count("Bicep") != 0:
+                    bicep.append(bone)
                     if bone.startswith("L_") or bone.endswith("_L"):
-                        armature.data.edit_bones[prefix + bone].tail = bicep_l
+                        bicep_l = armature.pose.bones[prefix + bone].head
                     elif bone.startswith("R_") or bone.endswith("_R"):
-                        armature.data.edit_bones[prefix + bone].tail = bicep_r
+                        bicep_r = armature.pose.bones[prefix + bone].head
+                    bicep_present = 1
+
+                if bone.count("Trapezius") != 0:
+                    trapezius.append(bone)
+                    trapezius_present = 1
+
+                if bone.count("Quadricep") != 0:
+                    quadricep.append(bone)
+                    if bone.startswith("L_") or bone.endswith("_L"):
+                        quadricep_l = armature.pose.bones[prefix + bone].head
+                    elif bone.startswith("R_") or bone.endswith("_R"):
+                        quadricep_r = armature.pose.bones[prefix + bone].head
+                    quadricep_present = 1
 
         for bone in arm.central_bones:
             if bone.casefold() == "pelvis": #No parent
@@ -691,89 +716,155 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                 
                 armature.data.edit_bones[prefix + bone].tail = pbone.x, pbone.y, pbone.z+6
 
-        #Tweaks positioning of some helper bones
-
-        #Bicep repositioning
-        if bicep != []:
+        if type == "weight":
+            #Gets certain bone positions and avoids some bones not using bicep or ulna's location when they should
             for bone in arm.symmetrical_bones:
-                if bone.count("Forearm") != 0:
-                    if bone.startswith("L_") or bone.endswith("_L"):
-                        forearm_l = armature.pose.bones[prefix + bone].head
-                    elif bone.startswith("R_") or bone.endswith("_R"):
-                        forearm_r = armature.pose.bones[prefix + bone].head
-
-            for bone in bicep:
-                if bone.startswith("L_") or bone.endswith("_L"):
-                    armature.data.edit_bones[prefix + bone].tail = forearm_l
-                elif bone.startswith("R_") or bone.endswith("_R"):
-                    armature.data.edit_bones[prefix + bone].tail = forearm_r
-
-        #Ulna and wrist repositioning
-        if ulna != [] or wrist != []:
-
-            #Obtains hand head location
-            for bone in arm.symmetrical_bones:
-                if bone.count("Hand") != 0:
-                    if bone.startswith("L_") or bone.endswith("_L"):
-                        hand_l = armature.pose.bones[prefix + bone].head
-                    elif bone.startswith("R_") or bone.endswith("_R"):
-                        hand_r = armature.pose.bones[prefix + bone].head
-
-            #If both ulna and wrist are present
-            if ulna != [] and wrist != []:
-                for bone in ulna:
-                    if bone.startswith("L_") or bone.endswith("_L"):
-                        armature.data.edit_bones[prefix + bone].tail = hand_l
-                        ulna_l = armature.pose.bones[prefix + bone].tail
-                    elif bone.startswith("R_") or bone.endswith("_R"):
-                        armature.data.edit_bones[prefix + bone].tail = hand_r
-                        ulna_r = armature.pose.bones[prefix + bone].tail
-                    
-                    armature.data.edit_bones[prefix + bone].length = armature.data.edit_bones[prefix + bone].length / 1.6
-
-                #Mode change is required to update ulna's tail position (Since it was changed prior). If you know a better way please let me know.
-                bpy.ops.object.mode_set(mode='OBJECT')
-                bpy.ops.object.mode_set(mode='EDIT')
-
-                for bone in wrist:
-                    if bone.startswith("L_") or bone.endswith("_L"):
-                        armature.data.edit_bones[prefix + bone].head = ulna_l
-                        armature.data.edit_bones[prefix + bone].tail = hand_l
-                    elif bone.startswith("R_") or bone.endswith("_R"):
-                        armature.data.edit_bones[prefix + bone].head = ulna_r
-                        armature.data.edit_bones[prefix + bone].tail = hand_r
-
-            #Else if only ulna is present
-            elif ulna != []:
-                for bone in ulna:
-                    if bone.startswith("L_") or bone.endswith("_L"):
-                        armature.data.edit_bones[prefix + bone].tail = hand_l
-                    elif bone.startswith("R_") or bone.endswith("_R"):
-                        armature.data.edit_bones[prefix + bone].tail = hand_r
-
-            #Else if only wrist is present
-            elif wrist != []:
-                for bone in arm.symmetrical_bones:
+                if bicep_present == 1:
+                    #Gets position
                     if bone.count("Forearm") != 0:
-                        armature.data.edit_bones[prefix + bone].length = armature.data.edit_bones[prefix + bone].length / 1.3
                         if bone.startswith("L_") or bone.endswith("_L"):
-                            forearm_l = armature.pose.bones[prefix + bone].tail
+                            forearm_l = armature.pose.bones[prefix + bone].head
                         elif bone.startswith("R_") or bone.endswith("_R"):
-                            forearm_r = armature.pose.bones[prefix + bone].tail
+                            forearm_r = armature.pose.bones[prefix + bone].head
 
-                #Mode change is required to update ulna's tail position (Since it was changed prior). If you know a better way please let me know.
-                bpy.ops.object.mode_set(mode='OBJECT')
-                bpy.ops.object.mode_set(mode='EDIT')
+                    #Forces upperarm to use bicep position
+                    if bone.count("UpperArm") != 0:
+                        if bone.startswith("L_") or bone.endswith("_L"):
+                            armature.data.edit_bones[prefix + bone].tail = bicep_l
+                        elif bone.startswith("R_") or bone.endswith("_R"):
+                            armature.data.edit_bones[prefix + bone].tail = bicep_r
+                else:
+                    if bone.count("Forearm") != 0:
+                        armature.data.edit_bones[prefix + bone].use_connect = True
 
-                for bone in wrist:
+                if ulna_present == 1 or wrist_present == 1:
+                    #Gets position
+                    if bone.count("Hand") != 0:
+                        if bone.startswith("L_") or bone.endswith("_L"):
+                            hand_l = armature.pose.bones[prefix + bone].head
+                        elif bone.startswith("R_") or bone.endswith("_R"):
+                            hand_r = armature.pose.bones[prefix + bone].head
+
+                    #Forces forearm to use ulna position
+                    if bone.count("Forearm") != 0:
+                        if bone.startswith("L_") or bone.endswith("_L"):
+                            armature.data.edit_bones[prefix + bone].tail = ulna_l
+                        elif bone.startswith("R_") or bone.endswith("_R"):
+                            armature.data.edit_bones[prefix + bone].tail = ulna_r
+                else:
+                    if bone.count("Hand") != 0:
+                        armature.data.edit_bones[prefix + bone].use_connect = True
+
+                if quadricep_present == 1:
+                    #Gets position
+                    if bone.count("Calf") != 0:
+                        if bone.startswith("L_") or bone.endswith("_L"):
+                            calf_l = armature.pose.bones[prefix + bone].head
+                        elif bone.startswith("R_") or bone.endswith("_R"):
+                            calf_r = armature.pose.bones[prefix + bone].head
+                        
+                    #Forces thigh to use quadricep position
+                    if bone.count("Thigh") != 0:
+                        if bone.startswith("L_") or bone.endswith("_L"):
+                            armature.data.edit_bones[prefix + bone].tail = quadricep_l
+                        elif bone.startswith("R_") or bone.endswith("_R"):
+                            armature.data.edit_bones[prefix + bone].tail = quadricep_r
+                else:
+                    if bone.count("Calf") != 0:
+                        armature.data.edit_bones[prefix + bone].use_connect = True
+
+                if trapezius_present == 1:
+                    if bone.count("UpperArm") != 0:
+                        if bone.startswith("L_") or bone.endswith("_L"):
+                            upperarm_l = armature.pose.bones[prefix + bone].head
+                        elif bone.startswith("R_") or bone.endswith("_R"):
+                            upperarm_r = armature.pose.bones[prefix + bone].head
+                else:
+                    if bone.count("UpperArm") != 0:
+                        armature.data.edit_bones[prefix + bone].use_connect = True
+
+            #Tweaks positioning of some helper bones
+
+            #Bicep repositioning
+            if bicep != []:
+                for bone in bicep:
                     if bone.startswith("L_") or bone.endswith("_L"):
-                        armature.data.edit_bones[prefix + bone].head = forearm_l
+                        armature.data.edit_bones[prefix + bone].tail = forearm_l
                     elif bone.startswith("R_") or bone.endswith("_R"):
-                        armature.data.edit_bones[prefix + bone].head = forearm_r
+                        armature.data.edit_bones[prefix + bone].tail = forearm_r
+
+            if trapezius != []:
+                for bone in trapezius:
+                    if bone.startswith("L_") or bone.endswith("_L"):
+                        armature.data.edit_bones[prefix + bone].tail = upperarm_l
+                    elif bone.startswith("R_") or bone.endswith("_R"):
+                        armature.data.edit_bones[prefix + bone].tail = upperarm_r
+
+            if quadricep != []:
+                for bone in quadricep:
+                    if bone.startswith("L_") or bone.endswith("_L"):
+                        armature.data.edit_bones[prefix + bone].tail = calf_l
+                    elif bone.startswith("R_") or bone.endswith("_R"):
+                        armature.data.edit_bones[prefix + bone].tail = calf_r
+
+            #Ulna and wrist repositioning
+            if ulna != [] or wrist != []:
+
+                #If both ulna and wrist are present
+                if ulna != [] and wrist != []:
+                    for bone in ulna:
+                        if bone.startswith("L_") or bone.endswith("_L"):
+                            armature.data.edit_bones[prefix + bone].tail = hand_l
+                            ulna_l = armature.pose.bones[prefix + bone].tail
+                        elif bone.startswith("R_") or bone.endswith("_R"):
+                            armature.data.edit_bones[prefix + bone].tail = hand_r
+                            ulna_r = armature.pose.bones[prefix + bone].tail
+                        
+                        armature.data.edit_bones[prefix + bone].length = armature.data.edit_bones[prefix + bone].length / 1.6
+
+                    #Mode change is required to update ulna's tail position (Since it was changed prior). If you know a better way please let me know.
+                    bpy.ops.object.mode_set(mode='OBJECT')
+                    bpy.ops.object.mode_set(mode='EDIT')
+
+                    for bone in wrist:
+                        if bone.startswith("L_") or bone.endswith("_L"):
+                            armature.data.edit_bones[prefix + bone].head = ulna_l
+                            armature.data.edit_bones[prefix + bone].tail = hand_l
+                        elif bone.startswith("R_") or bone.endswith("_R"):
+                            armature.data.edit_bones[prefix + bone].head = ulna_r
+                            armature.data.edit_bones[prefix + bone].tail = hand_r
+
+                #Else if only ulna is present
+                elif ulna != []:
+                    for bone in ulna:
+                        if bone.startswith("L_") or bone.endswith("_L"):
+                            armature.data.edit_bones[prefix + bone].tail = hand_l
+                        elif bone.startswith("R_") or bone.endswith("_R"):
+                            armature.data.edit_bones[prefix + bone].tail = hand_r
+
+                #Else if only wrist is present
+                elif wrist != []:
+                    for bone in arm.symmetrical_bones:
+                        if bone.count("Forearm") != 0:
+                            armature.data.edit_bones[prefix + bone].length = armature.data.edit_bones[prefix + bone].length / 1.3
+                            if bone.startswith("L_") or bone.endswith("_L"):
+                                forearm_l = armature.pose.bones[prefix + bone].tail
+                            elif bone.startswith("R_") or bone.endswith("_R"):
+                                forearm_r = armature.pose.bones[prefix + bone].tail
+
+                    #Mode change is required to update ulna's tail position (Since it was changed prior). If you know a better way please let me know.
+                    bpy.ops.object.mode_set(mode='OBJECT')
+                    bpy.ops.object.mode_set(mode='EDIT')
+
+                    for bone in wrist:
+                        if bone.startswith("L_") or bone.endswith("_L"):
+                            armature.data.edit_bones[prefix + bone].head = forearm_l
+                        elif bone.startswith("R_") or bone.endswith("_R"):
+                            armature.data.edit_bones[prefix + bone].head = forearm_r
 
         if arm.other_bones != []:
             for bone in arm.other_bones:
-                #Removes weapon bones and attachments since they're of no use for the charactrer
+                #Removes unimportant bones since they're of no use for the charactrer
                 if bone.count("weapon") != 0:
                     prefix = Prefixes.other
                     bone = armature.data.edit_bones[prefix + bone]
@@ -781,6 +872,10 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                 elif bone.startswith("a."):
                     prefix = Prefixes.attachment
                     bone = armature.data.edit_bones[prefix + bone.replace("a.", "")]
+                    armature.data.edit_bones.remove(bone)
+                elif bone.count("forward") != 0:
+                    prefix = Prefixes.other
+                    bone = armature.data.edit_bones[prefix + bone]
                     armature.data.edit_bones.remove(bone)
 
         #Removes pole bones if simple IK was used prior and not removed
@@ -809,7 +904,6 @@ def generate_armature(type, action): #Creates or deletes the weight armature
             bpy.data.armatures.remove(arm.animation_armature_real)
             arm.animation_armature = False
             arm.animation_armature_real = None
-
 
 def weight_armature(action): #Creates duplicate armature for more spread out weighting
         
@@ -945,7 +1039,7 @@ def inverse_kinematics(action): #Adds IK to the armature
 def anim_armature(action):
 
     generate_armature("anim", action)
-        
+    
     if action == 0:
         armature = bpy.data.objects[arm.animation_armature_name]
 
@@ -1034,14 +1128,25 @@ def anim_armature(action):
             ebone.layers[3] = True
             ebone.layers[0] = False
 
-        #Symmetrical
         for bone in arm.symmetrical_bones:
-            pbone = armature.pose.bones[prefix + bone]
-            param = pbone.rigify_parameters
-            ebone = armature.data.edit_bones[prefix + bone]
+
+            #Bones deleted prior
+            if bone.count("Trapezius") != 0 or bone.count("Bicep") != 0 or bone.count("Elbow") != 0 or bone.count("Ulna") != 0 or bone.count("Wrist") != 0 or bone.count("Knee") != 0 or bone.count("Quadricep") != 0:
+                pass
+            else:
+                pbone = armature.pose.bones[prefix + bone]
+                param = pbone.rigify_parameters
+                ebone = armature.data.edit_bones[prefix + bone]
+
+            #"Resets" bone layers, since bone layers remain from previous setup
+            ebone.layers[0] = True
+
+            for i in [1,2,3,4,5,6,7]:
+                ebone.layers[i] = False
 
             if bone.count("Finger") != 0:
                 ebone.layers[5] = True
+                ebone.layers[0] = False
 
             if bone.count("UpperArm") != 0 or bone.count("Forearm") != 0 or bone.count("Hand") != 0:
                 if bone.startswith("L_") or bone.endswith("_L"):
@@ -1081,9 +1186,9 @@ def anim_armature(action):
         for bone in arm.central_bones:
             pbone = armature.pose.bones[prefix + bone]
             param = pbone.rigify_parameters
-            dbone = armature.data.bones[prefix + bone]
+            ebone = armature.data.edit_bones[prefix + bone]
 
-            dbone.layers[3] = True
+            ebone.layers[3] = True
 
             if bone.count("Pelvis") != 0:
                 pbone.rigify_type = "spines.basic_spine"
@@ -1099,7 +1204,7 @@ def anim_armature(action):
                 param.tweak_layers[1] = False
                 param.tweak_layers[4] = True
             
-            dbone.layers[0] = False
+            ebone.layers[0] = False
 
         for i in [1,2,3,4,5,6,7]:
                 armature.data.layers[i] = True
