@@ -196,6 +196,7 @@ class Armature: #Armature base
                 self.weight_armature_name = self.weight_armature_name_full.name
                 self.weight_armature_real = bpy.data.armatures[self.name_real.name + ".weight"]
                 self.weight_armature = True
+                print("Weight armature detected")
             except:
                 self.weight_armature = False
         
@@ -205,6 +206,7 @@ class Armature: #Armature base
                 self.animation_armature_name = self.animation_armature_name_full.name
                 self.animation_armature_real = bpy.data.armatures[self.name_real.name + ".anim"]
                 self.animation_armature = True
+                print("Animation armature detected")
             except:
                 self.animation_armature = False
 
@@ -1023,8 +1025,22 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                 bpy.data.armatures.remove(arm.weight_armature_real)
             except:
                 pass
+
+            #Gets collection and removes if it's empty
+            try:
+                collection = bpy.data.collections['Weight Armature']
+            except:
+                collection = None
+
+            if collection != None:
+                if collection.objects.keys() == []:
+                    bpy.data.collections.remove(collection)
+
             arm.weight_armature = False
+            arm.weight_armature_name = None
+            arm.weight_armature_name_full = None
             arm.weight_armature_real = None
+            
         elif type == "anim":
             try:
                 bpy.data.objects.remove(arm.animation_armature_name_full)
@@ -1034,7 +1050,33 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                 bpy.data.armatures.remove(arm.animation_armature_real)
             except:
                 pass
+
+            #Gets collection and removes if it's empty
+            try:
+                collection = bpy.data.collections['Animation Armature']
+            except:
+                collection = None
+
+            if collection != None:
+                if collection.objects.keys() == []:
+                    bpy.data.collections.remove(collection)
+                    
+            #Checks if retarget empties are present, if so, remove them
+            try:
+                collection = bpy.data.collections["Retarget Empties " + "(" + arm.name + ")"]
+            except:
+                collection = None
+
+            if collection != None:
+                for object in collection.objects.keys():
+                    object = bpy.data.objects[object]
+                    bpy.data.objects.remove(object)
+
+                bpy.data.collections.remove(collection)
+
             arm.animation_armature = False
+            arm.animation_armature_name = None
+            arm.animation_armature_name_full = None
             arm.animation_armature_real = None
 
 def weight_armature(action): #Creates duplicate armature for more spread out weighting
@@ -1172,7 +1214,7 @@ def inverse_kinematics(action): #Adds IK to the armature
 
 def anim_armature(action):
 
-    def generate():
+    def generate_rigify():
         generate_armature("anim", action)
         
         if action == 0:
@@ -1427,6 +1469,7 @@ def anim_armature(action):
                 target.empty_display_type = 'SPHERE'
 
                 #Parent to base
+                base.parent = parent
                 target.parent = base
 
                 #Sets rotation
@@ -1532,13 +1575,43 @@ def anim_armature(action):
                 rot.target = target
 
         prefix = arm.prefix
+
+        #Creates parent for all bases for easier storage/manipulation
+        parent = bpy.data.objects.new("parent_" + arm.animation_armature_name, None)
+
         for bone in arm.symmetrical_bones:
             retarget(bone, 0)
 
         for bone in arm.central_bones:
             retarget(bone, 1)
 
+        #Connects parent to collection
+        collection = bpy.data.collections["Retarget Empties " + "(" + arm.name + ")"]
+        collection.objects.link(parent)
+
+        #Deletes generated armature
+        generate_armature("anim", 1)
+
+        #Renames armature to prior generated armature
+        armature = bpy.data.objects["rig"]
+        armature.name = arm.name + ".anim"
+        armature.data.name = arm.name_real.name + ".anim"
+
+        #Links to animation armature
+        try:
+            collection = bpy.data.collections['Animation Armature']
+        except:
+            collection = None
+            
+        if collection != None:
+            collection.objects.link(armature)
+
+        arm.animation_armature = True
+        arm.animation_armature_name_full = armature
+        arm.animation_armature_name = armature.name
+        arm.animation_armature_real = armature.data
+
     if action != 2:
-        generate()
+        generate_rigify()
     elif action == 2:
         link()
