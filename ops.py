@@ -170,3 +170,19 @@ class VAT_OT_rigifyretarget_delete(bpy.types.Operator):
         functions.anim_armature(1)
 
         return{'FINISHED'}
+
+class VAT_OT_rigifyretarget_link(bpy.types.Operator):
+    """Connects original armature with generated Rigify armature"""
+    bl_idname = "vat.rigifyretarget_link"
+    bl_label = "Animation Ready Armature Link"
+
+    @classmethod #Same as before
+    def poll(cls, context):
+        vatproperties = bpy.context.scene.vatproperties
+        if vatproperties.target_armature != None:
+            return (functions.arm.animation_armature == True)
+
+    def execute(self, context):
+        functions.anim_armature(2)
+
+        return{'FINISHED'}
