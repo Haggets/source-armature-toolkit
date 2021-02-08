@@ -148,6 +148,10 @@ class VAT_PT_rigifyretarget(bpy.types.Panel): #Rigify Retargetting panel
             if functions.arm.animation_armature == True:
                 row = layout.row()
                 row.operator("vat.rigifyretarget_link", text="Link to generated armature")
+                col = layout.column()
+                col.label(text="Do not change generated armature name", icon='INFO')
+                col.label(text="It'll be changed automatically")
+
         box = layout.box()
         box.label(text="Meant for complex animation", icon='INFO')
         box.label(text="Creates animation ready armature", icon='INFO')

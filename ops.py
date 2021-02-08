@@ -179,8 +179,12 @@ class VAT_OT_rigifyretarget_link(bpy.types.Operator):
     @classmethod #Same as before
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
+        try:
+            rig = bpy.data.objects['rig']
+        except:
+            rig = None
         if vatproperties.target_armature != None:
-            return (functions.arm.animation_armature == True)
+            return (functions.arm.animation_armature == True and rig != None)
 
     def execute(self, context):
         functions.anim_armature(2)
