@@ -58,6 +58,8 @@ class Armature: #Armature base
         self.get_armatures()
         self.get_constraints()
         self.set_groups()
+        if self.helper_bones != []:
+            self.set_procedural_bones()
         
     def get_bones(self): #Builds bone lists
         armature = bpy.data.objects[self.name]
@@ -90,23 +92,31 @@ class Armature: #Armature base
                     elif bone.startswith(self.prefix):
                         self.central_bones.append(bone.replace(self.prefix, ""))
 
+                #Helper prefix
+                if bone.startswith("hlp_"): #Helper
+                    self.helper_bones.append(bone.replace(Prefixes.helper, ""))
+
                 #Source and Blender prefixes
-                if bone.startswith("ValveBiped."):
+                elif bone.startswith("ValveBiped."):
                     vatproperties.sfm_armature = False
                     self.prefix = "ValveBiped.Bip01_"
 
-                    #Usual prefix
-                    if bone.startswith(self.prefix + "L_") or bone.startswith(self.prefix + "R_"): #Symmetrical
-                        self.scheme = 0
-                        self.symmetrical_bones.append(bone.replace(self.prefix, ""))
+                    #Helper bones without helper prefix, differentiated with "s."
+                    if bone.count("Ulna") != 0 or bone.count("Wrist") != 0 or bone.count("Elbow") != 0 or bone.count("Knee") != 0 or bone.count("Trapezius") != 0 or bone.count("Quadricep") != 0 or bone.count("Bicep") != 0 or bone.count("Shoulder") != 0:
+                        self.helper_bones.append(bone.replace(self.prefix, "s."))
 
-                    #Strange L4D2 helper prefix, must be differentiated from the usual helper bone with "s."
+                    #Strange L4D2 helper prefix, must be differentiated from the usual helper bone with "s2."
                     elif bone.startswith("ValveBiped.hlp_"):
-                        self.helper_bones.append(bone.replace("ValveBiped.hlp_", "s."))
+                        self.helper_bones.append(bone.replace("ValveBiped.hlp_", "s2."))
 
                     #Attachment bone prefix. They are supposed to be in other bones instead
                     elif bone.startswith("ValveBiped.attachment"):
                         self.other_bones.append(bone.replace("ValveBiped.attachment_", "a."))
+
+                    #Default prefix
+                    elif bone.startswith(self.prefix + "L_") or bone.startswith(self.prefix + "R_"): #Symmetrical
+                        self.scheme = 0
+                        self.symmetrical_bones.append(bone.replace(self.prefix, ""))
 
                     #Blender prefix
                     elif bone.endswith("_L") or bone.endswith("_R"):
@@ -132,10 +142,6 @@ class Armature: #Armature base
 
                     else:
                         self.central_bones.append(bone.replace("bip_", ""))
-
-                #Helper prefix
-                elif bone.startswith("hlp_"): #Helper
-                    self.helper_bones.append(bone.replace(Prefixes.helper, ""))
 
                 #No/Different prefix
                 else:
@@ -259,7 +265,7 @@ class Armature: #Armature base
             for bone in self.symmetrical_bones:
 
                 #Arms
-                if bone.count("Clavicle") != 0 or bone.count("UpperArm") != 0 or bone.count("Bicep") != 0 or bone.count("Forearm") != 0 or bone.count("Hand") != 0 or bone.count("Finger") != 0:
+                if bone.count("Clavicle") != 0 or bone.count("Trapezius") != 0 or bone.count("UpperArm") != 0 or bone.count("Bicep") != 0 or bone.count("Forearm") != 0 or bone.count("Hand") != 0 or bone.count("Finger") != 0:
                     if bone.startswith("L_") or bone.endswith("_L"):
                         armature.pose.bones[prefix + bone].bone_group_index = 1
                         armature.data.bones[prefix + bone].layers[1] = True
@@ -277,11 +283,6 @@ class Armature: #Armature base
                         armature.pose.bones[prefix + bone].bone_group_index = 4
                         armature.data.bones[prefix + bone].layers[4] = True
 
-                #Helper bones without helper prefixes
-                elif bone.count("Knee") != 0 or bone.count("Ulna") != 0 or bone.count("Elbow") != 0 or bone.count("Wrist") != 0:
-                    armature.pose.bones[prefix + bone].bone_group_index = 5
-                    armature.data.bones[prefix + bone].layers[5] = True
-
                 armature.data.bones[prefix + bone].layers[0] = False
 
             for bone in self.central_bones:
@@ -289,12 +290,18 @@ class Armature: #Armature base
 
             for bone in self.helper_bones:
 
+                if bone.startswith("s."):
+                    prefix = self.prefix
+                    armature.pose.bones[prefix + bone.replace("s.", "")].bone_group_index = 5
+                    armature.data.bones[prefix + bone.replace("s.", "")].layers[5] = True
+                    armature.data.bones[prefix + bone.replace("s.", "")].layers[0] = False
+
                 #Special helper bones
-                if bone.startswith("s."): 
-                        prefix = Prefixes.helper2
-                        armature.pose.bones[prefix + bone.replace("s.", "")].bone_group_index = 5
-                        armature.data.bones[prefix + bone.replace("s.", "")].layers[5] = True
-                        armature.data.bones[prefix + bone.replace("s.", "")].layers[0] = False
+                elif bone.startswith("s2."): 
+                    prefix = Prefixes.helper2
+                    armature.pose.bones[prefix + bone.replace("s2.", "")].bone_group_index = 5
+                    armature.data.bones[prefix + bone.replace("s2.", "")].layers[5] = True
+                    armature.data.bones[prefix + bone.replace("s2.", "")].layers[0] = False
                 else: #Helper bones
                     prefix = Prefixes.helper
                     armature.pose.bones[prefix + bone].bone_group_index = 5
@@ -331,7 +338,109 @@ class Armature: #Armature base
             #Reveals used layers
             for i in [0,1,2,3,4,5,6,7]:
                 armature.data.layers[i] = True
+
+        print("Bone groups set!")
             
+    def set_procedural_bones(self):
+        armature = bpy.data.objects[self.name]
+        prefix = self.prefix
+
+        #Gets position for helper bone transforms
+        for bone in self.symmetrical_bones:
+            if bone.count("Hand"):
+                if bone.startswith("L_") or bone.endswith("_L"):
+                    hand_l = armature.pose.bones[prefix + bone]
+                elif bone.startswith("R_") or bone.endswith("_R"):
+                    hand_r = armature.pose.bones[prefix + bone]
+            elif bone.count("Forearm"):
+                if bone.startswith("L_") or bone.endswith("_L"):
+                    forearm_l = armature.pose.bones[prefix + bone]
+                elif bone.startswith("R_") or bone.endswith("_R"):
+                    forearm_r = armature.pose.bones[prefix + bone]
+            elif bone.count("Calf") != 0:
+                if bone.startswith("L_") or bone.endswith("_L"):
+                    calf_l = armature.pose.bones[prefix + bone]
+                elif bone.startswith("R_") or bone.endswith("_R"):
+                    calf_r = armature.pose.bones[prefix + bone]
+            elif bone.count("Thigh") != 0:
+                if bone.startswith("L_") or bone.endswith("_L"):
+                    thigh_l = armature.pose.bones[prefix + bone]
+                elif bone.startswith("R_") or bone.endswith("_R"):
+                    thigh_r = armature.pose.bones[prefix + bone]
+
+        for bone in self.helper_bones:
+            #Adds transforms to only these helper bones
+            if bone.count("Wrist") != 0 or bone.count("Ulna") != 0 or bone.count("Elbow") != 0 or bone.casefold().count("knee") != 0 or bone.count("Quadricep") != 0:
+                if bone.startswith("s."):
+                    prefix = self.prefix
+                    transform = armature.pose.bones[prefix + bone.replace("s.", "")].constraints.new('TRANSFORM')
+                elif bone.startswith("s2."):
+                    prefix = Prefixes.helper2
+                    transform = armature.pose.bones[prefix + bone.replace("s2.", "")].constraints.new('TRANSFORM')
+                else:
+                    transform = armature.pose.bones[prefix + bone].constraints.new('TRANSFORM')
+
+                #Initial parameters
+                transform.target = self.name_full
+                transform.map_from = 'ROTATION'
+                transform.map_to = 'ROTATION'
+                transform.target_space = 'LOCAL'
+                transform.owner_space = 'LOCAL'
+            
+                #Hand rotation
+                if bone.count("Wrist") != 0 or bone.count("Ulna") != 0:
+                    transform.from_min_x_rot = -1.5708
+                    transform.from_max_x_rot = 1.5708
+
+                    if bone.replace("s.", "").startswith("L_") or bone.replace("s.", "").endswith("_L"):
+                        transform.subtarget = hand_l.name
+                    elif bone.replace("s.", "").startswith("R_") or bone.replace("s.", "").endswith("_R"):
+                        transform.subtarget = hand_r.name
+
+                    if bone.count("Wrist") != 0:
+                        transform.to_min_x_rot = -1.309
+                        transform.to_max_x_rot = 1.309
+
+                    elif bone.count("Ulna") != 0:
+                        transform.to_min_x_rot = -0.872665
+                        transform.to_max_x_rot = 0.872665
+
+                #Forearm and thigh rotation
+                elif bone.count("Elbow") != 0 or bone.casefold().count("knee") != 0 or bone.count("Quadricep") != 0:
+                    transform.from_min_z_rot = -1.5708
+                    transform.from_max_z_rot = 1.5708
+
+                    transform.to_min_z_rot = -0.785398
+                    transform.to_max_z_rot = 0.785398
+                    
+                    if bone.count("Elbow") != 0:
+                        if bone.replace("s.", "").startswith("L_") or bone.replace("s.", "").endswith("_L"):
+                            transform.subtarget = forearm_l.name
+                        elif bone.replace("s.", "").startswith("R_") or bone.replace("s.", "").endswith("_R"):
+                            transform.subtarget = forearm_r.name
+
+                    #THE WAY THE CASE PROBLEM SHOULD BE SORTED
+                    elif bone.title().count("Knee") != 0:
+                        if bone.startswith("s."):
+                            if bone.replace("s.", "").title().startswith("L_") or bone.replace("s.", "").title().endswith("_L"):
+                                transform.subtarget = calf_l.name
+                            elif bone.replace("s.", "").title().startswith("R_") or bone.replace("s.", "").title().endswith("_R"):
+                                transform.subtarget = calf_r.name
+
+                        elif bone.startswith("s2."):
+                            if bone.replace("s2.", "").title().startswith("L_") or bone.replace("s.", "").title().endswith("_L"):
+                                transform.subtarget = calf_l.name
+                            elif bone.replace("s2.", "").title().startswith("R_") or bone.replace("s.", "").title().endswith("_R"):
+                                transform.subtarget = calf_r.name
+
+                    elif bone.count("Quadricep") != 0:
+                        if bone.replace("s.", "").startswith("L_") or bone.replace("s.", "").endswith("_L"):
+                            transform.subtarget = thigh_l.name
+                        elif bone.replace("s.", "").startswith("R_") or bone.replace("s.", "").endswith("_R"):
+                            transform.subtarget = thigh_r.name
+
+        print("Procedural bones configured!")
+
 def armature_rename(scheme): #Bone prefix/suffix repositioning
 
     def rename(bone):
@@ -359,13 +468,17 @@ def armature_rename(scheme): #Bone prefix/suffix repositioning
     if arm.helper_bones != []:
         for bone in arm.helper_bones:
             if bone.startswith("s."):
+                prefix = arm.prefix
+                rename(bone.replace("s.", ""))
+
+            elif bone.startswith("s2."):
 
                 #Their prefix is usually already in the end so they're left alone
                 if bone.endswith("_L") or bone.endswith("_R"):
                     pass
                 else:
                     prefix = Prefixes.helper2
-                    rename(bone.replace("s.", ""))
+                    rename(bone.replace("s2.", ""))
 
             else:
                 prefix = Prefixes.helper
@@ -523,8 +636,12 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
     if arm.helper_bones != []:
         for bone in arm.helper_bones:
             if bone.startswith("s."):
-                prefix = Prefixes.helper2
+                prefix = arm.prefix
                 constraint(bone.replace("s.", ""))
+
+            elif bone.startswith("s2."):
+                prefix = Prefixes.helper2
+                constraint(bone.replace("s2.", ""))
             else:
                 prefix = Prefixes.helper
                 constraint(bone)
@@ -602,7 +719,8 @@ def generate_armature(type, action): #Creates or deletes the weight armature
         #Bone connection
         bpy.ops.object.mode_set(mode='OBJECT')
         bpy.ops.object.select_all(action='DESELECT') #You're required to be in edit mode to use "data.edit_bones", else there will be no bone info given.
-        armature.select_set(1)
+        armature.select_set(True)
+        bpy.context.view_layer.objects.active = armature
         bpy.ops.object.mode_set(mode='EDIT')
 
         for bone in arm.symmetrical_bones:
@@ -894,14 +1012,28 @@ def generate_armature(type, action): #Creates or deletes the weight armature
 
     #Deletion    
     elif action == 1:
+
+        #Checks if they weren't deleted already
         if type == "weight":
-            bpy.data.objects.remove(arm.weight_armature_name_full)
-            bpy.data.armatures.remove(arm.weight_armature_real)
+            try:
+                bpy.data.objects.remove(arm.weight_armature_name_full)
+            except:
+                print("Weight armature already deleted, cleaning rest")
+            try:
+                bpy.data.armatures.remove(arm.weight_armature_real)
+            except:
+                pass
             arm.weight_armature = False
             arm.weight_armature_real = None
         elif type == "anim":
-            bpy.data.objects.remove(arm.animation_armature_name_full)
-            bpy.data.armatures.remove(arm.animation_armature_real)
+            try:
+                bpy.data.objects.remove(arm.animation_armature_name_full)
+            except:
+                print("Animation armature already deleted, cleaning rest")
+            try:
+                bpy.data.armatures.remove(arm.animation_armature_real)
+            except:
+                pass
             arm.animation_armature = False
             arm.animation_armature_real = None
 
@@ -951,6 +1083,7 @@ def inverse_kinematics(action): #Adds IK to the armature
                 elif bone.startswith("R_") or bone.endswith("_R"):
                     ik = armature.pose.bones[prefix + bone].constraints.new('IK')
                     ik.chain_count = 3
+                    ik.pole_target = arm.name_full
                     if bone.count("Hand"):
                         ik.pole_subtarget = "ForearmPole_R"
                     elif bone.count("Foot"):
@@ -977,7 +1110,8 @@ def inverse_kinematics(action): #Adds IK to the armature
         if action == 0:
             bpy.ops.object.mode_set(mode='OBJECT')
             bpy.ops.object.select_all(action='DESELECT') #Apparently you're required to be in edit mode to use "data.edit_bones", else there will be no bone info given. Dumb
-            armature.select_set(1)
+            armature.select_set(True)
+            bpy.context.view_layer.objects.active = armature
             bpy.ops.object.mode_set(mode='EDIT')
 
             for bone in arm.central_bones:
@@ -1038,177 +1172,373 @@ def inverse_kinematics(action): #Adds IK to the armature
 
 def anim_armature(action):
 
-    generate_armature("anim", action)
-    
-    if action == 0:
-        armature = bpy.data.objects[arm.animation_armature_name]
+    def generate():
+        generate_armature("anim", action)
+        
+        if action == 0:
+            armature = bpy.data.objects[arm.animation_armature_name]
 
-        bpy.ops.object.mode_set(mode='OBJECT')
-        bpy.ops.object.select_all(action='DESELECT') #You're required to be in edit mode to use "data.edit_bones", else there will be no bone info given.
-        armature.select_set(1)
-        bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.object.mode_set(mode='OBJECT')
+            bpy.ops.object.select_all(action='DESELECT') 
+            armature.select_set(True)
+            bpy.context.view_layer.objects.active = armature
+            bpy.ops.object.mode_set(mode='EDIT') #You're required to be in edit mode to use "data.edit_bones", else there will be no bone info given.
 
-        for i in [1,2,3,4,5,6,7]:
-                armature.data.layers[i] = False
+            #Hides all but the first layer
+            for i in [1,2,3,5,4,6,7]:
+                    armature.data.layers[i] = False
 
-        #Rigify portion
-        prefix = arm.prefix
+            #Rigify portion
+            prefix = arm.prefix
 
-        bpy.ops.pose.rigify_layer_init()
+            #Gets pelvis position and gets edit_bone name
+            for bone in arm.central_bones:
+                if bone.casefold() == "pelvis":
+                    pelvis = armature.pose.bones[prefix + bone].head
+                    epelvis = armature.data.edit_bones[prefix + bone]
 
-        #Creates layers
-        for i in range(0,19):
-            armature.data.rigify_layers.add()
+            for bone in arm.symmetrical_bones:
+                if bone.count("Foot") != 0:
+                    if bone.startswith("L_") or bone.endswith("_L"):
+                        foot_l = armature.pose.bones[prefix + bone].head
+                        efoot_l = armature.data.edit_bones[prefix + bone]
+                    elif bone.startswith("R_") or bone.endswith("_R"):
+                        foot_r = armature.pose.bones[prefix + bone].head
+                        efoot_r = armature.data.edit_bones[prefix + bone]
 
-        #Rigify layers
-        names = ["Torso", "Torso (Tweak)", "Fingers", "Fingers (Detail)", "Arm.L (IK)", "Arm.L (FK)", "Arm.L (Tweak)", "Arm.R (IK)", "Arm.R (FK)", "Arm.R (Tweak)", "Leg.L (IK)", "Leg.L (FK)", "Leg.L (Tweak)", "Leg.R (IK)", "Leg.R (FK)", "Leg.R (Tweak)"]
+            #Creates 2 pelvis bones for whatever Rigify does with em
+            for bone in ["Pelvis_L", "Pelvis_R"]:
+                ebone = armature.data.edit_bones.new(prefix + bone)
 
-        group = [3,4,6,5,2,5,4,2,5,4,2,5,4,2,5,4]
+                ebone.head = pelvis
+                ebone.parent = epelvis
 
-        for i, name, group in zip(range(3,19), names, group):
-            armature.data.rigify_layers[i].name = name
-            armature.data.rigify_layers[i].row = i
-            armature.data.rigify_layers[i].group = group
-
-        #Gets pelvis position and gets edit_bone name
-        for bone in arm.central_bones:
-            if bone.casefold() == "pelvis":
-                pelvis = armature.pose.bones[prefix + bone].head
-                epelvis = armature.data.edit_bones[prefix + bone]
-
-        for bone in arm.symmetrical_bones:
-            if bone.count("Foot") != 0:
+                #New pelvis bone positioning
                 if bone.startswith("L_") or bone.endswith("_L"):
-                    foot_l = armature.pose.bones[prefix + bone].head
-                    efoot_l = armature.data.edit_bones[prefix + bone]
+                    ebone.tail.xyz = pelvis.x-3, pelvis.y-2, pelvis.z+4
                 elif bone.startswith("R_") or bone.endswith("_R"):
-                    foot_r = armature.pose.bones[prefix + bone].head
-                    efoot_r = armature.data.edit_bones[prefix + bone]
+                    ebone.tail.xyz = pelvis.x+3, pelvis.y-2, pelvis.z+4
 
-        #Creates 2 pelvis bones for whatever Rigify does with em
-        for bone in ["Pelvis_L", "Pelvis_R"]:
-            ebone = armature.data.edit_bones.new(prefix + bone)
+            for bone in ["Heel_L", "Heel_R"]:
+                ebone = armature.data.edit_bones.new(prefix + bone)
 
-            ebone.head = pelvis
-            ebone.parent = epelvis
+                if bone.endswith("_L"):
+                    ebone.parent = efoot_l
+                    ebone.tail.xyz = foot_l.x+1.5, foot_l.y+1, 0
+                    ebone.head.xyz = foot_l.x-1.5, foot_l.y+1, 0
+                    ebone.layers[13] = True
+                    ebone.layers[0] = False
+                elif bone.endswith("_R"):
+                    ebone.parent = efoot_r
+                    ebone.tail.xyz = foot_r.x-1.5, foot_r.y+1, 0
+                    ebone.head.xyz = foot_r.x+1.5, foot_r.y+1, 0
+                    ebone.layers[16] = True
+                    ebone.layers[0] = False
 
-            #New pelvis bone positioning
-            if bone.startswith("L_") or bone.endswith("_L"):
-                ebone.tail.xyz = pelvis.x-3, pelvis.y-2, pelvis.z+4
-            elif bone.startswith("R_") or bone.endswith("_R"):
-                ebone.tail.xyz = pelvis.x+3, pelvis.y-2, pelvis.z+4
+            #Newly added bones are not added to the armature data until the user changes modes at least once, i know no other way around it. If you do please let me know.
+            bpy.ops.object.mode_set(mode='OBJECT')
+            bpy.ops.object.mode_set(mode='EDIT')
 
-        for bone in ["Heel_L", "Heel_R"]:
-            ebone = armature.data.edit_bones.new(prefix + bone)
-
-            if bone.endswith("_L"):
-                ebone.parent = efoot_l
-                ebone.tail.xyz = foot_l.x+1.5, foot_l.y+1, 0
-                ebone.head.xyz = foot_l.x-1.5, foot_l.y+1, 0
-                ebone.layers[13] = True
+            #Rigify parameters
+            for bone in ["Pelvis_L", "Pelvis_R"]:
+                pbone = armature.pose.bones[prefix + bone]
+                ebone = armature.data.edit_bones[prefix + bone]
+                
+                pbone.rigify_type = "basic.super_copy"
+                pbone.rigify_parameters.make_control = False
+                ebone.layers[3] = True
                 ebone.layers[0] = False
-            elif bone.endswith("_R"):
-                ebone.parent = efoot_r
-                ebone.tail.xyz = foot_r.x-1.5, foot_r.y+1, 0
-                ebone.head.xyz = foot_r.x+1.5, foot_r.y+1, 0
-                ebone.layers[16] = True
-                ebone.layers[0] = False
 
-        #Newly added bones are not added to the armature data until the user changes modes at least once, i know no other way around it. If you do please let me know.
-        bpy.ops.object.mode_set(mode='OBJECT')
-        bpy.ops.object.mode_set(mode='EDIT')
+            for bone in arm.symmetrical_bones:
 
-        #Rigify parameters
-        for bone in ["Pelvis_L", "Pelvis_R"]:
-            pbone = armature.pose.bones[prefix + bone]
-            ebone = armature.data.edit_bones[prefix + bone]
-            
-            pbone.rigify_type = "basic.super_copy"
-            pbone.rigify_parameters.make_control = False
-            ebone.layers[3] = True
-            ebone.layers[0] = False
+                #Bones deleted prior
+                if bone.count("Trapezius") != 0 or bone.count("Bicep") != 0 or bone.count("Elbow") != 0 or bone.count("Ulna") != 0 or bone.count("Wrist") != 0 or bone.count("Knee") != 0 or bone.count("Quadricep") != 0:
+                    pass
+                else:
+                    pbone = armature.pose.bones[prefix + bone]
+                    param = pbone.rigify_parameters
+                    ebone = armature.data.edit_bones[prefix + bone]
 
-        for bone in arm.symmetrical_bones:
+                #Placeholder layer must be 5 to avoid a big annoyance with Finger02 always being on layer 0 despite being extremely explicit about it, must be a Blender bug
+                ebone.layers[5] = True
 
-            #Bones deleted prior
-            if bone.count("Trapezius") != 0 or bone.count("Bicep") != 0 or bone.count("Elbow") != 0 or bone.count("Ulna") != 0 or bone.count("Wrist") != 0 or bone.count("Knee") != 0 or bone.count("Quadricep") != 0:
-                pass
-            else:
+                for i in [1,2,3,4,5,6,7]:
+                    ebone.layers[i] = False
+
+                if bone.count("Finger") != 0:
+                    ebone.layers[5] = True
+
+                if bone.count("UpperArm") != 0 or bone.count("Forearm") != 0 or bone.count("Hand") != 0:
+                    if bone.startswith("L_") or bone.endswith("_L"):
+                        ebone.layers[7] = True
+                    elif bone.startswith("R_") or bone.endswith("_R"):
+                        ebone.layers[10] = True
+
+                if bone.count("Thigh") != 0 or bone.count("Calf") != 0 or bone.count("Foot") != 0 or bone.count("Toe") != 0:
+                    if bone.startswith("L_") or bone.endswith("_L"):
+                        ebone.layers[13] = True
+                    elif bone.startswith("R_") or bone.endswith("_R"):
+                        ebone.layers[16] = True
+
+                if bone.count("Clavicle") != 0:
+                    pbone.rigify_type = "basic.super_copy"
+                    param.make_widget = False
+                    ebone.layers[3] = True
+
+                if bone.count("UpperArm") != 0:
+                    pbone.rigify_type = "limbs.super_limb"
+                    param.tweak_layers[1] = False
+                    param.fk_layers[1] = False
+
+                    if bone.startswith("L_") or bone.endswith("_L"):
+                        param.fk_layers[8] = True
+                        param.tweak_layers[9] = True
+                    elif bone.startswith("R_") or bone.endswith("_R"):
+                        param.fk_layers[11] = True
+                        param.tweak_layers[12] = True
+                    param.segments = 1
+
+                if bone.count("Thigh") != 0:
+                    pbone.rigify_type = "limbs.super_limb"
+                    param.limb_type = 'leg'
+                    param.tweak_layers[1] = False
+                    param.fk_layers[1] = False
+
+                    if bone.startswith("L_") or bone.endswith("_L"):
+                        param.fk_layers[14] = True
+                        param.tweak_layers[15] = True
+                    elif bone.startswith("R_") or bone.endswith("_R"):
+                        param.fk_layers[17] = True
+                        param.tweak_layers[18] = True
+                    param.segments = 1
+
+                ebone.layers[5] = False
+
+            #Central
+            for bone in arm.central_bones:
                 pbone = armature.pose.bones[prefix + bone]
                 param = pbone.rigify_parameters
                 ebone = armature.data.edit_bones[prefix + bone]
 
-            #"Resets" bone layers, since bone layers remain from previous setup
-            ebone.layers[0] = True
-
-            for i in [1,2,3,4,5,6,7]:
-                ebone.layers[i] = False
-
-            if bone.count("Finger") != 0:
-                ebone.layers[5] = True
-                ebone.layers[0] = False
-
-            if bone.count("UpperArm") != 0 or bone.count("Forearm") != 0 or bone.count("Hand") != 0:
-                if bone.startswith("L_") or bone.endswith("_L"):
-                    ebone.layers[7] = True
-                elif bone.startswith("R_") or bone.endswith("_R"):
-                    ebone.layers[10] = True
-
-            if bone.count("Thigh") != 0 or bone.count("Calf") != 0 or bone.count("Foot") != 0 or bone.count("Toe") != 0:
-                if bone.startswith("L_") or bone.endswith("_L"):
-                    ebone.layers[13] = True
-                elif bone.startswith("R_") or bone.endswith("_R"):
-                    ebone.layers[16] = True
-
-            if bone.count("Clavicle") != 0:
-                pbone.rigify_type = "basic.super_copy"
-                param.make_widget = False
                 ebone.layers[3] = True
 
-            if bone.count("UpperArm") != 0:
-                pbone.rigify_type = "limbs.super_limb"
-                param.tweak_layers[1] = False
-                param.tweak_layers[8] = True
-                param.fk_layers[1] = False
-                param.fk_layers[9] = True
+                if bone.count("Pelvis") != 0:
+                    pbone.rigify_type = "spines.basic_spine"
+                    param.pivot_pos = 2
+                    param.tweak_layers[1] = False
+                    param.tweak_layers[4] = True
+                    param.fk_layers[1] = False
+                    param.fk_layers[4] = True
 
-            if bone.count("Thigh") != 0:
-                pbone.rigify_type = "limbs.super_limb"
-                param.limb_type = 'leg'
-                param.tweak_layers[1] = False
-                param.tweak_layers[15] = True
-                param.fk_layers[1] = False
-                param.fk_layers[14] = True
+                if bone.count("Neck1") != 0:
+                    pbone.rigify_type = "spines.super_head"
+                    param.connect_chain = True
+                    param.tweak_layers[1] = False
+                    param.tweak_layers[4] = True
+                
+                ebone.layers[0] = False
 
-            ebone.layers[0] = False
+            armature = bpy.data.armatures[arm.animation_armature_real.name]
 
-        #Central
-        for bone in arm.central_bones:
-            pbone = armature.pose.bones[prefix + bone]
-            param = pbone.rigify_parameters
-            ebone = armature.data.edit_bones[prefix + bone]
+            #Creates bone groups
+            for group in ['Root', 'IK', 'Special', 'Tweak', 'FK', 'Extra']:
+                color = armature.rigify_colors.add()
+                color.name = group
 
-            ebone.layers[3] = True
+                armature.rigify_colors[group].select = (0.3140000104904175, 0.7839999794960022, 1.0)
+                armature.rigify_colors[group].active = (0.5490000247955322, 1.0, 1.0)
+                armature.rigify_colors[group].standard_colors_lock = True
 
-            if bone.count("Pelvis") != 0:
-                pbone.rigify_type = "spines.basic_spine"
-                param.pivot_pos = 2
-                param.tweak_layers[1] = False
-                param.tweak_layers[4] = True
-                param.fk_layers[1] = False
-                param.fk_layers[4] = True
+                if group == "Root":
+                    armature.rigify_colors[group].normal = (0.43529415130615234, 0.18431372940540314, 0.41568630933761597)
+                if group == "IK":
+                    armature.rigify_colors[group].normal = (0.6039215922355652, 0.0, 0.0)
+                if group== "Special":
+                    armature.rigify_colors[group].normal = (0.9568628072738647, 0.7882353663444519, 0.0470588281750679)
+                if group== "Tweak":
+                    armature.rigify_colors[group].normal = (0.03921568766236305, 0.21176472306251526, 0.5803921818733215)
+                if group== "FK":
+                    armature.rigify_colors[group].normal = (0.11764706671237946, 0.5686274766921997, 0.03529411926865578)
+                if group== "Extra":
+                    armature.rigify_colors[group].normal = (0.9686275124549866, 0.250980406999588, 0.0941176563501358)
 
-            if bone.count("Neck1") != 0:
-                pbone.rigify_type = "spines.super_head"
-                param.connect_chain = True
-                param.tweak_layers[1] = False
-                param.tweak_layers[4] = True
+            #Creates layers
+            for i in range(0,29):
+                armature.rigify_layers.add()
+
+            #Rigify layers
+            names = ["Torso", "Torso (Tweak)", "Fingers", "Fingers (Detail)", "Arm.L (IK)", "Arm.L (FK)", "Arm.L (Tweak)", "Arm.R (IK)", "Arm.R (FK)", "Arm.R (Tweak)", "Leg.L (IK)", "Leg.L (FK)", "Leg.L (Tweak)", "Leg.R (IK)", "Leg.R (FK)", "Leg.R (Tweak)"]
+
+            row_groups = [3,4,5,6,7,8,9,7,8,9,10,11,12,10,11,12]
+
+            layer_groups = [3,4,6,5,2,5,4,2,5,4,2,5,4,2,5,4]
+
+            for i, name, row, group in zip(range(3,19), names, row_groups, layer_groups):
+                armature.rigify_layers[i].name = name
+                armature.rigify_layers[i].row = row
+                armature.rigify_layers[i].group = group
+
+            armature.layers[0] = False
+
+            for i in [3,5,7,10,13,16]:
+                    armature.layers[i] = True
+
+            bpy.ops.object.mode_set(mode='OBJECT')
+
+            print("Animation armature created!")
+
+    def link():
+
+        def retarget(bone, type):
+            armature = bpy.data.objects["rig"]
             
-            ebone.layers[0] = False
+            #Retarget empties creation
+            try:
+                collection = bpy.data.collections["Retarget Empties " + "(" + arm.name + ")"]
+            except:
+                collection = bpy.data.collections.new("Retarget Empties " + "(" + arm.name + ")")
+                bpy.context.scene.collection.children.link(collection)
 
-        for i in [1,2,3,4,5,6,7]:
-                armature.data.layers[i] = True
+            collection.hide_viewport = True
 
-        bpy.ops.object.mode_set(mode='OBJECT')
+            if bone.count("Trapezius") != 0 or bone.count("Bicep") != 0 or bone.count("Elbow") != 0 or bone.count("Knee") != 0 or bone.count("Ulna") != 0 or bone.count("Wrist") != 0:
+                pass
 
-        print("Animation armature created!")
+            else:
+                #Creates base empty and links
+                base = bpy.data.objects.new("base_" + prefix + bone, None)
+                collection.objects.link(base)
+                base.empty_display_type = 'CUBE'
+                base.hide_select = True
+
+                #Location constraint
+                loc = base.constraints.new('COPY_LOCATION')
+                loc.target = armature
+                loc.subtarget = "ORG-" + prefix + bone
+
+                #Rotation constraint
+                rot = base.constraints.new('COPY_ROTATION')
+                rot.target = armature
+                rot.subtarget = "ORG-" + prefix + bone
+
+                #Creates target empty and links
+                target = bpy.data.objects.new("target_" + prefix + bone, None)
+                collection.objects.link(target)
+                target.empty_display_type = 'SPHERE'
+
+                #Parent to base
+                target.parent = base
+
+                #Sets rotation
+
+                #For reference:
+                #1.5707963705062866 = 90°
+                #3.1415927410125732 = 180°
+
+                #Default empty rotation, fit for most bones
+                if type == 0:
+                    target.rotation_euler[0] = 1.5707963705062866 #90°
+                    target.rotation_euler[1] = 3.1415927410125732 #180°
+                    target.rotation_euler[2] = -1.5707963705062866 #-90°
+                elif type == 1:
+                    target.rotation_euler[0] = 0
+                    target.rotation_euler[1] = 0
+                    target.rotation_euler[2] = 0
+                
+                #More specific empty rotations for bones that don't fit the default rotation
+                if bone.count("Hand") != 0:
+                    if bone.startswith("L_") or bone.endswith("_L"):
+                        target.rotation_euler[0] = 2.96705961227417 #170°
+                        target.rotation_euler[1] = 3.2288591861724854 #185°
+                        target.rotation_euler[2] = -1.6057029962539673 #-92
+                    elif bone.startswith("R_") or bone.endswith("_R"):
+                        target.rotation_euler[0] = 0.1745329201221466 #10°
+                        target.rotation_euler[1] = 3.2288591861724854 #185°
+                        target.rotation_euler[2] = -1.535889744758606 #-88°
+
+                elif bone.count("Clavicle") != 0:
+                    if bone.startswith("L_") or bone.endswith("_L"):
+                        target.rotation_euler[0] = -1.5707963705062866 #-90°
+                    elif bone.startswith("R_") or bone.endswith("_R"):
+                        pass
+
+                elif bone.count("Thigh") != 0 or bone.count("Calf") != 0 or bone.count("Foot"):
+                    target.rotation_euler[1] = 0
+                    target.rotation_euler[2] = 1.5707963705062866 #90°
+
+                elif bone.count("Toe0") != 0:
+                    target.rotation_euler[1] = 0
+                    target.rotation_euler[2] = 1.5707963705062866 #90°
+                    
+                    if bone.startswith("L_") or bone.endswith("_L"):
+                        target.rotation_euler[0] = -1.535889744758606 #-88°
+                    elif bone.startswith("R_") or bone.endswith("_R"):
+                        target.rotation_euler[0] = -1.675516128540039 #-96°
+
+                elif bone.count("Finger") != 0:
+                    #Makes them smaller for the sake of readability
+                    base.empty_display_size = 0.5
+                    target.empty_display_size = 0.5
+
+                    if bone.count("Finger0") != 0:
+                        if bone.startswith("L_") or bone.endswith("_L"):
+                            target.rotation_euler[0] = 3.1415927410125732 #180°
+                        elif bone.startswith("R_") or bone.endswith("_R"):
+                            target.rotation_euler[0] = 0
+                            target.rotation_euler[1] = 0
+                            target.rotation_euler[2] = 1.5707963705062866 #90°
+
+                        if bone.count("Finger02") != 0:
+                            target.rotation_euler[0] = 0
+                            target.rotation_euler[1] = 0
+                            target.rotation_euler[2] = 0
+
+                    elif bone.count("Finger1"):
+                        target.rotation_euler[1] = 0
+                        target.rotation_euler[2] = 1.5707963705062866 #90°
+
+                        if bone.startswith("L_") or bone.endswith("_L"):
+                            target.rotation_euler[0] = 1.5707963705062866 #90°
+                        elif bone.startswith("R_") or bone.endswith("_R"):
+                            target.rotation_euler[0] = -1.5707963705062866 #-90°
+
+                        if bone.count("Finger12") != 0:
+                            target.rotation_euler[0] = 0
+                            target.rotation_euler[1] = 0
+                            target.rotation_euler[2] = 0
+
+                    elif bone.count("Finger2") != 0 or bone.count("Finger3") != 0 or bone.count("Finger4") != 0:
+                        target.rotation_euler[1] = 0
+                        target.rotation_euler[2] = 1.5707963705062866 #90°
+
+                        if bone.startswith("L_") or bone.endswith("_L"):
+                            pass
+                        elif bone.startswith("R_") or bone.endswith("_R"):
+                            target.rotation_euler[0] = -1.5707963705062866 #-90°
+
+                        if bone.count("Finger22") != 0 or bone.count("Finger32") != 0 or bone.count("Finger42") != 0:
+                            target.rotation_euler[0] = 0
+                            target.rotation_euler[1] = 0
+                            target.rotation_euler[2] = 0
+
+                if bone.count("Spine") != 0 or bone.count("Neck") != 0 or bone.count("Head") != 0:
+                    target.rotation_euler[2] = 1.5707963705062866
+
+                #Bone connection
+                armature = bpy.data.objects[arm.name]
+                loc = armature.pose.bones[prefix + bone].constraints.new('COPY_LOCATION')
+                loc.target = target
+                rot = armature.pose.bones[prefix + bone].constraints.new('COPY_ROTATION')
+                rot.target = target
+
+        prefix = arm.prefix
+        for bone in arm.symmetrical_bones:
+            retarget(bone, 0)
+
+        for bone in arm.central_bones:
+            retarget(bone, 1)
+
+    if action != 2:
+        generate()
+    elif action == 2:
+        link()
