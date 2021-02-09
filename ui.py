@@ -146,11 +146,33 @@ class VAT_PT_rigifyretarget(bpy.types.Panel): #Rigify Retargetting panel
         row.operator("vat.rigifyretarget_delete", text="Delete")
         if vatproperties.target_armature != None:
             if functions.arm.animation_armature == True:
-                row = layout.row()
-                row.operator("vat.rigifyretarget_link", text="Link to generated armature")
-                col = layout.column()
-                col.label(text="Do not change generated armature name", icon='INFO')
-                col.label(text="It'll be changed automatically")
+                if functions.arm.animation_armature_setup == True:
+                    row = layout.row()
+                    row.operator("vat.rigifyretarget_link", text="Link to generated armature")
+                    col = layout.column()
+                    col.label(text="Do not change generated armature name", icon='INFO')
+                    col.label(text="It'll be changed automatically")
+
+                elif functions.arm.animation_armature_setup == False:
+                    #Presets
+                    row = layout.row()
+                    row.label(text="Upper body presets:")
+                    row = layout.row()
+                    row.prop(vatproperties, "retarget_top_preset", expand=True)
+
+                    row = layout.row()
+                    row.label(text="Spine presets:")
+                    row = layout.row()
+                    row.prop(vatproperties, "retarget_center_preset", expand=True)
+
+                    row = layout.row()
+                    row.label(text="Lower body presets:")
+                    row = layout.row()
+                    row.prop(vatproperties, "retarget_bottom_preset", expand=True)
+
+                    #Refresh
+                    row = layout.row()
+                    row.operator("vat.rigifyretarget_update", text="Refresh")
 
         box = layout.box()
         box.label(text="Meant for complex animation", icon='INFO')

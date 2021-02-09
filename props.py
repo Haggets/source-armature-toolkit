@@ -3,7 +3,7 @@ from . import functions
 
 class VAT_properties(bpy.types.PropertyGroup): #Defines global properties the plugin will use
 
-    #Thanks to Jeacom for 
+    #Thanks to Jeacom for this
     def armature_poll(self, object):
         #Generated armatures should not be part of the list
         if object.name.endswith(".weight") or object.name.endswith(".anim"):
@@ -23,5 +23,32 @@ class VAT_properties(bpy.types.PropertyGroup): #Defines global properties the pl
         items=[
             ('OP1', "Left Side", "Left to Right"), 
             ('OP2', "Right Side", "Right to Left")
+        ]
+    )
+
+    retarget_top_preset : bpy.props.EnumProperty(
+        name="Rigify arm presets",
+        description="Empty rotation presets for arms",
+        items=[
+            ('OP1', "Default Preset", "Works with most characters"),
+            ('OP2', "Second Preset", "Works with Bill and Nick (L4D Characters)")
+        ]
+    )
+
+    retarget_center_preset : bpy.props.EnumProperty(
+        name="Rigify center presets",
+        description="Empty rotation presets for the spine/head",
+        items=[
+            ('OP1', "Default Preset", "Works with most characters"),
+            ('OP2', "Second Preset", "Works with Bill and Nick (L4D Characters)")
+        ]
+    )
+
+    retarget_bottom_preset : bpy.props.EnumProperty(
+        name="Rigify leg presets",
+        description="Empty rotation presets for legs",
+        items=[
+            ('OP1', "Default Preset", "Works with most characters"),
+            ('OP2', "Second Preset", "Works with Bill and Nick (L4D Characters)")
         ]
     )
