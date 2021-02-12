@@ -11,7 +11,7 @@ class VAT_OT_armaturerename_blender(bpy.types.Operator): #Converts armature sche
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature != None:
-            return (functions.arm.scheme == 0 and functions.arm.sfm == False)
+            return (functions.arm.scheme == 0 and functions.arm.sfm == False and functions.arm.scheme != -1)
     
     def execute(self, context):
         functions.armature_rename(1)
@@ -27,7 +27,7 @@ class VAT_OT_armaturerename_source(bpy.types.Operator): #Converts armature schem
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature != None:
-            return (functions.arm.scheme == 1 and functions.arm.sfm == False)
+            return (functions.arm.scheme == 1 and functions.arm.sfm == False and functions.arm.scheme != -1)
     
     def execute(self, context):
         functions.armature_rename(0)
@@ -43,10 +43,11 @@ class VAT_OT_constraintsymmetry_create(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature != None:
-            if vatproperties.affected_side == 'OP1':
-                return (functions.arm.symmetry_left == False and functions.arm.symmetry_right == False)
-            elif vatproperties.affected_side == 'OP2':
-                return (functions.arm.symmetry_right == False and functions.arm.symmetry_left == False)
+            if functions.arm.scheme != -1:
+                if vatproperties.affected_side == 'OP1':
+                    return (functions.arm.symmetry_left == False and functions.arm.symmetry_right == False)
+                elif vatproperties.affected_side == 'OP2':
+                    return (functions.arm.symmetry_right == False and functions.arm.symmetry_left == False)
 
 
     def execute(self, context):
@@ -64,10 +65,11 @@ class VAT_OT_constraintsymmetry_delete(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature != None:
-            if vatproperties.affected_side == 'OP1':
-                return (functions.arm.symmetry_left == True)
-            elif vatproperties.affected_side == 'OP2':
-                return (functions.arm.symmetry_right == True)
+            if functions.arm.scheme != -1:
+                if vatproperties.affected_side == 'OP1':
+                    return (functions.arm.symmetry_left == True)
+                elif vatproperties.affected_side == 'OP2':
+                    return (functions.arm.symmetry_right == True)
 
     def execute(self, context):
         vatproperties = bpy.context.scene.vatproperties
@@ -84,7 +86,7 @@ class VAT_OT_weightarmature_create(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature != None:
-            return (functions.arm.weight_armature == False)
+            return (functions.arm.weight_armature == False and functions.arm.scheme != -1)
 
     def execute(self, context):
         functions.weight_armature(0)
@@ -100,7 +102,7 @@ class VAT_OT_weightarmature_delete(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature != None:
-            return (functions.arm.weight_armature == True)
+            return (functions.arm.weight_armature == True and functions.arm.scheme != -1)
 
     def execute(self, context):
         functions.weight_armature(1)
@@ -116,7 +118,7 @@ class VAT_OT_inversekinematics_create(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature != None:
-            return (functions.arm.inverse_kinematics == False)
+            return (functions.arm.inverse_kinematics == False and functions.arm.scheme != -1)
 
     def execute(self, context):
         functions.inverse_kinematics(0)
@@ -132,7 +134,7 @@ class VAT_OT_inversekinematics_delete(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature != None:
-            return (functions.arm.inverse_kinematics == True)
+            return (functions.arm.inverse_kinematics == True and functions.arm.scheme != -1)
 
     def execute(self, context):
         functions.inverse_kinematics(1)
@@ -148,7 +150,7 @@ class VAT_OT_rigifyretarget_create(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature != None:
-            return (functions.arm.animation_armature == False)
+            return (functions.arm.animation_armature == False and functions.arm.scheme != -1)
 
     def execute(self, context):
         functions.anim_armature(0)
@@ -164,7 +166,7 @@ class VAT_OT_rigifyretarget_delete(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature != None:
-            return (functions.arm.animation_armature == True)
+            return (functions.arm.animation_armature == True and functions.arm.scheme != -1)
 
     def execute(self, context):
         functions.anim_armature(1)
@@ -180,7 +182,7 @@ class VAT_OT_rigifyretarget_link(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature != None:
-            return (functions.arm.animation_armature == True and functions.arm.animation_armature_setup == True)
+            return (functions.arm.animation_armature == True and functions.arm.animation_armature_setup == True and functions.arm.scheme != -1)
 
     def execute(self, context):
         functions.anim_armature(2)
@@ -196,7 +198,7 @@ class VAT_OT_rigifyretarget_update(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature != None:
-            return (functions.arm.animation_armature == True and functions.arm.animation_armature_setup == False)
+            return (functions.arm.animation_armature == True and functions.arm.animation_armature_setup == False and functions.arm.scheme != -1)
 
     def execute(self, context):
         functions.anim_armature(3)
