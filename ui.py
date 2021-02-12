@@ -144,6 +144,10 @@ class VAT_PT_rigifyretarget(bpy.types.Panel): #Rigify Retargetting panel
         row = layout.row()
         row.operator("vat.rigifyretarget_create", text="Generate")
         row.operator("vat.rigifyretarget_delete", text="Delete")
+
+        layout.prop(vatproperties, "target_object")
+        layout.label(text="Used to check for facial expressions")
+
         if vatproperties.target_armature != None:
             if functions.arm.animation_armature == True:
                 if functions.arm.animation_armature_setup == True:
@@ -156,7 +160,7 @@ class VAT_PT_rigifyretarget(bpy.types.Panel): #Rigify Retargetting panel
                 elif functions.arm.animation_armature_setup == False:
                     #Presets
                     row = layout.row()
-                    row.label(text="Upper body presets:")
+                    row.label(text="Upper limbs presets:")
                     row = layout.row()
                     row.prop(vatproperties, "retarget_top_preset", expand=True)
 
@@ -166,7 +170,7 @@ class VAT_PT_rigifyretarget(bpy.types.Panel): #Rigify Retargetting panel
                     row.prop(vatproperties, "retarget_center_preset", expand=True)
 
                     row = layout.row()
-                    row.label(text="Lower body presets:")
+                    row.label(text="Lower limbs presets:")
                     row = layout.row()
                     row.prop(vatproperties, "retarget_bottom_preset", expand=True)
 
