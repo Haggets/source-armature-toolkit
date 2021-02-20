@@ -37,7 +37,7 @@ class VAT_properties(bpy.types.PropertyGroup): #Defines global properties the pl
         description="Empty rotation presets for arms",
         items=[
             ('OP1', "Default Preset", "Works with most characters"),
-            ('OP2', "Second Preset", "Works with Bill and Nick (L4D Characters)")
+            ('OP2', "Second Preset", "In case the default doesn't work")
         ]
     )
 
@@ -46,7 +46,7 @@ class VAT_properties(bpy.types.PropertyGroup): #Defines global properties the pl
         description="Empty rotation presets for the spine/head",
         items=[
             ('OP1', "Default Preset", "Works with most characters"),
-            ('OP2', "Second Preset", "Works with Bill and Nick (L4D Characters)")
+            ('OP2', "Second Preset", "Works with HL2 Alyx")
         ]
     )
 
@@ -55,6 +55,6 @@ class VAT_properties(bpy.types.PropertyGroup): #Defines global properties the pl
         description="Empty rotation presets for legs",
         items=[
             ('OP1', "Default Preset", "Works with most characters"),
-            ('OP2', "Second Preset", "Works with Bill and Nick (L4D Characters)")
+            ('OP2', "Second Preset", "In case the default doesn't work")
         ]
     )
