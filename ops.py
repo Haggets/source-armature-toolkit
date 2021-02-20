@@ -179,10 +179,10 @@ class VAT_OT_rigifyretarget_link(bpy.types.Operator):
     bl_label = "Animation Ready Armature Link"
 
     @classmethod
-    def poll(cls, context):
+    def poll(self, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature != None:
-            return (functions.arm.animation_armature == True and functions.arm.animation_armature_setup == True and functions.arm.scheme != -1)
+            return (context.object.name == "rig")
 
     def execute(self, context):
         functions.anim_armature(2)
