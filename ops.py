@@ -6,12 +6,13 @@ class VAT_OT_armaturerename_blender(bpy.types.Operator): #Converts armature sche
     """Converts to Blender friendly scheme to allow for symmetry"""
     bl_idname = "vat.armaturerename_blender"
     bl_label = "Blender Friendly Scheme"
+    bl_options = {'REGISTER', 'UNDO'}
     
     @classmethod #Checks if an armature is selected and it is not an SFM one, since it doesn't need it
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        if vatproperties.target_armature != None:
-            return (functions.arm.scheme == 0 and functions.arm.sfm == False and functions.arm.scheme != -1)
+        if vatproperties.target_armature:
+            return (functions.arm.scheme == 0 and not functions.arm.sfm and functions.arm.scheme != -1)
     
     def execute(self, context):
         functions.armature_rename(1)
@@ -22,12 +23,13 @@ class VAT_OT_armaturerename_source(bpy.types.Operator): #Converts armature schem
     """Reverts back to original Source friendly scheme for export"""
     bl_idname = "vat.armaturerename_source"
     bl_label = "Original scheme"
+    bl_options = {'REGISTER', 'UNDO'}
     
     @classmethod
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        if vatproperties.target_armature != None:
-            return (functions.arm.scheme == 1 and functions.arm.sfm == False and functions.arm.scheme != -1)
+        if vatproperties.target_armature:
+            return (functions.arm.scheme == 1 and not functions.arm.sfm and functions.arm.scheme != -1)
     
     def execute(self, context):
         functions.armature_rename(0)
@@ -38,16 +40,17 @@ class VAT_OT_constraintsymmetry_create(bpy.types.Operator):
     """Creates symmetry with constraints to allow for armature reproportioning while keeping correct roll values"""
     bl_idname = "vat.constraintsymmetry_create"
     bl_label = "Roll Corrected Symmetry"
+    bl_options = {'REGISTER', 'UNDO'}
     
     @classmethod
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        if vatproperties.target_armature != None:
+        if vatproperties.target_armature:
             if functions.arm.scheme != -1:
                 if vatproperties.affected_side == 'OP1':
-                    return (functions.arm.symmetry_left == False and functions.arm.symmetry_right == False)
+                    return (not functions.arm.symmetry_left and not functions.arm.symmetry_right)
                 elif vatproperties.affected_side == 'OP2':
-                    return (functions.arm.symmetry_right == False and functions.arm.symmetry_left == False)
+                    return (not functions.arm.symmetry_right and not functions.arm.symmetry_left)
 
 
     def execute(self, context):
@@ -60,16 +63,17 @@ class VAT_OT_constraintsymmetry_delete(bpy.types.Operator):
     """Removes previously added constraints"""
     bl_idname = "vat.constraintsymmetry_delete"
     bl_label = "Symmetry Constraints Removal"
+    bl_options = {'REGISTER', 'UNDO'}
     
     @classmethod
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        if vatproperties.target_armature != None:
+        if vatproperties.target_armature:
             if functions.arm.scheme != -1:
                 if vatproperties.affected_side == 'OP1':
-                    return (functions.arm.symmetry_left == True)
+                    return (functions.arm.symmetry_left)
                 elif vatproperties.affected_side == 'OP2':
-                    return (functions.arm.symmetry_right == True)
+                    return (functions.arm.symmetry_right)
 
     def execute(self, context):
         vatproperties = bpy.context.scene.vatproperties
@@ -81,12 +85,13 @@ class VAT_OT_weightarmature_create(bpy.types.Operator):
     """Duplicates armature with connected bones"""
     bl_idname = "vat.weightarmature_create"
     bl_label = "Better Automatic Weighting"
+    bl_options = {'REGISTER', 'UNDO'}
     
     @classmethod
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        if vatproperties.target_armature != None:
-            return (functions.arm.weight_armature == False and functions.arm.scheme != -1)
+        if vatproperties.target_armature:
+            return (not functions.arm.weight_armature and functions.arm.scheme != -1)
 
     def execute(self, context):
         functions.weight_armature(0)
@@ -97,12 +102,13 @@ class VAT_OT_weightarmature_delete(bpy.types.Operator):
     """Removes duplicate armature"""
     bl_idname = "vat.weightarmature_delete"
     bl_label = "Duplicate Armature Removal"
+    bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        if vatproperties.target_armature != None:
-            return (functions.arm.weight_armature == True and functions.arm.scheme != -1)
+        if vatproperties.target_armature:
+            return (functions.arm.weight_armature and functions.arm.scheme != -1)
 
     def execute(self, context):
         functions.weight_armature(1)
@@ -113,12 +119,13 @@ class VAT_OT_inversekinematics_create(bpy.types.Operator):
     """Creates simple Inverse Kinematics (IK)"""
     bl_idname = "vat.inversekinematics_create"
     bl_label = "Simple IK"
+    bl_options = {'REGISTER', 'UNDO'}
     
     @classmethod
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        if vatproperties.target_armature != None:
-            return (functions.arm.inverse_kinematics == False and functions.arm.scheme != -1)
+        if vatproperties.target_armature:
+            return (not functions.arm.inverse_kinematics and functions.arm.scheme != -1)
 
     def execute(self, context):
         functions.inverse_kinematics(0)
@@ -129,12 +136,13 @@ class VAT_OT_inversekinematics_delete(bpy.types.Operator):
     """Deletes simple Inverse Kinematics (IK)"""
     bl_idname = "vat.inversekinematics_delete"
     bl_label = "Simple IK Removal"
+    bl_options = {'REGISTER', 'UNDO'}
     
     @classmethod
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        if vatproperties.target_armature != None:
-            return (functions.arm.inverse_kinematics == True and functions.arm.scheme != -1)
+        if vatproperties.target_armature:
+            return (functions.arm.inverse_kinematics and functions.arm.scheme != -1)
 
     def execute(self, context):
         functions.inverse_kinematics(1)
@@ -145,12 +153,13 @@ class VAT_OT_rigifyretarget_create(bpy.types.Operator):
     """Creates animation ready armature"""
     bl_idname = "vat.rigifyretarget_create"
     bl_label = "Custom Animation Ready Armature"
+    bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        if vatproperties.target_armature != None:
-            return (functions.arm.animation_armature == False and functions.arm.scheme != -1)
+        if vatproperties.target_armature:
+            return (not functions.arm.animation_armature and functions.arm.scheme != -1)
 
     def execute(self, context):
         functions.anim_armature(0)
@@ -161,12 +170,13 @@ class VAT_OT_rigifyretarget_delete(bpy.types.Operator):
     """Deletes generated armature"""
     bl_idname = "vat.rigifyretarget_delete"
     bl_label = "Animation Ready Armature Removal"
+    bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        if vatproperties.target_armature != None:
-            return (functions.arm.animation_armature == True and functions.arm.scheme != -1)
+        if vatproperties.target_armature:
+            return (functions.arm.animation_armature and functions.arm.scheme != -1)
 
     def execute(self, context):
         functions.anim_armature(1)
@@ -177,11 +187,12 @@ class VAT_OT_rigifyretarget_link(bpy.types.Operator):
     """Connects original armature with generated Rigify armature"""
     bl_idname = "vat.rigifyretarget_link"
     bl_label = "Animation Ready Armature Link"
+    bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(self, context):
         vatproperties = bpy.context.scene.vatproperties
-        if vatproperties.target_armature != None:
+        if vatproperties.target_armature:
             return (context.object.name == "rig")
 
     def execute(self, context):
@@ -193,12 +204,13 @@ class VAT_OT_rigifyretarget_update(bpy.types.Operator):
     """Connects original armature with generated Rigify armature"""
     bl_idname = "vat.rigifyretarget_update"
     bl_label = "Animation Ready Armature Empty Update"
+    bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        if vatproperties.target_armature != None:
-            return (functions.arm.animation_armature == True and functions.arm.animation_armature_setup == False and functions.arm.scheme != -1)
+        if vatproperties.target_armature:
+            return (functions.arm.animation_armature and not functions.arm.animation_armature_setup and functions.arm.scheme != -1)
 
     def execute(self, context):
         functions.anim_armature(3)

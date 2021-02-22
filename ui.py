@@ -20,20 +20,20 @@ class VAT_PT_mainpanel(bpy.types.Panel): #Main panel that subpanels will use
         layout = self.layout
         
         layout.prop(vatproperties, "target_armature") #Armature that will be affected by the utilities
-        if vatproperties.target_armature != None:
-            if vatproperties.custom_scheme_enabled == True and vatproperties.custom_scheme_prefix != "":
+        if vatproperties.target_armature:
+            if vatproperties.custom_scheme_enabled and vatproperties.custom_scheme_prefix:
                 layout.label(text="Type: Custom Prefix Armature")
             elif functions.arm.scheme == -1:
                 layout.label(text="Type: Unknown Armature")
-            elif functions.arm.sfm == False:
+            elif not functions.arm.sfm:
                 layout.label(text="Type: Default Source Armature")
-            elif functions.arm.sfm == True:
+            elif functions.arm.sfm:
                 layout.label(text="Type: Source Filmmaker Armature")
         else:
             layout.label(text="No Armature...")
 
         layout.prop(vatproperties, "custom_scheme_enabled")
-        if vatproperties.custom_scheme_enabled == True:
+        if vatproperties.custom_scheme_enabled:
             layout.prop(vatproperties, "custom_scheme_prefix")
         
 class VAT_PT_armaturerename(bpy.types.Panel): #Armature rename panel
@@ -52,7 +52,7 @@ class VAT_PT_armaturerename(bpy.types.Panel): #Armature rename panel
         row.operator("vat.armaturerename_blender", text="Convert")
         row.operator("vat.armaturerename_source", text="Restore")
         col = layout.column()
-        if vatproperties.target_armature != None:
+        if vatproperties.target_armature:
             if functions.arm.scheme == 0:
                 col.label(text="Current: Source Scheme")
             elif functions.arm.scheme == 1:
@@ -80,8 +80,8 @@ class VAT_PT_constraintsymmetry(bpy.types.Panel): #Constraint Symmetry panel
         row = layout.row()
         row.prop(vatproperties, "affected_side", expand=True)
         row = layout.row()
-        if vatproperties.target_armature != None:
-            if vatproperties.affected_side == 'OP1' and functions.arm.symmetry_right == True or vatproperties.affected_side == 'OP2' and functions.arm.symmetry_left == True:
+        if vatproperties.target_armature:
+            if vatproperties.affected_side == 'OP1' and functions.arm.symmetry_right or vatproperties.affected_side == 'OP2' and functions.arm.symmetry_left:
                 row.label(text="Already applied on the opposite side")
 
         box = layout.box()
@@ -148,15 +148,15 @@ class VAT_PT_rigifyretarget(bpy.types.Panel): #Rigify Retargetting panel
         layout.prop(vatproperties, "target_object")
         layout.label(text="Used to check for facial expressions")
 
-        if vatproperties.target_armature != None:
-            if functions.arm.animation_armature == True:
-                if functions.arm.animation_armature_setup == True:
+        if vatproperties.target_armature:
+            if functions.arm.animation_armature:
+                if functions.arm.animation_armature_setup:
                     row = layout.row()
                     row.operator("vat.rigifyretarget_link", text="Link to generated armature")
                     col = layout.column()
                     col.label(text="Link after armature is generated", icon='INFO')
 
-                elif functions.arm.animation_armature_setup == False:
+                elif not functions.arm.animation_armature_setup:
                     #Presets
                     row = layout.row()
                     row.label(text="Upper limbs presets:")
