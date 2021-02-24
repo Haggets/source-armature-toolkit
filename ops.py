@@ -6,7 +6,6 @@ class VAT_OT_armaturerename_blender(bpy.types.Operator): #Converts armature sche
     """Converts to Blender friendly scheme to allow for symmetry"""
     bl_idname = "vat.armaturerename_blender"
     bl_label = "Blender Friendly Scheme"
-    bl_options = {'REGISTER', 'UNDO'}
     
     @classmethod #Checks if an armature is selected and it is not an SFM one, since it doesn't need it
     def poll(cls, context):
@@ -15,6 +14,7 @@ class VAT_OT_armaturerename_blender(bpy.types.Operator): #Converts armature sche
             return (functions.arm.scheme == 0 and not functions.arm.sfm and functions.arm.scheme != -1)
     
     def execute(self, context):
+        bpy.ops.ed.undo_push()
         functions.armature_rename(1)
         
         return{'FINISHED'}
@@ -23,7 +23,6 @@ class VAT_OT_armaturerename_source(bpy.types.Operator): #Converts armature schem
     """Reverts back to original Source friendly scheme for export"""
     bl_idname = "vat.armaturerename_source"
     bl_label = "Original scheme"
-    bl_options = {'REGISTER', 'UNDO'}
     
     @classmethod
     def poll(cls, context):
@@ -32,6 +31,7 @@ class VAT_OT_armaturerename_source(bpy.types.Operator): #Converts armature schem
             return (functions.arm.scheme == 1 and not functions.arm.sfm and functions.arm.scheme != -1)
     
     def execute(self, context):
+        bpy.ops.ed.undo_push()
         functions.armature_rename(0)
         
         return{'FINISHED'}
@@ -40,7 +40,6 @@ class VAT_OT_constraintsymmetry_create(bpy.types.Operator):
     """Creates symmetry with constraints to allow for armature reproportioning while keeping correct roll values"""
     bl_idname = "vat.constraintsymmetry_create"
     bl_label = "Roll Corrected Symmetry"
-    bl_options = {'REGISTER', 'UNDO'}
     
     @classmethod
     def poll(cls, context):
