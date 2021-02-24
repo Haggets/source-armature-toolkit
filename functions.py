@@ -12,7 +12,17 @@ def create_armature(self, context): #Creates new armature class
     vatproperties = bpy.context.scene.vatproperties
     if vatproperties.target_armature:
         global arm
+        #bpy.data.objects[vatproperties.target_armature.name]['vatidentifier'] = float(hash(vatproperties.target_armature.name))
         arm = Armature(vatproperties.target_armature)
+
+''' #No clue how to make it work.
+def get_hash(): #Gets unique identifier
+    armature = [armature for armature in bpy.data.objects if armature['vatidentifier'] == float(hash(self.name))]
+    if armature == vatproperties.target_armature:
+        arm.name = armature.name
+        arm.name_full = armature
+        arm.name_real = armature.data
+'''
 
 class Armature: #Armature base
 
@@ -110,7 +120,7 @@ class Armature: #Armature base
                         self.prefix = 'ValveBiped.Bip01_'
 
                         #Helper bones without helper prefix, differentiated with 's.'
-                        if bone.count('Ulna') != 0 or bone.count('Wrist') != 0 or bone.count('Elbow') != 0 or bone.count('Knee') != 0 or bone.count('Trapezius') != 0 or bone.count('Quadricep') != 0 or bone.count('Bicep') != 0 or bone.count('Shoulder') != 0:
+                        if bone.count('Ulna') or bone.count('Wrist') or bone.count('Elbow') or bone.count('Knee') or bone.count('Trapezius') or bone.count('Quadricep') or bone.count('Bicep') or bone.count('Shoulder'):
                             self.helper_bones.append(bone.replace(self.prefix, 's.'))
 
                         #Strange L4D2 helper prefix, must be differentiated from the usual helper bone with 's2.'
@@ -154,7 +164,7 @@ class Armature: #Armature base
                     #No/Different prefix
                     else:
                         #Makes sure generated IK bones are not part of list
-                        if bone.count('Pole') != 0:
+                        if bone.count('Pole'):
                             pass
                         else:
                             self.custom_bones.append(bone)
@@ -269,7 +279,7 @@ class Armature: #Armature base
             prefix = self.prefix
             
             for bone in self.symmetrical_bones:
-                if bone.count('Hand') != 0 or bone.count('Foot') != 0:
+                if bone.count('Hand') or bone.count('Foot'):
                     try:
                         armature.pose.bones[prefix + bone].constraints['IK']
                         self.inverse_kinematics = True
@@ -295,7 +305,7 @@ class Armature: #Armature base
             for bone in self.symmetrical_bones:
 
                 #Arms
-                if bone.count('Clavicle') != 0 or bone.count('Trapezius') != 0 or bone.count('UpperArm') != 0 or bone.count('Bicep') != 0 or bone.count('Forearm') != 0 or bone.count('Hand') != 0 or bone.count('Finger') != 0:
+                if bone.count('Clavicle') or bone.count('Trapezius') or bone.count('UpperArm') or bone.count('Bicep') or bone.count('Forearm') or bone.count('Hand') or bone.count('Finger'):
                     if bone.startswith('L_') or bone.endswith('_L'):
                         armature.pose.bones[prefix + bone].bone_group_index = 1
                         armature.data.bones[prefix + bone].layers[1] = True
@@ -304,7 +314,7 @@ class Armature: #Armature base
                         armature.data.bones[prefix + bone].layers[2] = True
 
                 #Legs
-                elif bone.count('Thigh') != 0 or bone.count('Calf') != 0 or bone.count('Foot') != 0 or bone.count('Toe') != 0:
+                elif bone.count('Thigh') or bone.count('Calf') or bone.count('Foot') or bone.count('Toe'):
                     if bone.startswith('L_') or bone.endswith('_L'):
                         armature.pose.bones[prefix + bone].bone_group_index = 3
                         armature.data.bones[prefix + bone].layers[3] = True
@@ -341,7 +351,7 @@ class Armature: #Armature base
             for bone in self.other_bones:
 
                 #Weapon bones
-                if bone.count('weapon') != 0:
+                if bone.count('weapon'):
                     prefix = Prefixes.other
                     armature.pose.bones[prefix + bone].bone_group_index = 6
                     armature.data.bones[prefix + bone].layers[6] = True
@@ -387,12 +397,12 @@ class Armature: #Armature base
                     forearm_l = armature.pose.bones[prefix + bone]
                 elif bone.startswith('R_') or bone.endswith('_R'):
                     forearm_r = armature.pose.bones[prefix + bone]
-            elif bone.count('Calf') != 0:
+            elif bone.count('Calf'):
                 if bone.startswith('L_') or bone.endswith('_L'):
                     calf_l = armature.pose.bones[prefix + bone]
                 elif bone.startswith('R_') or bone.endswith('_R'):
                     calf_r = armature.pose.bones[prefix + bone]
-            elif bone.count('Thigh') != 0:
+            elif bone.count('Thigh'):
                 if bone.startswith('L_') or bone.endswith('_L'):
                     thigh_l = armature.pose.bones[prefix + bone]
                 elif bone.startswith('R_') or bone.endswith('_R'):
@@ -401,7 +411,7 @@ class Armature: #Armature base
         for bone in self.helper_bones:
 
             #Adds transforms to only these helper bones unless already existing
-            if bone.title().count('Wrist') != 0 or bone.title().count('Ulna') != 0 or bone.title().count('Elbow') != 0 or bone.title().count('Knee') != 0 or bone.title().count('Quad') != 0:
+            if bone.title().count('Wrist') or bone.title().count('Ulna') or bone.title().count('Elbow') or bone.title().count('Knee') or bone.title().count('Quad'):
                 new = 0
                 if bone.startswith('s.'):
                     prefix = self.prefix
@@ -435,9 +445,9 @@ class Armature: #Armature base
                     transform.owner_space = 'LOCAL'
                 
                     #Hand rotation
-                    if bone.title().count('Wrist') != 0 or bone.title().count('Ulna') != 0:
-                        transform.from_min_x_rot = -1.5708
-                        transform.from_max_x_rot = 1.5708
+                    if bone.title().count('Wrist') or bone.title().count('Ulna'):
+                        transform.from_min_x_rot = math.radians(-90)
+                        transform.from_max_x_rot = math.radians(90)
 
                         if bone.startswith('s.'):
                             if bone.replace('s.', '').title().startswith('L_') or bone.replace('s.', '').title().endswith('_L'):
@@ -450,29 +460,29 @@ class Armature: #Armature base
                             elif bone.replace('s2.', '').title().startswith('R_') or bone.replace('s2.', '').title().endswith('_R'):
                                 transform.subtarget = hand_r.name
 
-                        if bone.title().count('Wrist') != 0:
-                            transform.to_min_x_rot = -1.309
-                            transform.to_max_x_rot = 1.309
+                        if bone.title().count('Wrist'):
+                            transform.to_min_x_rot = math.radians(-75)
+                            transform.to_max_x_rot = math.radians(75)
 
                             #Lame fix for Nick's left wrist bone not being labeled as left
                             if bone.replace('s2.', '').title().startswith('R_') or bone.replace('s2.', '').title().endswith('_R') or bone.replace('s2.', '').title().startswith('L_') or bone.replace('s2.', '').title().endswith('_L'):
                                 pass
-                            elif bone.replace('s2.', '').title().count('Wrist') != 0:
+                            elif bone.replace('s2.', '').title().count('Wrist'):
                                 transform.subtarget = hand_l.name
 
-                        elif bone.title().count('Ulna') != 0:
-                            transform.to_min_x_rot = -0.872665
-                            transform.to_max_x_rot = 0.872665
+                        elif bone.title().count('Ulna'):
+                            transform.to_min_x_rot = math.radians(-50)
+                            transform.to_max_x_rot = math.radians(50)
 
                     #Forearm and thigh rotation
-                    elif bone.title().count('Elbow') != 0 or bone.title().count('Knee') != 0 or bone.title().count('Quad') != 0:
-                        transform.from_min_z_rot = -1.5708
-                        transform.from_max_z_rot = 1.5708
+                    elif bone.title().count('Elbow') or bone.title().count('Knee') or bone.title().count('Quad'):
+                        transform.from_min_z_rot = math.radians(-90)
+                        transform.from_max_z_rot = math.radians(90)
 
-                        transform.to_min_z_rot = -0.785398
-                        transform.to_max_z_rot = 0.785398
+                        transform.to_min_z_rot = math.radians(-45)
+                        transform.to_max_z_rot = math.radians(45)
                         
-                        if bone.title().count('Elbow') != 0:
+                        if bone.title().count('Elbow'):
                             if bone.startswith('s.'):
                                 if bone.replace('s.', '').title().startswith('L_') or bone.replace('s.', '').title().endswith('_L'):
                                     transform.subtarget = forearm_l.name
@@ -484,7 +494,7 @@ class Armature: #Armature base
                                 elif bone.replace('s2.', '').title().startswith('R_') or bone.replace('s2.', '').title().endswith('_R'):
                                     transform.subtarget = forearm_r.name
 
-                        elif bone.title().count('Knee') != 0:
+                        elif bone.title().count('Knee'):
                             if bone.startswith('s.'):
                                 if bone.replace('s.', '').title().startswith('L_') or bone.replace('s.', '').title().endswith('_L'):
                                     transform.subtarget = calf_l.name
@@ -497,7 +507,7 @@ class Armature: #Armature base
                                 elif bone.replace('s2.', '').title().startswith('R_') or bone.replace('s2.', '').title().endswith('_R'):
                                     transform.subtarget = calf_r.name
 
-                        elif bone.title().count('Quad') != 0:
+                        elif bone.title().count('Quad'):
                             if bone.startswith('s.'):
                                 if bone.replace('s.', '').title().startswith('L_') or bone.replace('s.', '').title().endswith('_L'):
                                     transform.subtarget = thigh_l.name
@@ -560,9 +570,7 @@ def armature_rename(scheme): #Bone prefix/suffix repositioning
             elif bone.startswith('s2.'):
 
                 #Their prefix is usually already in the end so they're left alone
-                if bone.endswith('_L') or bone.endswith('_R'):
-                    pass
-                else:
+                if not bone.endswith('_L') or not bone.endswith('_R'):
                     prefix = Prefixes.helper2
                     rename(bone.replace('s2.', ''))
 
@@ -827,7 +835,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
             parent = armature.pose.bones[prefix + bone].parent.name
 
             #Makes it so the hand bone is facing straight
-            if parent.count('Hand') != 0:
+            if parent.count('Hand'):
                 if bone.count('Finger0'):
                     pass
                 else:
@@ -841,19 +849,19 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                     
                 #Bones that should not be connected to parent on weight armatures
                 if type == 'weight':
-                    if bone.count('Thigh') != 0 or bone.count('Clavicle') != 0 or bone.count('Forearm') != 0 or bone.count('Hand') != 0 or bone.count('Elbow') != 0 or bone.count('Wrist') or bone.count('UpperArm') or bone.count('Calf') != 0 or bone.count('Knee') != 0:
+                    if bone.count('Thigh') or bone.count('Clavicle') or bone.count('Forearm') or bone.count('Hand') or bone.count('Elbow') or bone.count('Wrist') or bone.count('UpperArm') or bone.count('Calf') or bone.count('Knee'):
                         pass
                     else:
                         armature.data.edit_bones[prefix + bone].use_connect = True
                 #Bones that will not be connected to parent on anim armatures, the rest were deleted and would cause an error
                 elif type == 'anim':
-                    if bone.count('Thigh') != 0 or bone.count('Clavicle') != 0 or bone.count('Trapezius') != 0 or bone.count('Bicep') != 0 or bone.count('Elbow') != 0 or bone.count('Ulna') != 0 or bone.count('Wrist') != 0 or bone.count('Knee') != 0 or bone.count('Quadricep') != 0:
+                    if bone.count('Thigh') or bone.count('Clavicle') or bone.count('Trapezius') or bone.count('Bicep') or bone.count('Elbow') or bone.count('Ulna') or bone.count('Wrist') or bone.count('Knee') or bone.count('Quadricep'):
                         pass
                     else:
                         armature.data.edit_bones[prefix + bone].use_connect = True
 
             #Extends toe tip to be where the actual tip should be
-            if bone.title().count('Toe') != 0:
+            if bone.title().count('Toe'):
                 pbone = armature.pose.bones[prefix + bone].head
 
                 if bone.startswith('L_') or bone.endswith('_L'):
@@ -863,18 +871,18 @@ def generate_armature(type, action): #Creates or deletes the weight armature
 
             if type == 'weight':
                 #Helper bones
-                if bone.count('Knee') != 0:
+                if bone.count('Knee'):
                     pbone = armature.pose.bones[prefix + bone].tail
 
                     armature.data.edit_bones[prefix + bone].tail.y = pbone.y-5
 
-                if bone.count('Elbow') != 0:
+                if bone.count('Elbow'):
                     pbone = armature.pose.bones[prefix + bone].tail
 
                     armature.data.edit_bones[prefix + bone].tail.y = pbone.y+5
 
                 #Other helper bones that need additional tweaking on their positioning
-                if bone.count('Ulna') != 0:
+                if bone.count('Ulna'):
                     ulna.append(bone)
                     if bone.startswith('L_') or bone.endswith('_L'):
                         ulna_l = armature.pose.bones[prefix + bone].head
@@ -882,11 +890,11 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                         ulna_r = armature.pose.bones[prefix + bone].head
                     ulna_present = 1
                 
-                if bone.count('Wrist') != 0:
+                if bone.count('Wrist'):
                     wrist.append(bone)
                     wrist_present = 1
 
-                if bone.count('Bicep') != 0:
+                if bone.count('Bicep'):
                     bicep.append(bone)
                     if bone.startswith('L_') or bone.endswith('_L'):
                         bicep_l = armature.pose.bones[prefix + bone].head
@@ -894,11 +902,11 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                         bicep_r = armature.pose.bones[prefix + bone].head
                     bicep_present = 1
 
-                if bone.count('Trapezius') != 0:
+                if bone.count('Trapezius'):
                     trapezius.append(bone)
                     trapezius_present = 1
 
-                if bone.count('Quadricep') != 0:
+                if bone.count('Quadricep'):
                     quadricep.append(bone)
                     if bone.startswith('L_') or bone.endswith('_L'):
                         quadricep_l = armature.pose.bones[prefix + bone].head
@@ -908,7 +916,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
 
             #Fix for legs rotating the wrong way in most characters
             elif type == 'anim':
-                if bone.count('Calf') != 0:
+                if bone.count('Calf'):
                     armature.data.edit_bones[prefix + bone].head.y = armature.data.edit_bones[prefix + bone].head.y - 1
 
         for bone in arm.central_bones:
@@ -918,13 +926,13 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                 parent = armature.pose.bones[prefix + bone].parent.name
                 loc = armature.pose.bones[prefix + bone].head
                 armature.data.edit_bones[parent].tail = loc
-                if bone.count('Neck') != 0:
+                if bone.count('Neck'):
                     pass
                 else:
                     armature.data.edit_bones[prefix + bone].use_connect = True
                 
             #Extends head's length to be on par with actual head height
-            if bone.casefold().count('head') != 0:
+            if bone.casefold().count('head'):
                 pbone = armature.pose.bones[prefix + bone].head
                 
                 armature.data.edit_bones[prefix + bone].tail = pbone.x, pbone.y, pbone.z+6
@@ -934,66 +942,66 @@ def generate_armature(type, action): #Creates or deletes the weight armature
             for bone in arm.symmetrical_bones:
                 if bicep_present == 1:
                     #Gets position
-                    if bone.count('Forearm') != 0:
+                    if bone.count('Forearm'):
                         if bone.startswith('L_') or bone.endswith('_L'):
                             forearm_l = armature.pose.bones[prefix + bone].head
                         elif bone.startswith('R_') or bone.endswith('_R'):
                             forearm_r = armature.pose.bones[prefix + bone].head
 
                     #Forces upperarm to use bicep position
-                    if bone.count('UpperArm') != 0:
+                    if bone.count('UpperArm'):
                         if bone.startswith('L_') or bone.endswith('_L'):
                             armature.data.edit_bones[prefix + bone].tail = bicep_l
                         elif bone.startswith('R_') or bone.endswith('_R'):
                             armature.data.edit_bones[prefix + bone].tail = bicep_r
                 else:
-                    if bone.count('Forearm') != 0:
+                    if bone.count('Forearm'):
                         armature.data.edit_bones[prefix + bone].use_connect = True
 
                 if ulna_present == 1 or wrist_present == 1:
                     #Gets position
-                    if bone.count('Hand') != 0:
+                    if bone.count('Hand'):
                         if bone.startswith('L_') or bone.endswith('_L'):
                             hand_l = armature.pose.bones[prefix + bone].head
                         elif bone.startswith('R_') or bone.endswith('_R'):
                             hand_r = armature.pose.bones[prefix + bone].head
 
                     #Forces forearm to use ulna position
-                    if bone.count('Forearm') != 0:
+                    if bone.count('Forearm'):
                         if bone.startswith('L_') or bone.endswith('_L'):
                             armature.data.edit_bones[prefix + bone].tail = ulna_l
                         elif bone.startswith('R_') or bone.endswith('_R'):
                             armature.data.edit_bones[prefix + bone].tail = ulna_r
                 else:
-                    if bone.count('Hand') != 0:
+                    if bone.count('Hand'):
                         armature.data.edit_bones[prefix + bone].use_connect = True
 
                 if quadricep_present == 1:
                     #Gets position
-                    if bone.count('Calf') != 0:
+                    if bone.count('Calf'):
                         if bone.startswith('L_') or bone.endswith('_L'):
                             calf_l = armature.pose.bones[prefix + bone].head
                         elif bone.startswith('R_') or bone.endswith('_R'):
                             calf_r = armature.pose.bones[prefix + bone].head
                         
                     #Forces thigh to use quadricep position
-                    if bone.count('Thigh') != 0:
+                    if bone.count('Thigh'):
                         if bone.startswith('L_') or bone.endswith('_L'):
                             armature.data.edit_bones[prefix + bone].tail = quadricep_l
                         elif bone.startswith('R_') or bone.endswith('_R'):
                             armature.data.edit_bones[prefix + bone].tail = quadricep_r
                 else:
-                    if bone.count('Calf') != 0:
+                    if bone.count('Calf'):
                         armature.data.edit_bones[prefix + bone].use_connect = True
 
                 if trapezius_present == 1:
-                    if bone.count('UpperArm') != 0:
+                    if bone.count('UpperArm'):
                         if bone.startswith('L_') or bone.endswith('_L'):
                             upperarm_l = armature.pose.bones[prefix + bone].head
                         elif bone.startswith('R_') or bone.endswith('_R'):
                             upperarm_r = armature.pose.bones[prefix + bone].head
                 else:
-                    if bone.count('UpperArm') != 0:
+                    if bone.count('UpperArm'):
                         armature.data.edit_bones[prefix + bone].use_connect = True
 
             #Tweaks positioning of some helper bones
@@ -1056,7 +1064,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                 #Else if only wrist is present
                 elif wrist:
                     for bone in arm.symmetrical_bones:
-                        if bone.count('Forearm') != 0:
+                        if bone.count('Forearm'):
                             armature.data.edit_bones[prefix + bone].length = armature.data.edit_bones[prefix + bone].length / 1.3
                             if bone.startswith('L_') or bone.endswith('_L'):
                                 forearm_l = armature.pose.bones[prefix + bone].tail
@@ -1074,7 +1082,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
         if arm.other_bones:
             for bone in arm.other_bones:
                 #Removes unimportant bones since they're of no use for the charactrer
-                if bone.count('weapon') != 0:
+                if bone.count('weapon'):
                     prefix = Prefixes.other
                     bone = armature.data.edit_bones[prefix + bone]
                     armature.data.edit_bones.remove(bone)
@@ -1082,7 +1090,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                     prefix = Prefixes.attachment
                     bone = armature.data.edit_bones[prefix + bone.replace('a.', '')]
                     armature.data.edit_bones.remove(bone)
-                elif bone.count('forward') != 0:
+                elif bone.count('forward'):
                     prefix = Prefixes.other
                     bone = armature.data.edit_bones[prefix + bone]
                     armature.data.edit_bones.remove(bone)
@@ -1279,14 +1287,14 @@ def inverse_kinematics(action): #Adds IK to the armature
             update(1, armature)
 
             for bone in arm.central_bones:
-                if bone.count('Pelvis') != 0:
+                if bone.count('Pelvis'):
                     pelvis = armature.data.edit_bones[prefix + bone]
 
             #Gets forearm and calf position
             for bone in arm.symmetrical_bones:
-                if bone.count('Forearm') != 0:
+                if bone.count('Forearm'):
                     forearm = armature.pose.bones[prefix + bone]
-                elif bone.count('Calf') != 0:
+                elif bone.count('Calf'):
                     calf = armature.pose.bones[prefix + bone]
 
             for bone in ['ForearmPole_L', 'ForearmPole_R', 'CalfPole_L', 'CalfPole_R']:
@@ -1327,7 +1335,7 @@ def inverse_kinematics(action): #Adds IK to the armature
 
     poles()
     for bone in arm.symmetrical_bones:
-        if bone.count('Hand') != 0 or bone.count('Foot') != 0:
+        if bone.count('Hand') or bone.count('Foot'):
             constraints(bone)
     
     #If constraints could not be applied
@@ -1339,7 +1347,7 @@ def inverse_kinematics(action): #Adds IK to the armature
 
 def anim_armature(action):
 
-    def generate_rigify(): #Creates Rigify armature
+    def generate_rigify(action): #Creates Rigify armature
         generate_armature('anim', action)
         
         if action == 0:
@@ -1356,16 +1364,16 @@ def anim_armature(action):
 
             #Gets pelvis position and gets edit_bone name
             for bone in arm.central_bones:
-                if bone.casefold() == 'pelvis':
+                if bone.title().count("Pelvis"):
                     pelvis = armature.pose.bones[prefix + bone].head
                     epelvis = armature.data.edit_bones[prefix + bone]
                     
-                elif bone.count('Head') != 0:
+                elif bone.title().count('Head'):
                     head = armature.pose.bones[prefix + bone]
                     ehead = armature.data.edit_bones[prefix + bone]
 
             for bone in arm.symmetrical_bones:
-                if bone.count('Foot') != 0:
+                if bone.count('Foot'):
                     if bone.startswith('L_') or bone.endswith('_L'):
                         foot_l = armature.pose.bones[prefix + bone].head
                         efoot_l = armature.data.edit_bones[prefix + bone]
@@ -1373,9 +1381,9 @@ def anim_armature(action):
                         foot_r = armature.pose.bones[prefix + bone].head
                         efoot_r = armature.data.edit_bones[prefix + bone]
 
-                elif bone.count('Finger') != 0:
-                    if bone.count('Finger1') != 0:
-                        if bone.count('11') != 0 or bone.count('12') != 0:
+                elif bone.count('Finger'):
+                    if bone.count('Finger1'):
+                        if bone.count('11') or bone.count('12'):
                             pass
                         else:
                             if bone.startswith('L_') or bone.endswith('_L'):
@@ -1385,8 +1393,8 @@ def anim_armature(action):
                                 finger1_r = armature.pose.bones[prefix + bone].head
                                 efinger1_r = armature.data.edit_bones[prefix + bone]
                     
-                    elif bone.count('Finger2') != 0:
-                        if bone.count('21') != 0 or bone.count('22') != 0:
+                    elif bone.count('Finger2'):
+                        if bone.count('21') or bone.count('22'):
                             pass
                         else:
                             if bone.startswith('L_') or bone.endswith('_L'):
@@ -1396,8 +1404,8 @@ def anim_armature(action):
                                 finger2_r = armature.pose.bones[prefix + bone].head
                                 efinger2_r = armature.data.edit_bones[prefix + bone]
                         
-                    elif bone.count('Finger3') != 0:
-                        if bone.count('31') != 0 or bone.count('32') != 0:
+                    elif bone.count('Finger3'):
+                        if bone.count('31') or bone.count('32'):
                             pass
                         else:
                             if bone.startswith('L_') or bone.endswith('_L'):
@@ -1407,8 +1415,8 @@ def anim_armature(action):
                                 finger3_r = armature.pose.bones[prefix + bone].head
                                 efinger3_r = armature.data.edit_bones[prefix + bone]
 
-                    elif bone.count('Finger4') != 0:
-                        if bone.count('41') != 0 or bone.count('42') != 0:
+                    elif bone.count('Finger4'):
+                        if bone.count('41') or bone.count('42'):
                             pass
                         else:
                             if bone.startswith('L_') or bone.endswith('_L'):
@@ -1418,7 +1426,7 @@ def anim_armature(action):
                                 finger4_r = armature.pose.bones[prefix + bone].head
                                 efinger4_r = armature.data.edit_bones[prefix + bone]
 
-                elif bone.count('Hand') != 0:
+                elif bone.count('Hand'):
                     if bone.startswith('L_') or bone.endswith('_L'):
                         hand_l = armature.pose.bones[prefix + bone].head
                         ehand_l = armature.data.edit_bones[prefix + bone]
@@ -1448,14 +1456,14 @@ def anim_armature(action):
 
                     for shapekey in shapekeys:
                         #Eyebrows
-                        if shapekey.count('AU1L+AU1R') != 0 or shapekey.count('AU2L+AU2R') != 0 or shapekey.count('AU4L+AU4R') != 0 or shapekey.count('AU1AU2L+AU1AU2R') != 0 or shapekey.count('AU1AU4L+AU1AU4R') != 0 or shapekey.count('AU2AU4L+AU2AU4R') != 0:
+                        if shapekey.count('AU1L+AU1R') or shapekey.count('AU2L+AU2R') or shapekey.count('AU4L+AU4R') or shapekey.count('AU1AU2L+AU1AU2R') or shapekey.count('AU1AU4L+AU1AU4R') or shapekey.count('AU2AU4L+AU2AU4R'):
                             if eyebrows != 1: 
                                 #Inner, outer and full eyebrows
                                 for bone in ['Eyebrow_L', 'Eyebrow_R', 'Inner_Eyebrow_L', 'Inner_Eyebrow_R', 'Outer_Eyebrow_L', 'Outer_Eyebrow_R']:
                                     eyebrows = 1
                                     arm.facial_bones.append(bone)
 
-                                    ebone = armature.data.edit_bones.new(prefix + bone)
+                                    ebone = armature.data.edit_bones.new(bone)
                                     ebone.use_deform = False
 
                                     if bone == 'Eyebrow_L':
@@ -1478,14 +1486,14 @@ def anim_armature(action):
                                         ebone.tail.xyz = head.tail.x - 1.8, head.tail.y - 4, ebone.head.z
 
                         #Eyes
-                        elif shapekey.count('f01') != 0 or shapekey.count('f02') != 0 or shapekey.count('f03') != 0 or shapekey.count('f04') != 0 or shapekey.count('AU42') != 0:
+                        elif shapekey.count('f01') or shapekey.count('f02') or shapekey.count('f03') or shapekey.count('f04') or shapekey.count('AU42'):
                             if eyes != 1:
                                 #Upper and lower eyelids
                                 for bone in ['UpperEye_L', 'UpperEye_R', 'LowerEye_L', 'LowerEye_R']:
                                     eyes = 1
                                     arm.facial_bones.append(bone)
 
-                                    ebone = armature.data.edit_bones.new(prefix + bone)
+                                    ebone = armature.data.edit_bones.new(bone)
                                     ebone.use_deform = False
                                 
                                     if bone == 'UpperEye_L':
@@ -1505,14 +1513,14 @@ def anim_armature(action):
                                         ebone.tail.xyz = head.tail.x - 1.2, head.tail.y - 3.5, ebone.head.z
                             
                         #Cheek
-                        elif shapekey.count('AU6L+AU6R') != 0 or shapekey.count('AU6ZL+AU6ZR') != 0 or shapekey.count('AU13L+AU13R') != 0:
+                        elif shapekey.count('AU6L+AU6R') or shapekey.count('AU6ZL+AU6ZR') or shapekey.count('AU13L+AU13R'):
                             if cheek != 1:
                                 #Cheeks for puffing and squinting
                                 for bone in ['Cheek_L', 'Cheek_R']:
                                     cheek = 1
                                     arm.facial_bones.append(bone)
 
-                                    ebone = armature.data.edit_bones.new(prefix + bone)
+                                    ebone = armature.data.edit_bones.new(bone)
                                     ebone.use_deform = False
 
                                     if bone == 'Cheek_L':
@@ -1523,14 +1531,14 @@ def anim_armature(action):
                                         ebone.tail.xyz = head.tail.x - 1.5, head.tail.y - 2.5 , ebone.head.z
 
                         #Nose
-                        elif shapekey.count('AU9L+AU9R') != 0 or shapekey.count('AU38') != 0:
+                        elif shapekey.count('AU9L+AU9R') or shapekey.count('AU38'):
                             if nose != 1:
                                 #Nostrils
                                 for bone in ['Nostril_L', 'Nostril_R']:
                                     nose = 1
                                     arm.facial_bones.append(bone)
 
-                                    ebone = armature.data.edit_bones.new(prefix + bone)
+                                    ebone = armature.data.edit_bones.new(bone)
                                     ebone.use_deform = False
 
                                     if bone == 'Nostril_L':
@@ -1541,15 +1549,15 @@ def anim_armature(action):
                                         ebone.tail.xyz = head.tail.x - 0.8, head.tail.y - 3.5 , ebone.head.z
 
                         #Mouth 
-                        elif shapekey.count('AU12L+AU12R') != 0 or shapekey.count('AU15L+AU15R') != 0 or shapekey.count('AU17L+AU17R') != 0 or shapekey.count('AU10L+AU10R') != 0 or shapekey.count('AU17DL+AU17DR') != 0 or shapekey.count('AU16L+AU16R') != 0 or shapekey.count('AU25L+AU25R') != 0 or shapekey.count('AU22L+AU22R') != 0 or shapekey.count('AU20L+AU20R') != 0 or shapekey.count('AU32') != 0 or shapekey.count('AU24') != 0 or shapekey.count('AU18L+AU18R') != 0 or shapekey.count('AU12AU25L+AU12AU25R') != 0 or shapekey.count('AU18ZL+AU18ZR') != 0 or shapekey.count('AU22ZL+AU22ZR') != 0 or shapekey.count('AU13L+AU13R') != 0 or shapekey.count('AD96L') != 0 or shapekey.count('AD96R') != 0:
+                        elif shapekey.count('AU12L+AU12R') or shapekey.count('AU15L+AU15R') or shapekey.count('AU17L+AU17R') or shapekey.count('AU10L+AU10R') or shapekey.count('AU17DL+AU17DR') or shapekey.count('AU16L+AU16R') or shapekey.count('AU25L+AU25R') or shapekey.count('AU22L+AU22R') or shapekey.count('AU20L+AU20R') or shapekey.count('AU32') or shapekey.count('AU24') or shapekey.count('AU18L+AU18R') or shapekey.count('AU12AU25L+AU12AU25R') or shapekey.count('AU18ZL+AU18ZR') or shapekey.count('AU22ZL+AU22ZR') or shapekey.count('AU13L+AU13R') or shapekey.count('AD96L') or shapekey.count('AD96R'):
                             if mouth != 1:
                                 #Mouth corners
-                                if shapekey.count('AU12L+AU12R') != 0 or shapekey.count('AU15L+AU15R') != 0 or shapekey.count('AU22L+AU22R') != 0 or shapekey.count('AU20L+AU20R') != 0 or shapekey.count('AU24') != 0 or shapekey.count('AU18L+AU18R') != 0 or shapekey.count('AU12AU25L+AU12AU25R') != 0 or shapekey.count('AU18ZL+AU18ZR') != 0 or shapekey.count('AU22ZL+AU22ZR') != 0:
+                                if shapekey.count('AU12L+AU12R') or shapekey.count('AU15L+AU15R') or shapekey.count('AU22L+AU22R') or shapekey.count('AU20L+AU20R') or shapekey.count('AU24') or shapekey.count('AU18L+AU18R') or shapekey.count('AU12AU25L+AU12AU25R') or shapekey.count('AU18ZL+AU18ZR') or shapekey.count('AU22ZL+AU22ZR'):
                                     for bone in ['MouthCorner_L', 'MouthCorner_R']:
                                         mouth = 1
                                         arm.facial_bones.append(bone)
 
-                                        ebone = armature.data.edit_bones.new(prefix + bone)
+                                        ebone = armature.data.edit_bones.new(bone)
                                         ebone.use_deform = False
 
                                         if bone == 'MouthCorner_L':
@@ -1561,12 +1569,12 @@ def anim_armature(action):
                                         
                             elif upper_lip != 1:
                                 #Upper lip
-                                if shapekey.count('AU10L+AU10R') != 0:
+                                if shapekey.count('AU10L+AU10R'):
                                     for bone in ['UpperLip_L', 'UpperLip_R']:
                                         upper_lip = 1
                                         arm.facial_bones.append(bone)
 
-                                        ebone = armature.data.edit_bones.new(prefix + bone)
+                                        ebone = armature.data.edit_bones.new(bone)
                                         ebone.use_deform = False
 
                                         if bone == 'UpperLip_L':
@@ -1578,12 +1586,12 @@ def anim_armature(action):
 
                             elif lower_lip != 1:
                                 #Lower lip
-                                if shapekey.count('AU17L+AU17R') != 0 or shapekey.count('AU17DL+AU17DR') != 0 or shapekey.count('AU16L+AU16R') != 0 or shapekey.count('AU25L+AU25R') != 0 or shapekey.count('AU32') != 0:
+                                if shapekey.count('AU17L+AU17R') or shapekey.count('AU17DL+AU17DR') or shapekey.count('AU16L+AU16R') or shapekey.count('AU25L+AU25R') or shapekey.count('AU32'):
                                         for bone in ['LowerLip_L', 'LowerLip_R']:
                                             lower_lip = 1
                                             arm.facial_bones.append(bone)
 
-                                            ebone = armature.data.edit_bones.new(prefix + bone)
+                                            ebone = armature.data.edit_bones.new(bone)
                                             ebone.use_deform = False
 
                                             if bone == 'LowerLip_L':
@@ -1595,12 +1603,12 @@ def anim_armature(action):
 
                             elif middle_lip != 1:
                                 #Middle lip
-                                if shapekey.count('AD96L') != 0 or shapekey.count('AD96R') != 0:
+                                if shapekey.count('AD96L') or shapekey.count('AD96R'):
                                     for bone in ['MiddleLip']:
                                         middle_lip = 1
                                         arm.facial_bones.append(bone)
 
-                                        ebone = armature.data.edit_bones.new(prefix + bone)
+                                        ebone = armature.data.edit_bones.new(bone)
                                         ebone.use_deform = False
 
                                         ebone.head.xyz = head.head.x, head.head.y - 4.5, head.head.z + 0.25
@@ -1608,18 +1616,20 @@ def anim_armature(action):
 
 
                         #Chin
-                        elif shapekey.count('AU31') != 0 or shapekey.count('AU26L+AU26R') != 0 or shapekey.count('AU27L+AU27R') != 0 or shapekey.count('AU26ZL+AU26ZR') != 0 or shapekey.count('AU27ZL+AU27ZR') != 0 or shapekey.count('AD30L') != 0 or shapekey.count('AD30R') != 0:
+                        elif shapekey.count('AU31') or shapekey.count('AU26L+AU26R') or shapekey.count('AU27L+AU27R') or shapekey.count('AU26ZL+AU26ZR') or shapekey.count('AU27ZL+AU27ZR') or shapekey.count('AD30L') or shapekey.count('AD30R'):
                             if chin != 1:
                                 for bone in ['Chin']:
                                     chin = 1
                                     arm.facial_bones.append(bone)
 
-                                    ebone = armature.data.edit_bones.new(prefix + bone)
+                                    ebone = armature.data.edit_bones.new(bone)
                                     ebone.use_deform = False
                                 
                                     if bone == 'Chin':
                                         ebone.head.xyz = 0, head.head.y - 4.5, head.head.z - 1.5
                                         ebone.tail.xyz = 0, head.tail.y - 4 , ebone.head.z + 0.15
+
+                    face_flex_setup(action) #Placeholder
 
             #Creates 2 pelvis bones for whatever Rigify does with em
             for bone in ['Pelvis_L', 'Pelvis_R']:
@@ -1636,21 +1646,21 @@ def anim_armature(action):
 
             #Creates multiple palm bones for fingers
             for bone in arm.symmetrical_bones:
-                if bone.count('Finger1') != 0 or bone.count('Finger2') != 0 or bone.count('Finger3') != 0 or bone.count('Finger4') != 0:
-                    if bone.count('11') != 0 or bone.count('12') != 0 or bone.count('21') != 0 or bone.count('22') != 0 or bone.count('31') != 0 or bone.count('32') != 0 or bone.count('41') != 0 or bone.count('42') != 0:
+                if bone.count('Finger1') or bone.count('Finger2') or bone.count('Finger3') or bone.count('Finger4'):
+                    if bone.count('11') or bone.count('12') or bone.count('21') or bone.count('22') or bone.count('31') or bone.count('32') or bone.count('41') or bone.count('42'):
                         pass
                     else:
                         if bone.startswith('L_') or bone.endswith('_L'):
                             for bone in ['Palm_' + bone]:
                                 ebone = armature.data.edit_bones.new(prefix + bone)
 
-                                if bone.count('Finger1') != 0:
+                                if bone.count('Finger1'):
                                     ebone.parent = ehand_l
 
                                     ebone.tail = finger1_l
                                     ebone.head.xyz = hand_l.x, finger1_l.y, hand_l.z
                                         
-                                elif bone.count('Finger2') != 0:
+                                elif bone.count('Finger2'):
                                     ebone.parent = ehand_l
 
                                     ebone.tail = finger2_l
@@ -1662,7 +1672,7 @@ def anim_armature(action):
                                     ebone.tail = finger3_l
                                     ebone.head.xyz = hand_l.x, finger3_l.y, hand_l.z
 
-                                elif bone.count('Finger4') != 0:
+                                elif bone.count('Finger4'):
                                     ebone.parent = ehand_l
 
                                     ebone.tail = finger4_l
@@ -1672,13 +1682,13 @@ def anim_armature(action):
                             for bone in ['Palm_' + bone]:
                                 ebone = armature.data.edit_bones.new(prefix + bone)
 
-                                if bone.count('Finger1') != 0:
+                                if bone.count('Finger1'):
                                     ebone.parent = ehand_r
 
                                     ebone.tail = finger1_r
                                     ebone.head.xyz = hand_r.x, finger1_r.y, hand_r.z
 
-                                elif bone.count('Finger2') != 0:
+                                elif bone.count('Finger2'):
                                     ebone.parent = ehand_r
 
                                     ebone.tail = finger2_r
@@ -1690,7 +1700,7 @@ def anim_armature(action):
                                     ebone.tail = finger3_r
                                     ebone.head.xyz = hand_r.x, finger3_r.y, hand_r.z
 
-                                elif bone.count('Finger4') != 0:
+                                elif bone.count('Finger4'):
                                     ebone.parent = ehand_r
 
                                     ebone.tail = finger4_r
@@ -1711,10 +1721,100 @@ def anim_armature(action):
                     ebone.head.xyz = foot_r.x+1.5, foot_r.y+1, 0
                     ebone.layers[16] = True
                     ebone.layers[0] = False
-
+                    
             update(0)
 
             #Rigify parameters
+            for bone in arm.facial_bones:
+                pbone = armature.pose.bones[bone]
+                ebone = armature.data.edit_bones[bone]
+
+                pbone.rigify_type = 'basic.raw_copy'
+                ebone.layers[0] = True
+                ebone.parent = armature.data.edit_bones[prefix + "Head1"] #If bone is not explicitly described, it'll pick a random bone...for some reason
+
+                #None of them go forward or backward so Y is locked for them all
+                if bone.count('Cheek') or bone.count('LowerLip') or bone.count('UpperLip'):
+                    pbone.lock_location[0] = True
+
+                elif bone.count('Eyebrow') or bone.count('UpperEye') or bone.count('LowerEye'):
+                    pbone.lock_location[0] = True
+                    pbone.lock_location[1] = True
+
+                elif bone.count('MiddleLip'):
+                    pbone.lock_location[2] = True
+                else:
+                    pbone.lock_location[1] = True
+
+                limit_loc = pbone.constraints.new('LIMIT_LOCATION')
+                limit_loc.owner_space = 'LOCAL'
+                limit_loc.use_transform_limit = True
+
+                #Min X
+                limit_loc.use_min_x = True
+                if bone.count('MouthCorner'):
+                    limit_loc.min_x = -0.5
+
+                elif bone == 'Nostril_L':
+                    limit_loc.min_x = 0
+
+                elif bone == 'Nostril_R':
+                    limit_loc.min_x = -0.5
+
+                else:
+                    limit_loc.min_x = -1
+
+                #Max X
+                limit_loc.use_max_x = True
+                if bone.count('MouthCorner') or bone == 'Nostril_L':
+                    limit_loc.max_x = 0.5
+
+                elif bone == 'Nostril_R':
+                    limit_loc.max_x = 0
+                else:
+                    limit_loc.max_x = 1
+
+                #Min Y
+                limit_loc.use_min_y = True
+                if bone.count('Cheek'):
+                    limit_loc.min_y = -1
+
+                elif bone.count('MiddleLip') or bone.count('LowerLip'):
+                    limit_loc.min_y = -0.5
+                else:
+                    limit_loc.min_y = 0
+
+                #Max Y
+                limit_loc.use_max_y = True
+                limit_loc.max_y = 0
+
+                #Min Z
+                limit_loc.use_min_z = True
+                if bone.count('Cheek') or bone.count('Nostril') or bone.count('UpperLip'):
+                    limit_loc.min_z = 0
+                    
+                elif bone.count('UpperEye') or bone.count('LowerEye'):
+                    limit_loc.min_z = -0.2
+
+                elif bone.count('Eyebrow') or bone.count('LowerLip') or bone.count('MouthCorner'):
+                    limit_loc.min_z = -0.5
+
+                elif bone.count('Chin'):
+                    limit_loc.min_z = -2
+                else:
+                    limit_loc.min_z = -1
+
+                #Max Z
+                limit_loc.use_max_z = True
+
+                if bone.count('UpperEye') or bone.count('LowerEye'):
+                    limit_loc.max_z = 0.2
+
+                elif bone.count('Eyebrow') or bone.count('UpperLip') or bone.count('MouthCorner') or bone.count('Nostril') or bone.count('LowerLip'):
+                    limit_loc.max_z = 0.5
+                else:
+                    limit_loc.max_z = 1
+
             for bone in ['Pelvis_L', 'Pelvis_R']:
                 pbone = armature.pose.bones[prefix + bone]
                 ebone = armature.data.edit_bones[prefix + bone]
@@ -1726,8 +1826,8 @@ def anim_armature(action):
 
             #Places created palm bones to corresponding bone layers and gets their position
             for bone in arm.symmetrical_bones:
-                if bone.count('Finger') != 0:
-                    if bone.count('0') != 0 or bone.count('11') != 0 or bone.count('12') != 0 or bone.count('21') != 0 or bone.count('22') != 0 or bone.count('31') != 0 or bone.count('31') != 0 or bone.count('32') != 0 or bone.count('41') != 0 or bone.count('42') != 0:
+                if bone.count('Finger'):
+                    if bone.count('0') or bone.count('11') or bone.count('12') or bone.count('21') or bone.count('22') or bone.count('31') or bone.count('31') or bone.count('32') or bone.count('41') or bone.count('42'):
                         pass
                     else:
                         pbone = armature.pose.bones[prefix + 'Palm_' + bone]
@@ -1740,7 +1840,7 @@ def anim_armature(action):
                             ebone.layers[10] = True
                             ebone.layers[0] = False
 
-                        if bone.count('Finger1') != 0:
+                        if bone.count('Finger1'):
                             if bone.startswith('L_') or bone.endswith('_L'):
                                 epalm_1_l = armature.data.edit_bones[prefix + 'Palm_' + bone]
                             elif bone.startswith('R_') or bone.endswith('_R'):
@@ -1748,104 +1848,28 @@ def anim_armature(action):
 
                             pbone.rigify_type = 'limbs.super_palm'
                             
-                        elif bone.count('Finger2') != 0:
+                        elif bone.count('Finger2'):
                             if bone.startswith('L_') or bone.endswith('_L'):
                                 epalm_2_l = armature.data.edit_bones[prefix + 'Palm_' + bone]
                             elif bone.startswith('R_') or bone.endswith('_R'):
                                 epalm_2_r = armature.data.edit_bones[prefix + 'Palm_' + bone]
                             
-                        elif bone.count('Finger3') != 0:
+                        elif bone.count('Finger3'):
                             if bone.startswith('L_') or bone.endswith('_L'):
                                 epalm_3_l = armature.data.edit_bones[prefix + 'Palm_' + bone]
                             elif bone.startswith('R_') or bone.endswith('_R'):
                                 epalm_3_r = armature.data.edit_bones[prefix + 'Palm_' + bone]
 
-                        elif bone.count('Finger4') != 0:
+                        elif bone.count('Finger4'):
                             if bone.startswith('L_') or bone.endswith('_L'):
                                 epalm_4_l = armature.data.edit_bones[prefix + 'Palm_' + bone]
                             elif bone.startswith('R_') or bone.endswith('_R'):
                                 epalm_4_r = armature.data.edit_bones[prefix + 'Palm_' + bone]
-
-            for bone in arm.facial_bones:
-                pbone = armature.pose.bones[prefix + bone]
-                ebone = armature.data.edit_bones[prefix + bone]
-
-                pbone.rigify_type = 'basic.raw_copy'
-                ebone.parent = ehead
-                ebone.layers[0] = True
-
-                #None of them go forward or backward so Y is locked for them all
-                if bone.count('Cheek') != 0 or bone.count('Nostril') != 0 or bone.count('LowerLip') != 0 or bone.count('UpperLip'):
-                    pbone.lock_location[0] = True
-
-                elif bone.count('Eyebrow') or bone.count('UpperEye') != 0 or bone.count('LowerEye') != 0:
-                    pbone.lock_location[0] = True
-                    pbone.lock_location[1] = True
-
-                elif bone.count('MiddleLip') != 0:
-                    pbone.lock_location[2] = True
-                else:
-                    pbone.lock_location[1] = True
-
-                limit_loc = pbone.constraints.new('LIMIT_LOCATION')
-                limit_loc.owner_space = 'LOCAL'
-                limit_loc.use_transform_limit = True
-
-                #Min X
-                limit_loc.use_min_x = True
-                if bone.count('MouthCorner') != 0:
-                    limit_loc.min_x = -0.5
-                else:
-                    limit_loc.min_x = -1
-
-                #Max X
-                limit_loc.use_max_x = True
-                if bone.count('MouthCorner') != 0:
-                    limit_loc.max_x = 0.5
-                else:
-                    limit_loc.max_x = 1
-
-                #Min Y
-                limit_loc.use_min_y = True
-                if bone.count('Cheek') != 0 or bone.count('MiddleLip') != 0:
-                    limit_loc.min_y = -1
-                else:
-                    limit_loc.min_y = 0
-
-                #Max Y
-                limit_loc.use_max_y = True
-                limit_loc.max_y = 0
-
-                #Min Z
-                limit_loc.use_min_z = True
-                if bone.count('Cheek') != 0 or bone.count('Nostril') != 0 or bone.count('UpperLip'):
-                    limit_loc.min_z = 0
-                    
-                elif bone.count('UpperEye') != 0 or bone.count('LowerEye') != 0:
-                    limit_loc.min_z = -0.2
-
-                elif bone.count('Eyebrow') != 0 or bone.count('LowerLip') != 0 or bone.count('MouthCorner') != 0:
-                    limit_loc.min_z = -0.5
-                else:
-                    limit_loc.min_z = -1
-
-                #Max Z
-                limit_loc.use_max_z = True
-                if bone.count('LowerLip') != 0:
-                    limit_loc.max_z = 0
-
-                elif bone.count('UpperEye') != 0 or bone.count('LowerEye') != 0:
-                    limit_loc.max_z = 0.2
-
-                elif bone.count('Eyebrow') != 0 or bone.count('UpperLip') != 0 or bone.count('MouthCorner') != 0 or bone.count('Nostril') != 0:
-                    limit_loc.max_z = 0.5
-                else:
-                    limit_loc.max_z = 1
                 
             for bone in arm.symmetrical_bones:
 
                 #Bones deleted prior
-                if bone.count('Trapezius') != 0 or bone.count('Bicep') != 0 or bone.count('Elbow') != 0 or bone.count('Ulna') != 0 or bone.count('Wrist') != 0 or bone.count('Knee') != 0 or bone.count('Quadricep') != 0:
+                if bone.count('Trapezius') or bone.count('Bicep') or bone.count('Elbow') or bone.count('Ulna') or bone.count('Wrist') or bone.count('Knee') or bone.count('Quadricep'):
                     pass
                 else:
                     pbone = armature.pose.bones[prefix + bone]
@@ -1858,17 +1882,17 @@ def anim_armature(action):
                 for i in [1,2,3,4,5,6,7]:
                     ebone.layers[i] = False
 
-                if bone.count('Finger') != 0:
+                if bone.count('Finger'):
                     ebone.layers[5] = True
 
-                    if bone.count('Finger0') != 0:
-                        if bone.count('01') != 0 or bone.count('02') != 0:
+                    if bone.count('Finger0'):
+                        if bone.count('01') or bone.count('02'):
                             pass
                         else:
                             pbone.rigify_type = 'limbs.super_finger'
 
-                    if bone.count('Finger1') != 0:
-                        if bone.count('11') != 0 or bone.count('12') != 0:
+                    if bone.count('Finger1'):
+                        if bone.count('11') or bone.count('12'):
                             pass
                         else:
                             pbone.rigify_type = 'limbs.super_finger'
@@ -1878,8 +1902,8 @@ def anim_armature(action):
                             elif bone.startswith('R_') or bone.endswith('_R'):
                                 ebone.parent = epalm_1_r
 
-                    elif bone.count('Finger2') != 0:
-                        if bone.count('21') != 0 or bone.count('22') != 0:
+                    elif bone.count('Finger2'):
+                        if bone.count('21') or bone.count('22'):
                             pass
                         else:
                             pbone.rigify_type = 'limbs.super_finger'
@@ -1889,8 +1913,8 @@ def anim_armature(action):
                             elif bone.startswith('R_') or bone.endswith('_R'):
                                 ebone.parent = epalm_2_r
 
-                    elif bone.count('Finger3') != 0:
-                        if bone.count('31') != 0 or bone.count('32') != 0:
+                    elif bone.count('Finger3'):
+                        if bone.count('31') or bone.count('32'):
                             pass
                         else:
                             pbone.rigify_type = 'limbs.super_finger'
@@ -1900,8 +1924,8 @@ def anim_armature(action):
                             elif bone.startswith('R_') or bone.endswith('_R'):
                                 ebone.parent = epalm_3_r
 
-                    elif bone.count('Finger4') != 0:
-                        if bone.count('41') != 0 or bone.count('42') != 0:
+                    elif bone.count('Finger4'):
+                        if bone.count('41') or bone.count('42'):
                             pass
                         else:
                             pbone.rigify_type = 'limbs.super_finger'
@@ -1911,24 +1935,24 @@ def anim_armature(action):
                             elif bone.startswith('R_') or bone.endswith('_R'):
                                 ebone.parent = epalm_4_r
 
-                if bone.count('UpperArm') != 0 or bone.count('Forearm') != 0 or bone.count('Hand') != 0:
+                if bone.count('UpperArm') or bone.count('Forearm') or bone.count('Hand'):
                     if bone.startswith('L_') or bone.endswith('_L'):
                         ebone.layers[7] = True
                     elif bone.startswith('R_') or bone.endswith('_R'):
                         ebone.layers[10] = True
 
-                if bone.count('Thigh') != 0 or bone.count('Calf') != 0 or bone.count('Foot') != 0 or bone.count('Toe') != 0:
+                if bone.count('Thigh') or bone.count('Calf') or bone.count('Foot') or bone.count('Toe'):
                     if bone.startswith('L_') or bone.endswith('_L'):
                         ebone.layers[13] = True
                     elif bone.startswith('R_') or bone.endswith('_R'):
                         ebone.layers[16] = True
 
-                if bone.count('Clavicle') != 0:
+                if bone.count('Clavicle'):
                     pbone.rigify_type = 'basic.super_copy'
                     param.make_widget = False
                     ebone.layers[3] = True
 
-                if bone.count('UpperArm') != 0:
+                if bone.count('UpperArm'):
                     pbone.rigify_type = 'limbs.super_limb'
                     param.tweak_layers[1] = False
                     param.fk_layers[1] = False
@@ -1941,7 +1965,7 @@ def anim_armature(action):
                         param.tweak_layers[12] = True
                     param.segments = 1
 
-                if bone.count('Thigh') != 0:
+                if bone.count('Thigh'):
                     pbone.rigify_type = 'limbs.super_limb'
                     param.limb_type = 'leg'
                     param.tweak_layers[1] = False
@@ -1965,7 +1989,7 @@ def anim_armature(action):
 
                 ebone.layers[3] = True
 
-                if bone.count('Pelvis') != 0:
+                if bone.count('Pelvis'):
                     pbone.rigify_type = 'spines.basic_spine'
                     param.pivot_pos = 2
                     param.tweak_layers[1] = False
@@ -1973,7 +1997,7 @@ def anim_armature(action):
                     param.fk_layers[1] = False
                     param.fk_layers[4] = True
 
-                if bone.count('Neck1') != 0:
+                if bone.count('Neck1'):
                     pbone.rigify_type = 'spines.super_head'
                     param.connect_chain = True
                     param.tweak_layers[1] = False
@@ -2032,6 +2056,33 @@ def anim_armature(action):
 
             print("Animation armature created!")
 
+        elif action == 1:
+
+            #Deletes Left/Right vertex groups if present
+            try:
+                left_group = bpy.data.objects[vatproperties.target_object.name].vertex_groups['Left']
+                bpy.data.objects[vatproperties.target_object.name].vertex_groups.remove(left_group)
+            except:
+                pass
+            
+            try:
+                right_group = bpy.data.objects[vatproperties.target_object.name].vertex_groups['Right']
+                bpy.data.objects[vatproperties.target_object.name].vertex_groups.remove(right_group)
+            except:
+                pass
+
+            #Checks if shapekeys exist and deletes everything after the division line
+            try:
+                division_line = bpy.data.objects[vatproperties.target_object.name].data.shape_keys.key_blocks.find('----------')
+                total_shapekeys = len(bpy.data.objects[vatproperties.target_object.name].data.shape_keys.key_blocks)
+
+                for shapekey in range(division_line, total_shapekeys):
+                    pass
+            except:
+                pass
+                
+
+
     def empty_rotation(bone, type): #Sets empty rotation
         prefix = arm.prefix
 
@@ -2056,21 +2107,21 @@ def anim_armature(action):
 
         #Upper body
         if vatproperties.retarget_top_preset == 'OP1':
-            if bone.count('Clavicle') != 0:
+            if bone.count('Clavicle'):
                 if bone.startswith('L_') or bone.endswith('_L'):
                     target.rotation_euler[0] = math.radians(-106)
                 elif bone.startswith('R_') or bone.endswith('_R'):
                     target.rotation_euler[0] = math.radians(104)
 
         elif vatproperties.retarget_top_preset == 'OP2':
-            if bone.count('Clavicle') != 0:
+            if bone.count('Clavicle'):
                 if bone.startswith('L_') or bone.endswith('_L'):
                     target.rotation_euler[0] = math.radians(-95)
                 elif bone.startswith('R_') or bone.endswith('_R'):
                     target.rotation_euler[0] = math.radians(90)
 
         #More specific empty rotations for bones that don't fit the default rotation
-        if bone.count('Hand') != 0:
+        if bone.count('Hand'):
             if bone.startswith('L_') or bone.endswith('_L'):
                 target.rotation_euler[0] = math.radians(170)
                 target.rotation_euler[1] = math.radians(185)
@@ -2080,12 +2131,12 @@ def anim_armature(action):
                 target.rotation_euler[1] = math.radians(185)
                 target.rotation_euler[2] = math.radians(-88)
 
-        elif bone.count('Finger') != 0:
+        elif bone.count('Finger'):
             #Makes them smaller for the sake of readability
             base.empty_display_size = 0.5
             target.empty_display_size = 0.5
 
-            if bone.count('Finger0') != 0:
+            if bone.count('Finger0'):
                 if bone.startswith('L_') or bone.endswith('_L'):
                     target.rotation_euler[0] = math.radians(180)
                 elif bone.startswith('R_') or bone.endswith('_R'):
@@ -2093,7 +2144,7 @@ def anim_armature(action):
                     target.rotation_euler[1] = 0
                     target.rotation_euler[2] = math.radians(90)
 
-                if bone.count('Finger02') != 0:
+                if bone.count('Finger02'):
                     if bone.startswith('L_') or bone.endswith('_L'):
                         target.rotation_euler[0] = math.radians(10)
                         target.rotation_euler[1] = math.radians(-110)
@@ -2108,22 +2159,22 @@ def anim_armature(action):
                 target.rotation_euler[1] = 0
                 target.rotation_euler[2] = math.radians(90)
 
-                if bone.count('Finger12') != 0:
+                if bone.count('Finger12'):
                     target.rotation_euler[0] = 0
                     target.rotation_euler[1] = math.radians(-90)
                     target.rotation_euler[2] = 0
 
-            elif bone.count('Finger2') != 0 or bone.count('Finger3') != 0 or bone.count('Finger4') != 0:
+            elif bone.count('Finger2') or bone.count('Finger3') or bone.count('Finger4'):
                 target.rotation_euler[0] = math.radians(-90)
                 target.rotation_euler[1] = 0
                 target.rotation_euler[2] = math.radians(90)
 
-                if bone.count('Finger22') != 0 or bone.count('Finger32') != 0:
+                if bone.count('Finger22') or bone.count('Finger32'):
                     target.rotation_euler[0] = 0
                     target.rotation_euler[1] = math.radians(-90)
                     target.rotation_euler[2] = 0
 
-                elif bone.count('Finger42') != 0:
+                elif bone.count('Finger42'):
                     target.rotation_euler[0] = 0
                     target.rotation_euler[2] = 0
 
@@ -2134,24 +2185,24 @@ def anim_armature(action):
 
         #Spine
         if vatproperties.retarget_center_preset == 'OP1':
-            if bone.count('Spine') != 0 or bone.count('Neck') != 0:
+            if bone.count('Spine') or bone.count('Neck'):
                 target.rotation_euler[2] = math.radians(90)
-            elif bone.count('Head') != 0:
+            elif bone.count('Head'):
                 target.rotation_euler[2] = math.radians(89.5)
 
         elif vatproperties.retarget_center_preset == 'OP2':
-            if bone.count('Spine') != 0 or bone.count('Neck') != 0:
+            if bone.count('Spine') or bone.count('Neck'):
                 target.rotation_euler[2] = math.radians(90)
 
-            elif bone.count('Head') != 0:
+            elif bone.count('Head'):
                 target.rotation_euler[2] = math.radians(80)
 
-            elif bone.count('Pelvis') != 0:
+            elif bone.count('Pelvis'):
                 target.rotation_euler[0] = math.radians(22)
 
         #Lower body
         if vatproperties.retarget_bottom_preset == 'OP1':
-            if bone.count('Thigh') != 0:
+            if bone.count('Thigh'):
                 target.rotation_euler[1] = math.radians(-3)
                 target.rotation_euler[2] = math.radians(90)
 
@@ -2160,7 +2211,7 @@ def anim_armature(action):
                 elif bone.startswith('R_') or bone.endswith('_R'):
                     target.rotation_euler[0] = math.radians(95)
             
-            elif bone.count('Calf') != 0:
+            elif bone.count('Calf'):
                 target.rotation_euler[1] = math.radians(3.5)
                 target.rotation_euler[2] = math.radians(90)
 
@@ -2169,11 +2220,11 @@ def anim_armature(action):
                 elif bone.startswith('R_') or bone.endswith('_R'):
                     target.rotation_euler[0] = math.radians(95)
 
-            elif bone.count('Foot') != 0:
+            elif bone.count('Foot'):
                 target.rotation_euler[1] = 0
                 target.rotation_euler[2] = math.radians(90)
 
-            elif bone.count('Toe0') != 0:
+            elif bone.count('Toe0'):
                 target.rotation_euler[1] = 0
                 target.rotation_euler[2] = math.radians(90)
                 
@@ -2183,11 +2234,11 @@ def anim_armature(action):
                     target.rotation_euler[0] = math.radians(-96)
 
         elif vatproperties.retarget_bottom_preset == 'OP2':
-            if bone.count('Thigh') != 0 or bone.count('Calf') != 0:
+            if bone.count('Thigh') or bone.count('Calf'):
                 target.rotation_euler[0] = 0
                 target.rotation_euler[1] = 0
                 target.rotation_euler[2] = math.radians(90)
-            elif bone.count('Foot') != 0:
+            elif bone.count('Foot'):
                 target.rotation_euler[0] = math.radains(90)
                 target.rotation_euler[1] = 0
                 target.rotation_euler[2] = math.radians(90)
@@ -2206,9 +2257,8 @@ def anim_armature(action):
 
             collection.hide_viewport = True
 
-            if bone.count('Trapezius') != 0 or bone.count('Bicep') != 0 or bone.count('Elbow') != 0 or bone.count('Knee') != 0 or bone.count('Ulna') != 0 or bone.count('Wrist') != 0:
+            if bone.count('Trapezius') or bone.count('Bicep') or bone.count('Elbow') or bone.count('Knee') or bone.count('Ulna') or bone.count('Wrist'):
                 pass
-
             else:
                 #Creates base empty and links
                 base = bpy.data.objects.new('base_{}{} ({})'.format(prefix, bone, arm.name), None)
@@ -2298,59 +2348,348 @@ def anim_armature(action):
         arm.animation_armature_name = armature.name
         arm.animation_armature_real = armature.data
 
-    def face_flex_setup(): #Sets up drivers for face flexes that will be controlled by face bones
+    def face_flex_setup(action): #Sets up drivers for face flexes that will be controlled by face bones
         prefix = arm.prefix
+            
+        if vatproperties.target_object:
+            try:
+                shapekeys = bpy.data.objects[vatproperties.target_object.name].data.shape_keys.key_blocks.keys()
+                object = bpy.data.objects[vatproperties.target_object.name].data.shape_keys.key_blocks
+            except:
+                shapekeys = None
+                print("No shape keys detected")
 
-        '''#Having the object data...
+        if shapekeys:
+            #Vertex group creation
 
-        #Changing mode is only to see the changes visually, data is active
-        bpy.ops.object.mode_set(mode='OBJECT')
-        for vertex in obj.data.vertices:
-            if vertex.co[0] > 0.05:
-                vertex.select = True
-            else:
-                vertex.select = False
-        bpy.ops.object.mode_set(mode='EDIT')
+            #Creates vertex groups
+            left_group = bpy.data.objects[vatproperties.target_object.name].vertex_groups.new(name='Left')
+            right_group = bpy.data.objects[vatproperties.target_object.name].vertex_groups.new(name='Right')
 
-        #Gets list of selected vertices
-        b = [verts for verts in bpy.context.active_object.data.vertices if verts.select]
-        '''
+            #Left side
+            for vertex in bpy.data.objects[vatproperties.target_object.name].data.vertices:
+                #Left side
+                if vertex.co[0] > 0.005:
+                    left_group.add([vertex.index], 1, 'REPLACE')
 
-        try:
-            armature = bpy.data.objects[arm.name].data.shape_keys.key_blocks
-        except:
-            armature = None
-            print("No shape keys detected")
+                #Right side
+                elif vertex.co[0] < -0.005:
+                    right_group.add([vertex.index], 1, 'REPLACE')
 
-        if armature:
-            for bone, shapekey in zip(arm.symmetrical_bones, shapekeys):
-                #Creates driver and sets initial parameters
-                driver = armature['f01'].driver_add('value')
+                elif vertex.co[0] <0.005 >-0.005:
+                    left_group.add([vertex.index], 0.5, 'REPLACE')
+                    right_group.add([vertex.index], 0.5, 'REPLACE')
 
-                variable = driver.driver.variables.new()
-                variable.name = "Face Flex"
-                variable.type = 'TRANSFORMS'
+            #Still need to add center vertices to both groups, will do once i figure out
+
+            #Shapekey creation
+
+            #Container for generated shapekeys
+            new_shapekeys = []
+
+            #Divides old shapekeys from generated ones
+            bpy.data.objects[vatproperties.target_object.name].shape_key_add(name='----------', from_mix=False)
+            bpy.data.objects[vatproperties.target_object.name].show_only_shape_key = False
+
+            for shapekey in shapekeys:
+                #Makes sure no other shapekey is active
+                object[shapekey].value = 0
+
+                #Appends central shapekeys, since they don't need L/R versions of them
+                if shapekey.count('AU17L+AU17R') or shapekey.count('AU26L+AU26R') or shapekey.count('AU27ZL+AU27ZR') or shapekey.count('AD30L') or shapekey.count('AD30R') or shapekey.count('AU22ZL+AU22ZR') or shapekey.count('AD96L') or shapekey.count('AD96R'):
+                    new_shapekeys.append(shapekey)
+
+                #Skips basis, redundant halfway close eye, reduntant halfway squint, reduntant harsher frown, redudant lower lip drop, reduntant halfway puckering level 1 and 2 mouth open and odd individual eye shapekeys
+                elif shapekey.lower().count('basis') or shapekey.count('AU42') or shapekey.count('AU22L+AU22R') or shapekey.count('AU20L+AU20R') or shapekey.count('AU6L+AU6R') or shapekey.count('AU18L+AU18R') or shapekey.count('AU27L+AU27R') or shapekey.count('AU26ZL+AU26ZR') or shapekey.count('AU25L+AU25R') or shapekey.count('AU22ZL+AU22ZR') or shapekey.count('lower_right') or shapekey.count('lower_left') or shapekey.count('upper_right') or shapekey.count('upper_left') or shapekey.count('lower_right.001') or shapekey.count('lower_left.001') or shapekey.count('upper_right.001') or shapekey.count('upper_left.001'):
+                    pass
+
+                else:
+                    object[shapekey].value = 1
+                    left_shapekey = bpy.data.objects[vatproperties.target_object.name].shape_key_add(name=shapekey + '_L', from_mix=True)
+                    right_shapekey = bpy.data.objects[vatproperties.target_object.name].shape_key_add(name=shapekey + '_R', from_mix=True)
+
+                    new_shapekeys.append(left_shapekey.name)
+                    new_shapekeys.append(right_shapekey.name)
+
+                    #Assigns shapekeys to group
+                    left_shapekey.vertex_group = left_group.name
+                    right_shapekey.vertex_group = right_group.name
+
+                    object[shapekey].value = 0
+
+            for shapekey in new_shapekeys:
+                #Creates driver
+                driver = object[shapekey].driver_add('value') #Creates new driver for shapekey
+
+                #Parameters and target
+                variable = driver.driver.variables.new() #Creates new variable onto the shapekey
+                variable.name = "flex"
+                driver.driver.expression = variable.name #Changes expression to created variable's name
+                variable.type = 'TRANSFORMS' #Changes type of variable to transform
 
                 target = variable.targets[0]
-                target.id = bpy.data.objects[arm.name]
-                target.bone_target = prefix + bone
-                target.transform_space = 'LOCAL_SPACE'
+                target.id = bpy.data.objects[arm.animation_armature_name] #Links variable to animation armature
 
-                #Sets expression to variable's name
-                driver.driver.expression = variable.name
+                #Specific tweaks for each bone
 
-                # 
-                target.targets[0].transform_type = 'LOC_Z'
+                #Eyebrows
+                if shapekey.count('AU1L+AU1R') or shapekey.count('AU2L+AU2R') or shapekey.count('AU4L+AU4R') or shapekey.count('AU1AU2L+AU1AU2R') or shapekey.count('AU1AU4L+AU1AU4R') or shapekey.count("AU2AU4L+AU2AU4R"): 
 
+                    #AU1L+AU1R = Inner eyebrow raise
+                    #AU2L+AU2R = Outer eyebrow raise
+                    #AU4L+AU4R = Full eyebrow drop
+                    #AU1AU2L+AU1AU2R = Full eyebrow raise
+                    #AU1AU4L+AU1AU4R = Outer eyebrow drop
+                    #AU2AU4L+AU2AU4R = Inner eyebrow drop
+
+                    target.transform_space = 'LOCAL_SPACE'
+                    target.transform_type = 'LOC_Z'
+
+                    if shapekey.count('AU1L+AU1R') or shapekey.count('AU2AU4L+AU2AU4R'):
+                        if shapekey.endswith('_L'):
+                            target.bone_target = "Inner_Eyebrow_L"
+                        elif shapekey.endswith('_R'):
+                            target.bone_target = "Inner_Eyebrow_R"
+
+                    elif shapekey.count('AU2L+AU2R') or shapekey.count('AU1AU4L+AU1AU4R'):
+                        if shapekey.endswith('_L'):
+                            target.bone_target = "Outer_Eyebrow_L"
+                        elif shapekey.endswith('_R'):
+                            target.bone_target = "Outer_Eyebrow_R"
+
+                    elif shapekey.count('AU4L+AU4R') or shapekey.count('AU1AU2L+AU1AU2R'):
+                        if shapekey.endswith('_L'):
+                            target.bone_target = "Eyebrow_L"
+                        elif shapekey.endswith('_R'):
+                            target.bone_target = "Eyebrow_R"
+
+                    if shapekey.count('AU4L+AU4R') or shapekey.count('AU1AU4L+AU1AU4R') or shapekey.count('AU2AU4L+AU2AU4R'):
+                        driver.modifiers[0].coefficients[1] = -2
+
+                    elif shapekey.count('AU1L+AU1R') or shapekey.count('AU2L+AU2R') or shapekey.count('AU1AU2L+AU1AU2R'):
+                        driver.modifiers[0].coefficients[1] = 2
+
+                #Eyes
+                elif shapekey.count('f01') or shapekey.count('f02') or shapekey.count('f03') or shapekey.count('f04'):
+                    
+                    #f01 = Upper eyelids drop
+                    #f02 = Upper eyelids raise
+                    #f03 = Lower eyelids drop
+                    #f04 = Lower eyelids raise
+
+                    target.transform_space = 'LOCAL_SPACE'
+                    target.transform_type = 'LOC_Z'
+
+                    if shapekey.count('f01') or shapekey.count('f02'):
+                        if shapekey.endswith('_L'):
+                            target.bone_target = "UpperEye_L"
+                        elif shapekey.endswith('_R'):
+                            target.bone_target = "UpperEye_R"
+
+                    elif shapekey.count('f03') or shapekey.count('f04'):
+                        if shapekey.endswith('_L'):
+                            target.bone_target = "LowerEye_L"
+                        elif shapekey.endswith('_R'):
+                            target.bone_target = "LowerEye_R"
+
+                    if shapekey.count('f01') or shapekey.count('f03'):
+                        driver.modifiers[0].coefficients[1] = -5
+                    
+                    elif shapekey.count('f02') or shapekey.count('f04'):
+                        driver.modifiers[0].coefficients[1] = 5
+
+                #Cheeks
+                elif shapekey.count('AU6ZL+AU6ZR') or shapekey.count('AU13L+AU13R'):
+
+                    #AU6ZL+AU6ZR = Squint
+                    #AU13L+AU13R = Filling cheek with air
+
+                    target.transform_space = 'LOCAL_SPACE'
+
+                    if shapekey.endswith('_L'):
+                        target.bone_target = "Cheek_L"
+                    elif shapekey.endswith('_R'):
+                        target.bone_target = "Cheek_R"
+
+                    if shapekey.count('AU6ZL+AU6ZR'):
+                        target.transform_type = 'LOC_Z'
+
+                    elif shapekey.count('AU13L+AU13R'):
+                        target.transform_type = 'LOC_Y'
+                        driver.modifiers[0].coefficients[1] = -1
+
+                #Nostrils
+                elif shapekey.count('AU9L+AU9R') or shapekey.count('AU38'):
+                    
+                    #AU9L+AU9R = Nostril raise
+                    #AU38 = Breath
+
+                    target.transform_space = 'LOCAL_SPACE'
+
+                    if shapekey.endswith('_L'):
+                        target.bone_target = "Nostril_L"
+                    elif shapekey.endswith('_R'):
+                        target.bone_target = "Nostril_R"
+
+                    if shapekey.count('AU9L+AU9R'):
+                        target.transform_type = 'LOC_Z'
+                        driver.modifiers[0].coefficients[1] = 2
+
+                    elif shapekey.count('AU38'):
+                        target.transform_type = 'LOC_X'
+
+                        if shapekey.endswith('_L'):
+                            driver.modifiers[0].coefficients[1] = 2
+
+                        elif shapekey.count('_R'):
+                            driver.modifiers[0].coefficients[1] = -2
+
+                #Mouth Corners
+                elif shapekey.count('AU12L+AU12R') or shapekey.count('AU15L+AU15R') or shapekey.count('AU24') or shapekey.count('AU18ZL+AU18ZR'):
+
+                    #AU12L+AU12R = Smile
+                    #AU15L+AU15R = Frown
+                    #AU24 = Tightener
+                    #AU18ZL+AU18ZR = Puckering
+
+                    target.transform_space = 'LOCAL_SPACE'
+
+                    if shapekey.endswith('_L'):
+                        target.bone_target = "MouthCorner_L"
+                    elif shapekey.endswith('_R'):
+                        target.bone_target = "MouthCorner_R"
+
+                    if shapekey.count('AU12L+AU12R') or shapekey.count('AU15L+AU15R'):
+                        target.transform_type = 'LOC_Z'
+
+                        if shapekey.count('AU12L+AU12R'):
+                            driver.modifiers[0].coefficients[1] = 2
+
+                        elif shapekey.count('AU15L+AU15R'):
+                            driver.modifiers[0].coefficients[1] = -2
+
+                    elif shapekey.count('AU24') or shapekey.count('AU18ZL+AU18ZR'):
+                        target.transform_type = 'LOC_X'
+
+                        if shapekey.count('AU24'):
+                            if shapekey.endswith('_L'):
+                                driver.modifiers[0].coefficients[1] = 2
+                            elif shapekey.endswith('_R'):
+                                driver.modifiers[0].coefficients[1] = -2
+                        
+                        elif shapekey.count('AU18ZL+AU18ZR'):
+                            if shapekey.endswith('_L'):
+                                driver.modifiers[0].coefficients[1] = -2
+                            elif shapekey.endswith('_R'):
+                                driver.modifiers[0].coefficients[1] = 2
+
+                #Upper lips
+                elif shapekey.count('AU10L+AU10R'):
+
+                    #AU10L+AU10R = Upper lip raise
+
+                    target.transform_type = 'LOC_Z'
+                    target.transform_space = 'LOCAL_SPACE'
+
+                    if shapekey.endswith('_L'):
+                        target.bone_target = "UpperLip_L"
+                    elif shapekey.endswith('_R'):
+                        target.bone_target = "UpperLip_R"
+
+                    driver.modifiers[0].coefficients[1] = 2
+
+                #Lower lips
+                elif shapekey.count('AU17DL+AU17DR') or shapekey.count('AU16L+AU16R') or shapekey.count('AU32'):
+
+                    #AU17DL+AU17DR = Lower lip raise
+                    #AU16L+AU16R = Lower lip drop
+                    #AU32 = Bite
+
+                    target.transform_space = 'LOCAL_SPACE'
+
+                    if shapekey.endswith('_L'):
+                        target.bone_target = "LowerLip_L"
+                    elif shapekey.endswith('_R'):
+                        target.bone_target = "LowerLip_R"
+
+                    if shapekey.count('AU16L+AU16R') or shapekey.count('AU17DL+AU17DR'):
+                        target.transform_type = 'LOC_Z'
+
+                        if shapekey.count('AU16L+AU16R'):
+                            driver.modifiers[0].coefficients[1] = -2
+                        elif shapekey.count('AU17DL+AU17DR'):
+                            driver.modifiers[0].coefficients[1] = 2
+
+                    elif shapekey.count('AU32'):
+                        target.transform_type = 'LOC_Y'
+                        driver.modifiers[0].coefficients[1] = -2
+
+                #Chin
+                elif shapekey.count('AU17L+AU17R') or shapekey.count('AU26L+AU26R') or shapekey.count('AU27ZL+AU27ZR') or shapekey.count('AD30L') or shapekey.count('AD30R'):
+
+                    #AU17L+AU17R = Chin raise (sort of)
+                    #AU26L+AU26R = Chin drop
+                    #AU27ZL+AU27ZR = Full mouth open
+                    #AD30L/R = Chin sideways
+
+                    target.bone_target = "Chin" 
+                    target.transform_space = 'LOCAL_SPACE'
+                    
+                    #Upwards/Downwards movement
+                    if shapekey.count('AU17L+AU17R') or shapekey.count('AU26L+AU26R') or shapekey.count('AU27ZL+AU27ZR'):
+                        target.transform_type = 'LOC_Z'
+
+                        #Chin lowers
+                        if shapekey.count('AU26L+AU26R'):
+                            driver.modifiers[0].coefficients[1] = -1
+                            driver.modifiers[0].use_restricted_range = True
+                            driver.modifiers[0].frame_start = -0.6
+                            driver.modifiers[0].blend_in = 0.1
+
+                        #Mouth fully opens
+                        elif shapekey.count('AU27ZL+AU27ZR'):
+                            driver.modifiers[0].coefficients[1] = -0.5 #Negative coefficient = Activated when moved down
+                            driver.modifiers[0].use_restricted_range = True
+                            driver.modifiers[0].frame_start = -2.1
+                            driver.modifiers[0].frame_end = -0.3
+                            driver.modifiers[0].blend_out = 0.25
+                    
+                    #Sideways movement
+                    elif shapekey.count('AD30L') or shapekey.count('AD30R'):
+                        target.transform_type = 'LOC_X'
+
+                        if shapekey.count('AD30R'):
+                                driver.modifiers[0].coefficients[1] = -1
+
+                #MiddleLip
+                elif shapekey.count('AD96L') or shapekey.count('AD96R') or shapekey.count('AU22ZL+AU22ZR'):
+
+                    #AD96L/R = Mouth sideways
+                    #AU22ZL+AU22ZR = Outside puckering
+
+                    target.bone_target = "MiddleLip" 
+                    target.transform_space = 'LOCAL_SPACE'
+
+                    if shapekey.count('AD96'):
+                        target.transform_type = 'LOC_X'
+
+                        if shapekey.endswith('R'):
+                            driver.modifiers[0].coefficients[1] = -1
+
+                    elif shapekey.count('AU22ZL+AU22ZR'):
+                        target.transform_type = 'LOC_Y'
+
+                        driver.modifiers[0].coefficients[1] = -2
 
     #Updates bone list in case it was modified
     arm.get_bones()
 
     if action == 0 or action == 1: #Usual creation/deletion
-        generate_rigify()
+        generate_rigify(action)
 
     elif action == 2: #Empty creation
         link()
+        #face_flex_setup(action)
 
     elif action == 3: #Empty rotation modification
         for bone in arm.symmetrical_bones:
