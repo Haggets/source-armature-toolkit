@@ -1,5 +1,5 @@
 import bpy
-from .functions import generate_armature
+from .utils import generate_armature
 
 def weight_armature(action): #Creates duplicate armature for more spread out weighting
         

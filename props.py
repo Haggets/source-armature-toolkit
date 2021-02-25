@@ -1,5 +1,5 @@
 import bpy
-from . import functions
+from . import utils
 
 class VAT_properties(bpy.types.PropertyGroup): #Defines global properties the plugin will use
 
@@ -15,7 +15,7 @@ class VAT_properties(bpy.types.PropertyGroup): #Defines global properties the pl
     def object_poll(self, object):
         return object.type == 'MESH'
         
-    target_armature : bpy.props.PointerProperty(type=bpy.types.Object, name='Armature', description="Armature that will be used to perform operations on", poll=armature_poll, update=functions.create_armature)
+    target_armature : bpy.props.PointerProperty(type=bpy.types.Object, name='Armature', description="Armature that will be used to perform operations on", poll=armature_poll, update=utils.create_armature)
     
     target_object : bpy.props.PointerProperty(type=bpy.types.Object, name='Object', description="Object linked to the armature that will be used for shapekeys", poll=object_poll)
 
