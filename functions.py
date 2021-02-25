@@ -1904,12 +1904,8 @@ def anim_armature(action):
                         pbone = armature.pose.bones[prefix + 'Palm_' + bone]
                         ebone = armature.data.edit_bones[prefix + 'Palm_' + bone]
 
-                        if bone.endswith('_L'):
-                            ebone.layers[7] = True
-                            ebone.layers[0] = False
-                        elif bone.endswith('_R'):
-                            ebone.layers[10] = True
-                            ebone.layers[0] = False
+                        ebone.layers[5] = True
+                        ebone.layers[0] = False
 
                         if bone.count('Finger1'):
                             if bone.startswith('L_') or bone.endswith('_L'):
