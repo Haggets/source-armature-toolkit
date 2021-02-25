@@ -1,9 +1,9 @@
 import bpy
 import math 
-from . import functions
-from .functions import Prefixes
-from .functions import update
-from .functions import generate_armature
+from . import utils
+from .utils import Prefixes
+from .utils import update
+from .utils import generate_armature
 
 def anim_armature(action):
 
@@ -13,7 +13,7 @@ def anim_armature(action):
         generate_armature('anim', action)
         
         if action == 0:
-            armature = bpy.data.objects[functions.arm.animation_armature_name]
+            armature = bpy.data.objects[utils.arm.animation_armature_name]
 
             update(1, armature)
 
@@ -22,10 +22,10 @@ def anim_armature(action):
                     armature.data.layers[i] = False
 
             #Rigify portion
-            prefix = functions.arm.prefix
+            prefix = utils.arm.prefix
 
             #Gets pelvis position and gets edit_bone name
-            for bone in functions.arm.central_bones:
+            for bone in utils.arm.central_bones:
                 if bone.title().count("Pelvis"):
                     pelvis = armature.pose.bones[prefix + bone].head
                     epelvis = armature.data.edit_bones[prefix + bone]
@@ -34,7 +34,7 @@ def anim_armature(action):
                     head = armature.pose.bones[prefix + bone]
                     ehead = armature.data.edit_bones[prefix + bone]
 
-            for bone in functions.arm.symmetrical_bones:
+            for bone in utils.arm.symmetrical_bones:
                 if bone.count('Foot'):
                     if bone.startswith('L_') or bone.endswith('_L'):
                         foot_l = armature.pose.bones[prefix + bone].head
@@ -126,7 +126,7 @@ def anim_armature(action):
                                 #Inner, outer and full eyebrows
                                 for bone in ['Eyebrow_L', 'Eyebrow_R', 'Inner_Eyebrow_L', 'Inner_Eyebrow_R', 'Outer_Eyebrow_L', 'Outer_Eyebrow_R']:
                                     eyebrows = 1
-                                    functions.arm.facial_bones.append(bone)
+                                    utils.arm.facial_bones.append(bone)
 
                                     ebone = armature.data.edit_bones.new(bone)
                                     ebone.use_deform = False
@@ -156,7 +156,7 @@ def anim_armature(action):
                                 #Upper and lower eyelids
                                 for bone in ['UpperEye_L', 'UpperEye_R', 'LowerEye_L', 'LowerEye_R']:
                                     eyes = 1
-                                    functions.arm.facial_bones.append(bone)
+                                    utils.arm.facial_bones.append(bone)
 
                                     ebone = armature.data.edit_bones.new(bone)
                                     ebone.use_deform = False
@@ -183,7 +183,7 @@ def anim_armature(action):
                                 #Cheeks for puffing and squinting
                                 for bone in ['Cheek_L', 'Cheek_R']:
                                     cheek = 1
-                                    functions.arm.facial_bones.append(bone)
+                                    utils.arm.facial_bones.append(bone)
 
                                     ebone = armature.data.edit_bones.new(bone)
                                     ebone.use_deform = False
@@ -201,7 +201,7 @@ def anim_armature(action):
                                 #Nostrils
                                 for bone in ['Nostril_L', 'Nostril_R']:
                                     nose = 1
-                                    functions.arm.facial_bones.append(bone)
+                                    utils.arm.facial_bones.append(bone)
 
                                     ebone = armature.data.edit_bones.new(bone)
                                     ebone.use_deform = False
@@ -220,7 +220,7 @@ def anim_armature(action):
                                 if shapekey.count('AU12L+AU12R') or shapekey.count('AU15L+AU15R') or shapekey.count('AU22L+AU22R') or shapekey.count('AU20L+AU20R') or shapekey.count('AU24') or shapekey.count('AU18L+AU18R') or shapekey.count('AU12AU25L+AU12AU25R') or shapekey.count('AU18ZL+AU18ZR') or shapekey.count('AU22ZL+AU22ZR'):
                                     for bone in ['MouthCorner_L', 'MouthCorner_R']:
                                         mouth = 1
-                                        functions.arm.facial_bones.append(bone)
+                                        utils.arm.facial_bones.append(bone)
 
                                         ebone = armature.data.edit_bones.new(bone)
                                         ebone.use_deform = False
@@ -237,7 +237,7 @@ def anim_armature(action):
                                 if shapekey.count('AU10L+AU10R'):
                                     for bone in ['UpperLip_L', 'UpperLip_R']:
                                         upper_lip = 1
-                                        functions.arm.facial_bones.append(bone)
+                                        utils.arm.facial_bones.append(bone)
 
                                         ebone = armature.data.edit_bones.new(bone)
                                         ebone.use_deform = False
@@ -254,7 +254,7 @@ def anim_armature(action):
                                 if shapekey.count('AU17L+AU17R') or shapekey.count('AU17DL+AU17DR') or shapekey.count('AU16L+AU16R') or shapekey.count('AU25L+AU25R') or shapekey.count('AU32'):
                                         for bone in ['LowerLip_L', 'LowerLip_R']:
                                             lower_lip = 1
-                                            functions.arm.facial_bones.append(bone)
+                                            utils.arm.facial_bones.append(bone)
 
                                             ebone = armature.data.edit_bones.new(bone)
                                             ebone.use_deform = False
@@ -271,7 +271,7 @@ def anim_armature(action):
                                 if shapekey.count('AD96L') or shapekey.count('AD96R'):
                                     for bone in ['MiddleLip']:
                                         middle_lip = 1
-                                        functions.arm.facial_bones.append(bone)
+                                        utils.arm.facial_bones.append(bone)
 
                                         ebone = armature.data.edit_bones.new(bone)
                                         ebone.use_deform = False
@@ -285,7 +285,7 @@ def anim_armature(action):
                             if chin != 1:
                                 for bone in ['Chin']:
                                     chin = 1
-                                    functions.arm.facial_bones.append(bone)
+                                    utils.arm.facial_bones.append(bone)
 
                                     ebone = armature.data.edit_bones.new(bone)
                                     ebone.use_deform = False
@@ -308,7 +308,7 @@ def anim_armature(action):
                     ebone.tail.xyz = pelvis.x+3, pelvis.y-2, pelvis.z+4
 
             #Creates multiple palm bones for fingers
-            for bone in functions.arm.symmetrical_bones:
+            for bone in utils.arm.symmetrical_bones:
                 if bone.count('Finger1') or bone.count('Finger2') or bone.count('Finger3') or bone.count('Finger4'):
                     if bone.count('11') or bone.count('12') or bone.count('21') or bone.count('22') or bone.count('31') or bone.count('32') or bone.count('41') or bone.count('42'):
                         pass
@@ -388,7 +388,7 @@ def anim_armature(action):
             update(0)
 
             #Rigify parameters
-            for bone in functions.arm.facial_bones:
+            for bone in utils.arm.facial_bones:
                 pbone = armature.pose.bones[bone]
                 ebone = armature.data.edit_bones[bone]
 
@@ -558,7 +558,7 @@ def anim_armature(action):
                 ebone.layers[0] = False
 
             #Places created palm bones to corresponding bone layers and gets their position
-            for bone in functions.arm.symmetrical_bones:
+            for bone in utils.arm.symmetrical_bones:
                 if bone.count('Finger'):
                     if bone.count('0') or bone.count('11') or bone.count('12') or bone.count('21') or bone.count('22') or bone.count('31') or bone.count('31') or bone.count('32') or bone.count('41') or bone.count('42'):
                         pass
@@ -595,7 +595,7 @@ def anim_armature(action):
                             elif bone.startswith('R_') or bone.endswith('_R'):
                                 epalm_4_r = armature.data.edit_bones[prefix + 'Palm_' + bone]
                 
-            for bone in functions.arm.symmetrical_bones:
+            for bone in utils.arm.symmetrical_bones:
 
                 #Bones deleted prior
                 if bone.count('Trapezius') or bone.count('Bicep') or bone.count('Elbow') or bone.count('Ulna') or bone.count('Wrist') or bone.count('Knee') or bone.count('Quadricep'):
@@ -711,7 +711,7 @@ def anim_armature(action):
                 ebone.layers[5] = False
 
             #Central
-            for bone in functions.arm.central_bones:
+            for bone in utils.arm.central_bones:
                 pbone = armature.pose.bones[prefix + bone]
                 param = pbone.rigify_parameters
                 ebone = armature.data.edit_bones[prefix + bone]
@@ -734,7 +734,7 @@ def anim_armature(action):
                 
                 ebone.layers[0] = False
 
-            armature = bpy.data.armatures[functions.arm.animation_armature_real.name]
+            armature = bpy.data.armatures[utils.arm.animation_armature_real.name]
 
             #Creates bone groups
             for group in ['Root', 'IK', 'Special', 'Tweak', 'FK', 'Extra']:
@@ -776,7 +776,7 @@ def anim_armature(action):
 
             armature.layers[0] = False
 
-            functions.arm.animation_armature_setup = True
+            utils.arm.animation_armature_setup = True
 
             for i in [3,5,7,10,13,16]:
                     armature.layers[i] = True
@@ -813,10 +813,10 @@ def anim_armature(action):
 
 
     def empty_rotation(bone, type): #Sets empty rotation
-        prefix = functions.arm.prefix
+        prefix = utils.arm.prefix
 
-        base = bpy.data.objects['base_{}{} ({})'.format(prefix, bone, functions.arm.name)]
-        target = bpy.data.objects['target_{}{} ({})'.format(prefix, bone, functions.arm.name)]
+        base = bpy.data.objects['base_{}{} ({})'.format(prefix, bone, utils.arm.name)]
+        target = bpy.data.objects['target_{}{} ({})'.format(prefix, bone, utils.arm.name)]
         
         #Default empty rotation, fit for most bones
 
@@ -979,9 +979,9 @@ def anim_armature(action):
             
             #Retarget empties creation
             try:
-                collection = bpy.data.collections["Retarget Empties ({})".format(functions.arm.name)]
+                collection = bpy.data.collections["Retarget Empties ({})".format(utils.arm.name)]
             except:
-                collection = bpy.data.collections.new("Retarget Empties ({})".format(functions.arm.name))
+                collection = bpy.data.collections.new("Retarget Empties ({})".format(utils.arm.name))
                 bpy.context.scene.collection.children.link(collection)
 
             collection.hide_viewport = True
@@ -990,7 +990,7 @@ def anim_armature(action):
                 pass
             else:
                 #Creates base empty and links
-                base = bpy.data.objects.new('base_{}{} ({})'.format(prefix, bone, functions.arm.name), None)
+                base = bpy.data.objects.new('base_{}{} ({})'.format(prefix, bone, utils.arm.name), None)
                 collection.objects.link(base)
                 base.empty_display_type = 'CUBE'
                 base.hide_select = True
@@ -1006,7 +1006,7 @@ def anim_armature(action):
                 rot.subtarget = 'ORG-' + prefix + bone
 
                 #Creates target empty and links
-                target = bpy.data.objects.new('target_{}{} ({})'.format(prefix, bone, functions.arm.name), None)
+                target = bpy.data.objects.new('target_{}{} ({})'.format(prefix, bone, utils.arm.name), None)
                 collection.objects.link(target)
                 target.empty_display_type = 'SPHERE'
 
@@ -1015,7 +1015,7 @@ def anim_armature(action):
                 target.parent = base
 
                 #Bone connection
-                armature = bpy.data.objects[functions.arm.name]
+                armature = bpy.data.objects[utils.arm.name]
                 loc = armature.pose.bones[prefix + bone].constraints.new('COPY_LOCATION')
                 loc.name = "Retarget Location"
                 loc.target = target
@@ -1024,9 +1024,9 @@ def anim_armature(action):
                 rot.target = target
 
         #Creates parent for all bases for easier storage/manipulation
-        parent = bpy.data.objects.new('parent_' + functions.arm.name, None)
+        parent = bpy.data.objects.new('parent_' + utils.arm.name, None)
 
-        prefix = functions.arm.prefix
+        prefix = utils.arm.prefix
 
         #Gets armature name and applies presets based on names
         current = str(vatproperties.target_armature.name)
@@ -1042,22 +1042,22 @@ def anim_armature(action):
             vatproperties.retarget_bottom_preset = 'OP1'
         
 
-        for bone in functions.arm.symmetrical_bones:
+        for bone in utils.arm.symmetrical_bones:
             retarget(bone)
             empty_rotation(bone, 0)
 
-        for bone in functions.arm.central_bones:
+        for bone in utils.arm.central_bones:
             retarget(bone)
             empty_rotation(bone, 1)
 
         #Connects parent to collection
-        collection = bpy.data.collections["Retarget Empties ({})".format(functions.arm.name)]
+        collection = bpy.data.collections["Retarget Empties ({})".format(utils.arm.name)]
         collection.objects.link(parent)
 
         #Renames armature to prior generated armature
         armature = bpy.data.objects['rig']
-        armature.name = functions.arm.name + '.anim'
-        armature.data.name = functions.arm.name_real.name + '.anim'
+        armature.name = utils.arm.name + '.anim'
+        armature.data.name = utils.arm.name_real.name + '.anim'
 
         #Deletes generated armature
         generate_armature('anim', 2)
@@ -1071,14 +1071,14 @@ def anim_armature(action):
         if collection:
             collection.objects.link(armature)
 
-        functions.arm.animation_armature = True
-        functions.arm.animation_armature_setup = False
-        functions.arm.animation_armature_name_full = armature
-        functions.arm.animation_armature_name = armature.name
-        functions.arm.animation_armature_real = armature.data
+        utils.arm.animation_armature = True
+        utils.arm.animation_armature_setup = False
+        utils.arm.animation_armature_name_full = armature
+        utils.arm.animation_armature_name = armature.name
+        utils.arm.animation_armature_real = armature.data
 
     def face_flex_setup(): #Sets up drivers for face flexes that will be controlled by face bones
-        prefix = functions.arm.prefix
+        prefix = utils.arm.prefix
             
         if vatproperties.target_object:
             try:
@@ -1157,7 +1157,7 @@ def anim_armature(action):
                 variable.type = 'TRANSFORMS' #Changes type of variable to transform
 
                 target = variable.targets[0]
-                target.id = bpy.data.objects[functions.arm.animation_armature_name] #Links variable to animation armature
+                target.id = bpy.data.objects[utils.arm.animation_armature_name] #Links variable to animation armature
 
                 #Specific tweaks for each bone
 
@@ -1485,7 +1485,7 @@ def anim_armature(action):
         print("Facial flex widgets generated!")
 
     #Updates bone list in case it was modified
-    functions.arm.get_bones()
+    utils.arm.get_bones()
 
     if action == 0 or action == 1: #Usual creation/deletion
         generate_rigify(action)
@@ -1495,7 +1495,7 @@ def anim_armature(action):
         face_flex_setup()
 
     elif action == 3: #Empty rotation modification
-        for bone in functions.arm.symmetrical_bones:
+        for bone in utils.arm.symmetrical_bones:
             empty_rotation(bone, 0)
-        for bone in functions.arm.central_bones:
+        for bone in utils.arm.central_bones:
             empty_rotation(bone, 1)

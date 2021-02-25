@@ -1,6 +1,6 @@
 import bpy
-from . import functions
-from .functions import Prefixes
+from . import utils
+from .utils import Prefixes
 
 def constraint_symmetry(action, side): #Creates symmetry by using constraints, keeping corrected roll value
     
@@ -13,7 +13,7 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
     rot_bonelist = []
 
     def getconstraint(bone):
-        armature = bpy.data.objects[functions.arm.name]
+        armature = bpy.data.objects[utils.arm.name]
 
         nonlocal loc
         nonlocal rot
@@ -28,7 +28,7 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
             rot = ''
 
     def constraint(bone): 
-        armature = bpy.data.objects[functions.arm.name]
+        armature = bpy.data.objects[utils.arm.name]
         
         getconstraint(bone) #Checks for already existing constraints
         
@@ -45,11 +45,11 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
                 if side == 'OP1':
                     if bone.startswith('L_') or bone.endswith('_L'):
                         loc = armature.pose.bones[prefix + bone].constraints.new('COPY_LOCATION')
-                        functions.arm.symmetry_left = True
+                        utils.arm.symmetry_left = True
                 elif side == 'OP2':
                     if bone.startswith('R_') or bone.endswith('_R'):
                         loc = armature.pose.bones[prefix + bone].constraints.new('COPY_LOCATION')
-                        functions.arm.symmetry_right = True
+                        utils.arm.symmetry_right = True
 
                 if loc:
                     #Constraint parameters
@@ -74,11 +74,11 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
                 if side == 'OP1':
                     if bone.startswith('L_') or bone.endswith('_L'):
                         rot = armature.pose.bones[prefix + bone].constraints.new('COPY_ROTATION')
-                        functions.arm.symmetry_left = True
+                        utils.arm.symmetry_left = True
                 elif side == 'OP2':
                     if bone.startswith('R_') or bone.endswith('_R'):
                         rot = armature.pose.bones[prefix + bone].constraints.new('COPY_ROTATION')
-                        functions.arm.symmetry_right = True
+                        utils.arm.symmetry_right = True
                     
                 if rot:
                     #Constraint parameters
@@ -103,18 +103,18 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
             
         #Deletion
         elif action == 1:
-            armature = bpy.data.objects[functions.arm.name]
+            armature = bpy.data.objects[utils.arm.name]
 
             #Location
             if loc:
                 if side == 'OP1':
                     if bone.startswith('L_') or bone.endswith('_L'):
                         armature.pose.bones[prefix + bone].constraints.remove(loc)
-                        functions.arm.symmetry_left = False
+                        utils.arm.symmetry_left = False
                 elif side == 'OP2':
                     if bone.startswith('R_') or bone.endswith('_R'):
                         armature.pose.bones[prefix + bone].constraints.remove(loc)
-                        functions.arm.symmetry_right = False
+                        utils.arm.symmetry_right = False
             else:
                 loc_bonelist.append(bone)
 
@@ -123,25 +123,25 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
                 if side == 'OP1':
                     if bone.startswith('L_') or bone.endswith('_L'):
                         armature.pose.bones[prefix + bone].constraints.remove(rot)
-                        functions.arm.symmetry_left = False
+                        utils.arm.symmetry_left = False
                 elif side == 'OP2':
                     if bone.startswith('R_') or bone.endswith('_R'):
                         armature.pose.bones[prefix + bone].constraints.remove(rot)
-                        functions.arm.symmetry_right = False
+                        utils.arm.symmetry_right = False
             else:
                 rot_bonelist.append(bone)
 
     #Updates bone list in case it was modified
-    functions.arm.get_bones()
+    utils.arm.get_bones()
 
-    prefix = functions.arm.prefix
-    for bone in functions.arm.symmetrical_bones:
+    prefix = utils.arm.prefix
+    for bone in utils.arm.symmetrical_bones:
         constraint(bone)
 
-    if functions.arm.helper_bones:
-        for bone in functions.arm.helper_bones:
+    if utils.arm.helper_bones:
+        for bone in utils.arm.helper_bones:
             if bone.startswith('s.'):
-                prefix = functions.arm.prefix
+                prefix = utils.arm.prefix
                 constraint(bone.replace('s.', ''))
 
             elif bone.startswith('s2.'):

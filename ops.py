@@ -4,7 +4,7 @@ from .constraint_symmetry import constraint_symmetry
 from .weight_armature import weight_armature
 from .simple_ik import inverse_kinematics
 from .advanced_ik import anim_armature
-from . import functions
+from . import utils
 from . import props
 
 class VAT_OT_armaturerename_blender(bpy.types.Operator): #Converts armature scheme to become Blender friendly
@@ -16,7 +16,7 @@ class VAT_OT_armaturerename_blender(bpy.types.Operator): #Converts armature sche
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature:
-            return (functions.arm.scheme == 0 and not functions.arm.sfm and functions.arm.scheme != -1)
+            return (utils.arm.scheme == 0 and not utils.arm.sfm and utils.arm.scheme != -1)
     
     def execute(self, context):
         bpy.ops.ed.undo_push()
@@ -33,7 +33,7 @@ class VAT_OT_armaturerename_source(bpy.types.Operator): #Converts armature schem
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature:
-            return (functions.arm.scheme == 1 and not functions.arm.sfm and functions.arm.scheme != -1)
+            return (utils.arm.scheme == 1 and not utils.arm.sfm and utils.arm.scheme != -1)
     
     def execute(self, context):
         bpy.ops.ed.undo_push()
@@ -50,11 +50,11 @@ class VAT_OT_constraintsymmetry_create(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature:
-            if functions.arm.scheme != -1:
+            if utils.arm.scheme != -1:
                 if vatproperties.affected_side == 'OP1':
-                    return (not functions.arm.symmetry_left and not functions.arm.symmetry_right)
+                    return (not utils.arm.symmetry_left and not utils.arm.symmetry_right)
                 elif vatproperties.affected_side == 'OP2':
-                    return (not functions.arm.symmetry_right and not functions.arm.symmetry_left)
+                    return (not utils.arm.symmetry_right and not utils.arm.symmetry_left)
 
 
     def execute(self, context):
@@ -73,11 +73,11 @@ class VAT_OT_constraintsymmetry_delete(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature:
-            if functions.arm.scheme != -1:
+            if utils.arm.scheme != -1:
                 if vatproperties.affected_side == 'OP1':
-                    return (functions.arm.symmetry_left)
+                    return (utils.arm.symmetry_left)
                 elif vatproperties.affected_side == 'OP2':
-                    return (functions.arm.symmetry_right)
+                    return (utils.arm.symmetry_right)
 
     def execute(self, context):
         vatproperties = bpy.context.scene.vatproperties
@@ -95,7 +95,7 @@ class VAT_OT_weightarmature_create(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature:
-            return (not functions.arm.weight_armature and functions.arm.scheme != -1)
+            return (not utils.arm.weight_armature and utils.arm.scheme != -1)
 
     def execute(self, context):
         weight_armature(0)
@@ -112,7 +112,7 @@ class VAT_OT_weightarmature_delete(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature:
-            return (functions.arm.weight_armature and functions.arm.scheme != -1)
+            return (utils.arm.weight_armature and utils.arm.scheme != -1)
 
     def execute(self, context):
         weight_armature(1)
@@ -129,7 +129,7 @@ class VAT_OT_inversekinematics_create(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature:
-            return (not functions.arm.inverse_kinematics and functions.arm.scheme != -1)
+            return (not utils.arm.inverse_kinematics and utils.arm.scheme != -1)
 
     def execute(self, context):
         inverse_kinematics(0)
@@ -146,7 +146,7 @@ class VAT_OT_inversekinematics_delete(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature:
-            return (functions.arm.inverse_kinematics and functions.arm.scheme != -1)
+            return (utils.arm.inverse_kinematics and utils.arm.scheme != -1)
 
     def execute(self, context):
         inverse_kinematics(1)
@@ -163,7 +163,7 @@ class VAT_OT_rigifyretarget_create(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature:
-            return (not functions.arm.animation_armature and functions.arm.scheme != -1)
+            return (not utils.arm.animation_armature and utils.arm.scheme != -1)
 
     def execute(self, context):
         anim_armature(0)
@@ -180,7 +180,7 @@ class VAT_OT_rigifyretarget_delete(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature:
-            return (functions.arm.animation_armature and functions.arm.scheme != -1)
+            return (utils.arm.animation_armature and utils.arm.scheme != -1)
 
     def execute(self, context):
         anim_armature(1)
@@ -214,7 +214,7 @@ class VAT_OT_rigifyretarget_update(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature:
-            return (functions.arm.animation_armature and not functions.arm.animation_armature_setup and functions.arm.scheme != -1)
+            return (utils.arm.animation_armature and not utils.arm.animation_armature_setup and utils.arm.scheme != -1)
 
     def execute(self, context):
         anim_armature(3)

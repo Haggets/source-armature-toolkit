@@ -1,6 +1,6 @@
 import bpy
-from . import functions
-from .functions import Prefixes
+from . import utils
+from .utils import Prefixes
 
 def armature_rename(scheme): #Bone prefix/suffix repositioning
 
@@ -13,27 +13,27 @@ def armature_rename(scheme): #Bone prefix/suffix repositioning
                 armature.bones[prefix + bone].name = prefix + bone.replace('L_', '') + '_L'
             elif bone.startswith('R_'):
                 armature.bones[prefix + bone].name = prefix + bone.replace('R_', '') + '_R'
-            functions.arm.scheme = 1
+            utils.arm.scheme = 1
 
         elif scheme == 0: #Blender -> Source
             if bone.endswith('_L'):
                 armature.bones[prefix + bone].name = prefix + 'L_' + bone.replace('_L', '')
             elif bone.endswith('_R'):
                 armature.bones[prefix + bone].name = prefix + 'R_' + bone.replace('_R', '')
-            functions.arm.scheme = 0
+            utils.arm.scheme = 0
 
     #Updates bone list in case it was modified
-    functions.arm.get_bones()
+    utils.arm.get_bones()
 
-    prefix = functions.arm.prefix
-    armature = bpy.data.armatures[functions.arm.name_real.name]
-    for bone in functions.arm.symmetrical_bones:
+    prefix = utils.arm.prefix
+    armature = bpy.data.armatures[utils.arm.name_real.name]
+    for bone in utils.arm.symmetrical_bones:
         rename(bone)
         
-    if functions.arm.helper_bones:
-        for bone in functions.arm.helper_bones:
+    if utils.arm.helper_bones:
+        for bone in utils.arm.helper_bones:
             if bone.startswith('s.'):
-                prefix = functions.arm.prefix
+                prefix = utils.arm.prefix
                 rename(bone.replace('s.', ''))
 
             elif bone.startswith('s2.'):
@@ -50,15 +50,15 @@ def armature_rename(scheme): #Bone prefix/suffix repositioning
     #Renames generated armatures to be on par with the original armature
 
     #Renames weight armature
-    if functions.arm.weight_armature:
-        armature = bpy.data.armatures[functions.arm.weight_armature_real.name]
-        for bone in functions.arm.symmetrical_bones:
+    if utils.arm.weight_armature:
+        armature = bpy.data.armatures[utils.arm.weight_armature_real.name]
+        for bone in utils.arm.symmetrical_bones:
             rename(bone)
 
     #Renames animation armature
-    if functions.arm.animation_armature:
-        armature = bpy.data.armatures[functions.arm.animation_armature_real.name]
-        for bone in functions.arm.symmetrical_bones:
+    if utils.arm.animation_armature:
+        armature = bpy.data.armatures[utils.arm.animation_armature_real.name]
+        for bone in utils.arm.symmetrical_bones:
             rename(bone)
 
-    functions.arm.get_bones() #Refreshes bone list
+    utils.arm.get_bones() #Refreshes bone list

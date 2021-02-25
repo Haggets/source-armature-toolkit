@@ -1,6 +1,6 @@
 import bpy
-from . import functions
-from .functions import update
+from . import utils
+from .utils import update
 
 def inverse_kinematics(action): #Adds IK to the armature
     
@@ -11,7 +11,7 @@ def inverse_kinematics(action): #Adds IK to the armature
     bonelist = []
 
     def getconstraint(bone):
-        armature = bpy.data.objects[functions.arm.name]
+        armature = bpy.data.objects[utils.arm.name]
 
         nonlocal ik_constraint
 
@@ -21,7 +21,7 @@ def inverse_kinematics(action): #Adds IK to the armature
             ik_constraint = ''
 
     def constraints(bone):
-        armature = bpy.data.objects[functions.arm.name]
+        armature = bpy.data.objects[utils.arm.name]
 
         nonlocal bonelist
         nonlocal ik_constraint
@@ -35,7 +35,7 @@ def inverse_kinematics(action): #Adds IK to the armature
                 if bone.startswith('L_') or bone.endswith('_L'):
                     ik = armature.pose.bones[prefix + bone].constraints.new('IK')
                     ik.chain_count = 3
-                    ik.pole_target = functions.arm.name_full
+                    ik.pole_target = utils.arm.name_full
                     if bone.count('Hand'):
                         ik.pole_subtarget = 'ForearmPole_L'
                     elif bone.count('Foot'):
@@ -43,12 +43,12 @@ def inverse_kinematics(action): #Adds IK to the armature
                 elif bone.startswith('R_') or bone.endswith('_R'):
                     ik = armature.pose.bones[prefix + bone].constraints.new('IK')
                     ik.chain_count = 3
-                    ik.pole_target = functions.arm.name_full
+                    ik.pole_target = utils.arm.name_full
                     if bone.count('Hand'):
                         ik.pole_subtarget = 'ForearmPole_R'
                     elif bone.count('Foot'):
                         ik.pole_subtarget = 'CalfPole_R'
-                functions.arm.inverse_kinematics = True
+                utils.arm.inverse_kinematics = True
             else:
                 bonelist.append(bone)
                 
@@ -60,22 +60,22 @@ def inverse_kinematics(action): #Adds IK to the armature
                     armature.pose.bones[prefix + bone].constraints.remove(ik_constraint)
                 elif bone.startswith('R_') or bone.endswith('_R'):
                     armature.pose.bones[prefix + bone].constraints.remove(ik_constraint)
-                functions.arm.inverse_kinematics = False
+                utils.arm.inverse_kinematics = False
             else:
                 bonelist.append(bone)
 
     def poles():
-        armature = bpy.data.objects[functions.arm.name]
+        armature = bpy.data.objects[utils.arm.name]
 
         if action == 0:
             update(1, armature)
 
-            for bone in functions.arm.central_bones:
+            for bone in utils.arm.central_bones:
                 if bone.count('Pelvis'):
                     pelvis = armature.data.edit_bones[prefix + bone]
 
             #Gets forearm and calf position
-            for bone in functions.arm.symmetrical_bones:
+            for bone in utils.arm.symmetrical_bones:
                 if bone.count('Forearm'):
                     forearm = armature.pose.bones[prefix + bone]
                 elif bone.count('Calf'):
@@ -113,12 +113,12 @@ def inverse_kinematics(action): #Adds IK to the armature
             bpy.ops.object.mode_set(mode='OBJECT')
 
     #Updates bone list in case it was modified
-    functions.arm.get_bones()
+    utils.arm.get_bones()
 
-    prefix = functions.arm.prefix
+    prefix = utils.arm.prefix
 
     poles()
-    for bone in functions.arm.symmetrical_bones:
+    for bone in utils.arm.symmetrical_bones:
         if bone.count('Hand') or bone.count('Foot'):
             constraints(bone)
     
