@@ -869,53 +869,8 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                 elif bone.startswith('R_') or bone.endswith('_R'):
                     armature.data.edit_bones[prefix + bone].tail = pbone.x-0.5, pbone.y-2.5, pbone.z
 
-            if type == 'weight':
-                #Helper bones
-                if bone.count('Knee'):
-                    pbone = armature.pose.bones[prefix + bone].tail
-
-                    armature.data.edit_bones[prefix + bone].tail.y = pbone.y-5
-
-                if bone.count('Elbow'):
-                    pbone = armature.pose.bones[prefix + bone].tail
-
-                    armature.data.edit_bones[prefix + bone].tail.y = pbone.y+5
-
-                #Other helper bones that need additional tweaking on their positioning
-                if bone.count('Ulna'):
-                    ulna.append(bone)
-                    if bone.startswith('L_') or bone.endswith('_L'):
-                        ulna_l = armature.pose.bones[prefix + bone].head
-                    elif bone.startswith('R_') or bone.endswith('_R'):
-                        ulna_r = armature.pose.bones[prefix + bone].head
-                    ulna_present = 1
-                
-                if bone.count('Wrist'):
-                    wrist.append(bone)
-                    wrist_present = 1
-
-                if bone.count('Bicep'):
-                    bicep.append(bone)
-                    if bone.startswith('L_') or bone.endswith('_L'):
-                        bicep_l = armature.pose.bones[prefix + bone].head
-                    elif bone.startswith('R_') or bone.endswith('_R'):
-                        bicep_r = armature.pose.bones[prefix + bone].head
-                    bicep_present = 1
-
-                if bone.count('Trapezius'):
-                    trapezius.append(bone)
-                    trapezius_present = 1
-
-                if bone.count('Quadricep'):
-                    quadricep.append(bone)
-                    if bone.startswith('L_') or bone.endswith('_L'):
-                        quadricep_l = armature.pose.bones[prefix + bone].head
-                    elif bone.startswith('R_') or bone.endswith('_R'):
-                        quadricep_r = armature.pose.bones[prefix + bone].head
-                    quadricep_present = 1
-
             #Fix for legs rotating the wrong way in most characters
-            elif type == 'anim':
+            if type == 'anim':
                 if bone.count('Calf'):
                     armature.data.edit_bones[prefix + bone].head.y = armature.data.edit_bones[prefix + bone].head.y - 1
 
@@ -938,6 +893,51 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                 armature.data.edit_bones[prefix + bone].tail = pbone.x, pbone.y, pbone.z+6
 
         if type == 'weight':
+            for bone in arm.helper_bones:
+                #Helper bones
+                if bone.count('Knee'):
+                    pbone = armature.pose.bones[prefix + bone.replace('s.', '')].tail
+
+                    armature.data.edit_bones[prefix + bone.replace('s.', '')].tail.y = pbone.y-5
+
+                if bone.count('Elbow'):
+                    pbone = armature.pose.bones[prefix + bone.replace('s.', '')].tail
+
+                    armature.data.edit_bones[prefix + bone.replace('s.', '')].tail.y = pbone.y+5
+
+                #Other helper bones that need additional tweaking on their positioning
+                if bone.count('Ulna'):
+                    ulna.append(bone)
+                    if bone.replace('s.', '').startswith('L_') or bone.replace('s.', '').endswith('_L'):
+                        ulna_l = armature.pose.bones[prefix + bone.replace('s.', '')].head
+                    elif bone.replace('s.', '').startswith('R_') or bone.replace('s.', '').endswith('_R'):
+                        ulna_r = armature.pose.bones[prefix + bone.replace('s.', '')].head
+                    ulna_present = 1
+                
+                if bone.count('Wrist'):
+                    wrist.append(bone)
+                    wrist_present = 1
+
+                if bone.count('Bicep'):
+                    bicep.append(bone)
+                    if bone.replace('s.', '').startswith('L_') or bone.replace('s.', '').endswith('_L'):
+                        bicep_l = armature.pose.bones[prefix + bone.replace('s.', '')].head
+                    elif bone.replace('s.', '').startswith('R_') or bone.replace('s.', '').endswith('_R'):
+                        bicep_r = armature.pose.bones[prefix + bone.replace('s.', '')].head
+                    bicep_present = 1
+
+                if bone.count('Trapezius'):
+                    trapezius.append(bone)
+                    trapezius_present = 1
+
+                if bone.count('Quadricep'):
+                    quadricep.append(bone)
+                    if bone.replace('s.', '').startswith('L_') or bone.replace('s.', '').endswith('_L'):
+                        quadricep_l = armature.pose.bones[prefix + bone.replace('s.', '')].head
+                    elif bone.replace('s.', '').startswith('R_') or bone.replace('s.', '').endswith('_R'):
+                        quadricep_r = armature.pose.bones[prefix + bone.replace('s.', '')].head
+                    quadricep_present = 1
+            
             #Gets certain bone positions and avoids some bones not using bicep or ulna's location when they should
             for bone in arm.symmetrical_bones:
                 if bicep_present == 1:
@@ -1009,6 +1009,15 @@ def generate_armature(type, action): #Creates or deletes the weight armature
             #Bicep repositioning
             if bicep:
                 for bone in bicep:
+                    if bone.startswith('s.'):
+                        prefix = arm.prefix
+                        bone = bone.replace('s.', '')
+                    elif bone.startswith('s2.'):
+                        prefix = Prefixes.helper2
+                        bone = bone.replace('s2.', '')
+                    else:
+                        prefix = Prefixes.helper
+
                     if bone.startswith('L_') or bone.endswith('_L'):
                         armature.data.edit_bones[prefix + bone].tail = forearm_l
                     elif bone.startswith('R_') or bone.endswith('_R'):
@@ -1016,6 +1025,15 @@ def generate_armature(type, action): #Creates or deletes the weight armature
 
             if trapezius:
                 for bone in trapezius:
+                    if bone.startswith('s.'):
+                        prefix = arm.prefix
+                        bone = bone.replace('s.', '')
+                    elif bone.startswith('s2.'):
+                        prefix = Prefixes.helper2
+                        bone = bone.replace('s2.', '')
+                    else:
+                        prefix = Prefixes.helper
+
                     if bone.startswith('L_') or bone.endswith('_L'):
                         armature.data.edit_bones[prefix + bone].tail = upperarm_l
                     elif bone.startswith('R_') or bone.endswith('_R'):
@@ -1023,6 +1041,15 @@ def generate_armature(type, action): #Creates or deletes the weight armature
 
             if quadricep:
                 for bone in quadricep:
+                    if bone.startswith('s.'):
+                        prefix = arm.prefix
+                        bone = bone.replace('s.', '')
+                    elif bone.startswith('s2.'):
+                        prefix = Prefixes.helper2
+                        bone = bone.replace('s2.', '')
+                    else:
+                        prefix = Prefixes.helper
+
                     if bone.startswith('L_') or bone.endswith('_L'):
                         armature.data.edit_bones[prefix + bone].tail = calf_l
                     elif bone.startswith('R_') or bone.endswith('_R'):
@@ -1034,6 +1061,15 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                 #If both ulna and wrist are present
                 if ulna and wrist:
                     for bone in ulna:
+                        if bone.startswith('s.'):
+                            prefix = arm.prefix
+                            bone = bone.replace('s.', '')
+                        elif bone.startswith('s2.'):
+                            prefix = Prefixes.helper2
+                            bone = bone.replace('s2.', '')
+                        else:
+                            prefix = Prefixes.helper
+
                         if bone.startswith('L_') or bone.endswith('_L'):
                             armature.data.edit_bones[prefix + bone].tail = hand_l
                             ulna_l = armature.pose.bones[prefix + bone].tail
@@ -1046,6 +1082,15 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                     update(0)
 
                     for bone in wrist:
+                        if bone.startswith('s.'):
+                            prefix = arm.prefix
+                            bone = bone.replace('s.', '')
+                        elif bone.startswith('s2.'):
+                            prefix = Prefixes.helper2
+                            bone = bone.replace('s2.', '')
+                        else:
+                            prefix = Prefixes.helper
+
                         if bone.startswith('L_') or bone.endswith('_L'):
                             armature.data.edit_bones[prefix + bone].head = ulna_l
                             armature.data.edit_bones[prefix + bone].tail = hand_l
@@ -1056,6 +1101,15 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                 #Else if only ulna is present
                 elif ulna:
                     for bone in ulna:
+                        if bone.startswith('s.'):
+                            prefix = arm.prefix
+                            bone = bone.replace('s.', '')
+                        elif bone.startswith('s2.'):
+                            prefix = Prefixes.helper2
+                            bone = bone.replace('s2.', '')
+                        else:
+                            prefix = Prefixes.helper
+
                         if bone.startswith('L_') or bone.endswith('_L'):
                             armature.data.edit_bones[prefix + bone].tail = hand_l
                         elif bone.startswith('R_') or bone.endswith('_R'):
@@ -1074,14 +1128,23 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                     update(0)
 
                     for bone in wrist:
+                        if bone.startswith('s.'):
+                            prefix = arm.prefix
+                            bone = bone.replace('s.', '')
+                        elif bone.startswith('s2.'):
+                            prefix = Prefixes.helper2
+                            bone = bone.replace('s2.', '')
+                        else:
+                            prefix = Prefixes.helper
+
                         if bone.startswith('L_') or bone.endswith('_L'):
                             armature.data.edit_bones[prefix + bone].head = forearm_l
                         elif bone.startswith('R_') or bone.endswith('_R'):
                             armature.data.edit_bones[prefix + bone].head = forearm_r
 
+        #Removes unimportant bones such as weapon or attachment bones
         if arm.other_bones:
             for bone in arm.other_bones:
-                #Removes unimportant bones since they're of no use for the charactrer
                 if bone.count('weapon'):
                     prefix = Prefixes.other
                     bone = armature.data.edit_bones[prefix + bone]
