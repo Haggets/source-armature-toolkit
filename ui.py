@@ -28,7 +28,7 @@ class VAT_PT_mainpanel(bpy.types.Panel): #Main panel that subpanels will use
             elif not functions.arm.sfm:
                 layout.label(text="Type: Default Source Armature")
             elif functions.arm.sfm:
-                layout.label(text="Type: Source Filmmaker Armature")
+                layout.label(text="Type: Source Filmmaker Armature (Unsupported)")
         else:
             layout.label(text="No Armature...")
 
