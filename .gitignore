@@ -9,3 +9,6 @@ __pycache__/simple_ik.cpython-37.pyc
 __pycache__/weight_armature.cpython-37.pyc
 __pycache__/advanced_ik.cpython-37.pyc
 __pycache__/utils.cpython-37.pyc
+__pycache__/addon_updater_ops.cpython-37.pyc
+__pycache__/addon_updater.cpython-37.pyc
+__pycache__/preferences.cpython-37.pyc
