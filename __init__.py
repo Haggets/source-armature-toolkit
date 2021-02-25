@@ -1,4 +1,8 @@
 import bpy
+from . import armature_rename
+from . import constraint_symmetry
+from . import weight_armature
+from . import simple_ik
 from . import functions
 from . import props
 from . import ops
