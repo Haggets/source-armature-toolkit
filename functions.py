@@ -1734,6 +1734,16 @@ def anim_armature(action):
                 ebone.layers[0] = True
                 ebone.parent = armature.data.edit_bones[prefix + "Head1"] #If bone is not explicitly described, it'll pick a random bone...for some reason
 
+                #Locks rotation and scale since they aren't meant to be used
+                pbone.lock_rotation_w = True
+                pbone.lock_rotation[0] = True
+                pbone.lock_rotation[1] = True
+                pbone.lock_rotation[2] = True
+
+                pbone.lock_scale[0] = True
+                pbone.lock_scale[1] = True
+                pbone.lock_scale[2] = True
+
                 #None of them go forward or backward so Y is locked for them all
                 if bone.count('Cheek') or bone.count('LowerLip') or bone.count('UpperLip'):
                     pbone.lock_location[0] = True
