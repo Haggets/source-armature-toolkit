@@ -25,7 +25,7 @@ In a connected armature, when you try moving a bone that has a parent, it'll ins
 
 This function simply adds IK constraints to the character's limbes (Hands, Feet), allowing for easier manipulation of them, which is ideal for simple animations.
 
-### Inverse Kinematics (Advanced IK)
-This functions is a heavy duty version of the previous function, instead creating a procedural armature with Rigify and retargetting the Source armature onto it, allowing for the usage of an animation ready armature, giving animators a WAY easier time animating characters, and allowing for a lot more flexibility overall.
+### Rigify Retarget (Advanced IK)
+This functions is a heavy duty version of the previous function, instead creating a procedural armature with Rigify and retargetting the Source armature onto it, allowing for the usage of an animation ready armature, giving animators a WAY easier time animating characters, and allowing for a lot more flexibility overall. This also includes the ability to use facial flexes with the armature, and said animations can be baked and imported into Source without much hassle.
 
 Remember to bake the animation onto the Source armature before exporting, otherwise the animation will not show up in the game, that's due to it only following another armature's actions, it is not doing anything on its own.
