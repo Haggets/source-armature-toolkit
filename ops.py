@@ -1,4 +1,9 @@
 import bpy
+from .armature_rename import armature_rename
+from .constraint_symmetry import constraint_symmetry
+from .weight_armature import weight_armature
+from .simple_ik import inverse_kinematics
+from .advanced_ik import anim_armature
 from . import functions
 from . import props
 
@@ -15,7 +20,7 @@ class VAT_OT_armaturerename_blender(bpy.types.Operator): #Converts armature sche
     
     def execute(self, context):
         bpy.ops.ed.undo_push()
-        functions.armature_rename(1)
+        armature_rename(1)
         
         return{'FINISHED'}
     
@@ -32,7 +37,7 @@ class VAT_OT_armaturerename_source(bpy.types.Operator): #Converts armature schem
     
     def execute(self, context):
         bpy.ops.ed.undo_push()
-        functions.armature_rename(0)
+        armature_rename(0)
         
         return{'FINISHED'}
     
@@ -54,7 +59,7 @@ class VAT_OT_constraintsymmetry_create(bpy.types.Operator):
 
     def execute(self, context):
         vatproperties = bpy.context.scene.vatproperties
-        functions.constraint_symmetry(0, vatproperties.affected_side)
+        constraint_symmetry(0, vatproperties.affected_side)
         
         return{'FINISHED'}
     
@@ -76,7 +81,7 @@ class VAT_OT_constraintsymmetry_delete(bpy.types.Operator):
 
     def execute(self, context):
         vatproperties = bpy.context.scene.vatproperties
-        functions.constraint_symmetry(1, vatproperties.affected_side)
+        constraint_symmetry(1, vatproperties.affected_side)
         
         return{'FINISHED'}
     
@@ -93,7 +98,7 @@ class VAT_OT_weightarmature_create(bpy.types.Operator):
             return (not functions.arm.weight_armature and functions.arm.scheme != -1)
 
     def execute(self, context):
-        functions.weight_armature(0)
+        weight_armature(0)
 
         return{'FINISHED'}
 
@@ -110,7 +115,7 @@ class VAT_OT_weightarmature_delete(bpy.types.Operator):
             return (functions.arm.weight_armature and functions.arm.scheme != -1)
 
     def execute(self, context):
-        functions.weight_armature(1)
+        weight_armature(1)
 
         return{'FINISHED'}
 
@@ -127,7 +132,7 @@ class VAT_OT_inversekinematics_create(bpy.types.Operator):
             return (not functions.arm.inverse_kinematics and functions.arm.scheme != -1)
 
     def execute(self, context):
-        functions.inverse_kinematics(0)
+        inverse_kinematics(0)
         
         return{'FINISHED'}
 
@@ -144,7 +149,7 @@ class VAT_OT_inversekinematics_delete(bpy.types.Operator):
             return (functions.arm.inverse_kinematics and functions.arm.scheme != -1)
 
     def execute(self, context):
-        functions.inverse_kinematics(1)
+        inverse_kinematics(1)
         
         return{'FINISHED'}
     
@@ -161,7 +166,7 @@ class VAT_OT_rigifyretarget_create(bpy.types.Operator):
             return (not functions.arm.animation_armature and functions.arm.scheme != -1)
 
     def execute(self, context):
-        functions.anim_armature(0)
+        anim_armature(0)
 
         return{'FINISHED'}
 
@@ -178,7 +183,7 @@ class VAT_OT_rigifyretarget_delete(bpy.types.Operator):
             return (functions.arm.animation_armature and functions.arm.scheme != -1)
 
     def execute(self, context):
-        functions.anim_armature(1)
+        anim_armature(1)
 
         return{'FINISHED'}
 
@@ -195,7 +200,7 @@ class VAT_OT_rigifyretarget_link(bpy.types.Operator):
             return (context.object.name == "rig")
 
     def execute(self, context):
-        functions.anim_armature(2)
+        anim_armature(2)
 
         return{'FINISHED'}
 
@@ -212,6 +217,6 @@ class VAT_OT_rigifyretarget_update(bpy.types.Operator):
             return (functions.arm.animation_armature and not functions.arm.animation_armature_setup and functions.arm.scheme != -1)
 
     def execute(self, context):
-        functions.anim_armature(3)
+        anim_armature(3)
 
         return{'FINISHED'}

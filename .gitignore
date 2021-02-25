@@ -3,3 +3,8 @@ __pycache__/functions.cpython-37.pyc
 __pycache__/__init__.cpython-37.pyc
 __pycache__/ops.cpython-37.pyc
 __pycache__/props.cpython-37.pyc
+__pycache__/armature_rename.cpython-37.pyc
+__pycache__/constraint_symmetry.cpython-37.pyc
+__pycache__/simple_ik.cpython-37.pyc
+__pycache__/weight_armature.cpython-37.pyc
+__pycache__/advanced_ik.cpython-37.pyc
