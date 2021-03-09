@@ -5,7 +5,7 @@ from .utils import Prefixes
 def armature_rename(scheme): #Bone prefix/suffix repositioning
 
     def rename(bone):
-        bpy.ops.object.mode_set(mode='OBJECT') #Forces object mode to avoid errors when being in edit mode
+        bpy.ops.object.mode_set(mode='OBJECT') #Forces object mode to avoid context errors
 
         #To which scheme
         if scheme == 1: #Source -> Blender
@@ -13,52 +13,63 @@ def armature_rename(scheme): #Bone prefix/suffix repositioning
                 armature.bones[prefix + bone].name = prefix + bone.replace('L_', '') + '_L'
             elif bone.startswith('R_'):
                 armature.bones[prefix + bone].name = prefix + bone.replace('R_', '') + '_R'
-            utils.arm.scheme = 1
 
         elif scheme == 0: #Blender -> Source
             if bone.endswith('_L'):
                 armature.bones[prefix + bone].name = prefix + 'L_' + bone.replace('_L', '')
             elif bone.endswith('_R'):
                 armature.bones[prefix + bone].name = prefix + 'R_' + bone.replace('_R', '')
-            utils.arm.scheme = 0
 
     #Updates bone list in case it was modified
-    utils.arm.get_bones()
+    utils.arm.get_bones(False)
 
     prefix = utils.arm.prefix
     armature = bpy.data.armatures[utils.arm.name_real.name]
-    for bone in utils.arm.symmetrical_bones:
-        rename(bone)
-        
-    if utils.arm.helper_bones:
-        for bone in utils.arm.helper_bones:
-            if bone.startswith('s.'):
-                prefix = utils.arm.prefix
-                rename(bone.replace('s.', ''))
 
-            elif bone.startswith('s2.'):
+    current_mode = bpy.context.object.mode
 
-                #Their prefix is usually already in the end so they're left alone
-                if not bone.endswith('_L') or not bone.endswith('_R'):
-                    prefix = Prefixes.helper2
-                    rename(bone.replace('s2.', ''))
-
-            else:
-                prefix = Prefixes.helper
+    #Symmetrical
+    for cat in utils.arm.symmetrical_bones.keys():
+        for bone in utils.arm.symmetrical_bones[cat].values():
+            for bone in bone:
                 rename(bone)
+    
+    #Helpers
+    if utils.arm.helper_bones:
+        for cat in utils.arm.helper_bones.keys():
+            for bone in utils.arm.helper_bones[cat].values():
+                for bone in bone:
+                    bone, prefix = utils.helper_convert(bone)
+                    rename(bone)
 
     #Renames generated armatures to be on par with the original armature
 
-    #Renames weight armature
+    prefix = utils.arm.prefix
+
+    #Weight armature
     if utils.arm.weight_armature:
         armature = bpy.data.armatures[utils.arm.weight_armature_real.name]
-        for bone in utils.arm.symmetrical_bones:
-            rename(bone)
+        for cat in utils.arm.symmetrical_bones.keys():
+            for bone in utils.arm.symmetrical_bones[cat].values():
+                for bone in bone:
+                    rename(bone)
+        
+        if utils.arm.helper_bones:
+            for cat in utils.arm.helper_bones.keys():
+                for bone in utils.arm.helper_bones[cat].values():
+                    for bone in bone:
+                        bone, prefix = utils.helper_convert(bone)
+                        rename(bone)
 
-    #Renames animation armature
+    prefix = utils.arm.prefix
+
+    #Animation armature
     if utils.arm.animation_armature:
         armature = bpy.data.armatures[utils.arm.animation_armature_real.name]
-        for bone in utils.arm.symmetrical_bones:
-            rename(bone)
+        for cat in utils.arm.symmetrical_bones.keys():
+            for bone in utils.arm.symmetrical_bones[cat].values():
+                for bone in bone:
+                    rename(bone)
 
-    utils.arm.get_bones() #Refreshes bone list
+    #Reverts back to previously used mode
+    bpy.ops.object.mode_set(mode=current_mode)

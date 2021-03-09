@@ -1,48 +1,45 @@
 import bpy
+import math
 from . import utils
 from .utils import update
 
 def inverse_kinematics(action): #Adds IK to the armature
 
-    def getconstraint():
-        armature = bpy.data.objects[utils.arm.name]
+    def getconstraint(bone):
+        nonlocal armature
     
-        #List that will store constraint info for bones
-        bonelist = {}
+        nonlocal bonelist
 
-        for bone in utils.arm.symmetrical_bones:
-            if bone.count('Hand') or bone.count('Foot'):
-                try:
-                    bonelist[bone] = armature.pose.bones[prefix + bone].constraints['IK']
-                except:
-                    bonelist[bone] = 'None'
+        try:
+            bonelist[bone] = armature.pose.bones[prefix + bone].constraints['IK']
+        except:
+            bonelist[bone] = None
 
         return bonelist
 
-    def constraints():
-        armature = bpy.data.objects[utils.arm.name]
+    def constraints(bone):
+        nonlocal armature
 
-        bonelist = getconstraint()
+        bonelist = getconstraint(bone)
 
         #Creation
         if action == 0:
-            for bone in bonelist:
-                if bonelist[bone] == 'None':
-                    ik = armature.pose.bones[prefix + bone].constraints.new('IK')
-                    ik.chain_count = 3
-                    ik.pole_target = utils.arm.name_full
+            if not bonelist[bone]:
+                ik = armature.pose.bones[prefix + bone].constraints.new('IK')
+                ik.chain_count = 3
+                ik.pole_target = utils.arm.name_full
 
-                    if bone.count('Hand'):
-                        if bone.startswith('L_') or bone.endswith('_L'):
-                            ik.pole_subtarget = 'ForearmPole_L'
-                        elif bone.startswith('R_') or bone.endswith('_R'):
-                            ik.pole_subtarget = 'ForearmPole_R'
+                if bone.count('Hand'):
+                    if bone.startswith('L_') or bone.endswith('_L'):
+                        ik.pole_subtarget = utils.arm.poles['forearm'][0] + '_Pole'
+                    elif bone.startswith('R_') or bone.endswith('_R'):
+                        ik.pole_subtarget = utils.arm.poles['forearm'][1] + '_Pole'
 
-                    elif bone.count('Foot'):
-                        if bone.startswith('L_') or bone.endswith('_L'):
-                            ik.pole_subtarget = 'CalfPole_L'
-                        elif bone.startswith('R_') or bone.endswith('_R'):
-                            ik.pole_subtarget = 'CalfPole_R'
+                elif bone.count('Foot'):
+                    if bone.startswith('L_') or bone.endswith('_L'):
+                        ik.pole_subtarget = utils.arm.poles['calf'][0] + '_Pole'
+                    elif bone.startswith('R_') or bone.endswith('_R'):
+                        ik.pole_subtarget = utils.arm.poles['calf'][1] + '_Pole'
                 else:
                     bonelist[bone] = 'Marked'
                     
@@ -52,7 +49,7 @@ def inverse_kinematics(action): #Adds IK to the armature
         elif action == 1:
 
             for bone in bonelist:
-                if bonelist[bone] != 'None':
+                if not bonelist[bone]:
                     if bone.startswith('L_') or bone.endswith('_L'):
                         armature.pose.bones[prefix + bone].constraints.remove(bonelist[bone])
                     elif bone.startswith('R_') or bone.endswith('_R'):
@@ -65,61 +62,114 @@ def inverse_kinematics(action): #Adds IK to the armature
         return bonelist
 
     def poles():
-        armature = bpy.data.objects[utils.arm.name]
+        nonlocal armature
+
+        bpy.ops.object.mode_set(mode='EDIT')
 
         if action == 0:
             update(1, armature)
 
-            for bone in utils.arm.central_bones:
-                if bone.count('Pelvis'):
-                    pelvis = armature.data.edit_bones[prefix + bone]
-                    break
+            #Cleans pole list
+            utils.arm.poles = {'hand': [], 'foot': [], 'forearm': [], 'calf': []}
 
-            #Gets forearm and calf position
-            for bone in utils.arm.symmetrical_bones:
-                if bone.count('Forearm'):
-                    forearm = armature.pose.bones[prefix + bone]
-                elif bone.count('Calf'):
-                    calf = armature.pose.bones[prefix + bone]
+            if len(utils.arm.symmetrical_bones['arms']['forearm']):
+                forearm = armature.pose.bones[prefix + utils.arm.symmetrical_bones['arms']['forearm'][0]]
+                for bone in utils.arm.symmetrical_bones['arms']['forearm']:
+                    utils.arm.poles['forearm'].append(bone)
 
-            for bone in ['ForearmPole_L', 'ForearmPole_R', 'CalfPole_L', 'CalfPole_R']:
-                ebone = armature.data.edit_bones.new(bone)
-                ebone.use_deform = False
-                ebone.parent = pelvis
+            if len(utils.arm.symmetrical_bones['legs']['calf']):
+                calf = armature.pose.bones[prefix + utils.arm.symmetrical_bones['legs']['calf'][0]]
+                for bone in utils.arm.symmetrical_bones['legs']['calf']:
+                    utils.arm.poles['calf'].append(bone)
 
-                if bone.startswith('Forearm'):
-                    if bone.endswith('_L'):
-                        ebone.tail = -forearm.tail.x, forearm.tail.y+12, forearm.tail.z
-                        ebone.head = -forearm.head.x, forearm.head.y+10, forearm.head.z
-                    elif bone.endswith('_R'):
-                        ebone.tail = forearm.tail.x, forearm.tail.y+12, forearm.tail.z
-                        ebone.head = forearm.head.x, forearm.head.y+10, forearm.head.z
-                elif bone.startswith('Calf'):
-                    if bone.endswith('_L'):
-                        ebone.tail = -calf.tail.x, calf.tail.y-10, calf.tail.z
-                        ebone.head = -calf.head.x, calf.head.y-12, calf.head.z
-                    elif bone.endswith('_R'):
-                        ebone.tail = calf.tail.x, calf.tail.y-10, calf.tail.z
-                        ebone.head = calf.head.x, calf.head.y-12, calf.head.z
+            if len(utils.arm.symmetrical_bones['legs']['foot']):
+                foot = armature.pose.bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][0]]
+                for bone in utils.arm.symmetrical_bones['legs']['foot']:
+                    utils.arm.poles['foot'].append(bone)
 
-            bpy.ops.object.mode_set(mode='OBJECT')
+            if len(utils.arm.symmetrical_bones['arms']['hand']):
+                hand = armature.pose.bones[prefix + utils.arm.symmetrical_bones['arms']['hand'][0]]
+                for bone in utils.arm.symmetrical_bones['arms']['hand']:
+                    utils.arm.poles['hand'].append(bone)
 
-        elif action == 1:
-            bpy.ops.object.mode_set(mode='EDIT')
+            for container, bone in utils.arm.poles.items():
+                for bone in bone:
+                    if container == 'forearm' or container == 'calf':
+                        ebone = armature.data.edit_bones.new(bone + '_Pole')
+                    else:
+                        ebone = armature.data.edit_bones.new(bone + '_Target')
+                    ebone.use_deform = False
+                    ebone.parent = armature.data.edit_bones[prefix + utils.arm.central_bones['pelvis'][0]]
+
+                    if container == 'forearm':
+                        if bone.startswith('L_') or bone.endswith('_L'):
+                            ebone.tail = math.copysign(forearm.tail.x, 1), forearm.tail.y+12, forearm.tail.z
+                            ebone.head = math.copysign(forearm.head.x, 1), forearm.head.y+10, forearm.head.z
+                        elif bone.startswith('R_') or bone.endswith('_R'):
+                            ebone.tail = math.copysign(forearm.tail.x, -1), forearm.tail.y+12, forearm.tail.z
+                            ebone.head = math.copysign(forearm.head.x, -1), forearm.head.y+10, forearm.head.z
+                    elif container == 'calf':
+                        if bone.startswith('L_') or bone.endswith('_L'):
+                            ebone.tail = math.copysign(calf.tail.x, 1), calf.tail.y-10, calf.tail.z
+                            ebone.head = math.copysign(calf.head.x, 1), calf.head.y-12, calf.head.z
+                        elif bone.startswith('R_') or bone.endswith('_R'):
+                            ebone.tail = math.copysign(calf.tail.x, -1), calf.tail.y-10, calf.tail.z
+                            ebone.head = math.copysign(calf.head.x, -1), calf.head.y-12, calf.head.z
+
+                    elif container == 'hand':
+                        if bone.startswith('L_') or bone.endswith('_L'):
+                            ebone.tail = math.copysign(hand.tail.x, 1), hand.tail.y, hand.tail.z
+                            ebone.head = math.copysign(hand.head.x, 1), hand.head.y, hand.head.z
+                            ebone.length = 1
+                            ebone.head = math.copysign(hand.tail.x, 1), hand.tail.y, hand.tail.z
+                        elif bone.startswith('R_') or bone.endswith('_R'):
+                            ebone.tail = math.copysign(hand.tail.x, -1), hand.tail.y, hand.tail.z
+                            ebone.head = math.copysign(hand.head.x, -1), hand.head.y, hand.head.z
+                            ebone.length = 1
+                            ebone.head = math.copysign(hand.tail.x, -1), hand.tail.y, hand.tail.z
+                    elif container == 'foot':
+                        if bone.startswith('L_') or bone.endswith('_L'):
+                            ebone.tail = math.copysign(foot.tail.x, 1), foot.tail.y, foot.tail.z
+                            ebone.head = math.copysign(foot.head.x, 1), foot.head.y, foot.head.z
+                            ebone.length = 1
+                            ebone.head = math.copysign(foot.tail.x, 1), foot.tail.y, foot.tail.z
+                        elif bone.startswith('R_') or bone.endswith('_R'):
+                            ebone.tail = math.copysign(foot.tail.x, -1), foot.tail.y, foot.tail.z
+                            ebone.head = math.copysign(foot.head.x, -1), foot.head.y, foot.head.z
+                            ebone.length = 1
+                            ebone.head = math.copysign(foot.tail.x, -1), foot.tail.y, foot.tail.z
+
+        elif action == 1:            
+            for container, bone in utils.arm.poles.items():
+                for bone in bone:
+                    if container == 'forearm' or container == 'calf':
+                        ebone = armature.data.edit_bones[bone + '_Pole']
+                    else:
+                        ebone = armature.data.edit_bones[bone + '_Target']
+                    armature.data.edit_bones.remove(ebone)
             
-            for bone in ['ForearmPole_L', 'ForearmPole_R', 'CalfPole_L', 'CalfPole_R']:
-                ebone = armature.data.edit_bones[bone]
-                armature.data.edit_bones.remove(ebone)
+            utils.arm.poles = {'hand': [], 'foot': [], 'forearm': [], 'calf': []}
 
-            bpy.ops.object.mode_set(mode='OBJECT')
+        bpy.ops.object.mode_set(mode='OBJECT')
 
     #Updates bone list in case it was modified
     utils.arm.get_bones(False)
 
+    armature = bpy.data.objects[utils.arm.name]
     prefix = utils.arm.prefix
 
+    current_mode = bpy.context.object.mode
+
+    #List that will store constraint info for bones
+    bonelist = {}
+
+    if not utils.arm.poles:
+        utils.arm.poles = {'hand': [], 'foot': [], 'forearm': [], 'calf': []}
+
     poles()
-    bonelist = constraints()
+    for bone in utils.arm.symmetrical_bones['arms']['hand'] + utils.arm.symmetrical_bones['legs']['foot']:
+        if bone:
+            bonelist = constraints(bone)
     
     #Final report that checks if some constraints are somehow missing or already applied
     final_report = []
@@ -133,3 +183,6 @@ def inverse_kinematics(action): #Adds IK to the armature
             print("IK constraints already exist for:", final_report)
         elif action == 1:
             print("IK constraints not found for:", final_report)
+
+    #Reverts back to previously used mode
+    bpy.ops.object.mode_set(mode=current_mode)
