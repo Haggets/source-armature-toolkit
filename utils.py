@@ -1,4 +1,5 @@
 import bpy
+import math
 
 class Prefixes: #Container for other prefixes
     helper = 'hlp_'
@@ -29,11 +30,11 @@ class Armature: #Armature base
 
         #Bone information
         self.full_bonelist = []
-        self.symmetrical_bones = []
-        self.central_bones = []
-        self.helper_bones = []
-        self.other_bones = []
-        self.custom_bones = []
+        self.symmetrical_bones = {'arms': {'clavicle': [], 'upperarm': [], 'forearm': [], 'hand': []}, 'legs': {'thigh': [], 'calf': [], 'foot': [], 'toe': []}, 'fingers': {'finger0': [], 'finger01': [], 'finger02': [], 'finger1': [], 'finger11': [], 'finger12': [], 'finger2': [], 'finger21': [], 'finger22': [], 'finger3': [], 'finger31': [], 'finger32': [], 'finger4': [], 'finger41': [], 'finger42': []}}
+        self.central_bones = {'pelvis': [], 'spine': [], 'spine1': [], 'spine2': [], 'spine4': [], 'neck': [], 'head': []}
+        self.helper_bones = {'arms': {'trapezius': [], 'bicep': [], 'elbow': [], 'ulna': [], 'wrist': []}, 'legs': {'quadricep': [], 'knee': []}, 'others': {'others': []}}
+        self.other_bones = {'forward': [], 'weapon': [], 'attachment': [], 'others': []}
+        self.custom_bones = {'others': []}
 
         #Additional information for operations
 
@@ -41,6 +42,7 @@ class Armature: #Armature base
         self.symmetry_left = False
         self.symmetry_right = False
         self.inverse_kinematics = False
+        self.poles = {'hand': [], 'foot': [], 'forearm': [], 'calf': []}
 
         #Weight armature
         self.weight_armature = False
@@ -56,7 +58,7 @@ class Armature: #Armature base
         self.facial_bones = []
 
         #Functions executed to gather previous information
-        self.get_bones()
+        self.get_bones(True)
         if self.scheme != -1:
             self.get_scheme()
             self.get_armatures()
@@ -67,23 +69,30 @@ class Armature: #Armature base
         else:
             print("Empty armature, cannot proceed")
             
-    def get_bones(self): #Builds bone lists
+    def get_bones(self, report): #Builds bone lists
         armature = bpy.data.objects[self.name]
 
         if self.name:
 
             #Cleans bone list
             self.full_bonelist = []
-            self.symmetrical_bones = []
-            self.central_bones = []
-            self.helper_bones = []
-            self.other_bones = []
-            self.custom_bones = []
+            self.symmetrical_bones = {'arms': {'clavicle': [], 'upperarm': [], 'forearm': [], 'hand': []}, 'legs': {'thigh': [], 'calf': [], 'foot': [], 'toe': []}, 'fingers': {'finger0': [], 'finger01': [], 'finger02': [], 'finger1': [], 'finger11': [], 'finger12': [], 'finger2': [], 'finger21': [], 'finger22': [], 'finger3': [], 'finger31': [], 'finger32': [], 'finger4': [], 'finger41': [], 'finger42': []}}
+            self.central_bones = {'pelvis': [], 'spine': [], 'spine1': [], 'spine2': [], 'spine4': [], 'neck': [], 'head': []}
+            self.helper_bones = {'arms': {'trapezius': [], 'bicep': [], 'elbow': [], 'ulna': [], 'wrist': []}, 'legs': {'quadricep': [], 'knee': []}, 'others': {'others': []}}
+            self.other_bones = {'forward': [], 'weapon': [], 'attachment': [], 'others': []}
+            self.custom_bones = {'others': []}
 
             self.full_bonelist = armature.data.bones.keys() #Gets all bones in armature
 
             #Checks if bone list is empty
             if self.full_bonelist:
+
+                symmetrical_bones_raw = []
+                central_bones_raw = []
+                helper_bones_raw = []
+                other_bones_raw = []
+                custom_bones_raw = []
+
                 for bone in self.full_bonelist:
 
                     #Custom prefixes
@@ -95,48 +104,48 @@ class Armature: #Armature base
                                 self.scheme = 3
                             elif bone.count('_L') == 0 or bone.count('L_') == 0:
                                 self.scheme = 3
-                            self.symmetrical_bones.append(bone.replace(self.prefix, ''))
+                            symmetrical_bones_raw.append(bone.replace(self.prefix, ''))
 
                         elif bone.startswith(self.prefix):
-                            self.central_bones.append(bone.replace(self.prefix, ''))
+                            central_bones_raw.append(bone.replace(self.prefix, ''))
 
                     #Helper prefix
-                    if bone.startswith('hlp_'): #Helper
-                        self.helper_bones.append(bone.replace(Prefixes.helper, ''))
+                    if bone.startswith('hlp_'):
+                        helper_bones_raw.append(bone.replace(Prefixes.helper, ''))
 
                     #Source and Blender prefixes
                     elif bone.startswith('ValveBiped.'):
                         vatproperties.sfm_armature = False
                         self.prefix = 'ValveBiped.Bip01_'
 
-                        #Helper bones without helper prefix, differentiated with 's.'
-                        if bone.count('Ulna') or bone.count('Wrist') or bone.count('Elbow') or bone.count('Knee') or bone.count('Trapezius') or bone.count('Quadricep') or bone.count('Bicep') or bone.count('Shoulder'):
-                            self.helper_bones.append(bone.replace(self.prefix, 's.'))
-
                         #Strange L4D2 helper prefix, must be differentiated from the usual helper bone with 's2.'
-                        elif bone.startswith('ValveBiped.hlp_'):
-                            self.helper_bones.append(bone.replace('ValveBiped.hlp_', 's2.'))
+                        if bone.startswith('ValveBiped.hlp_'):
+                            helper_bones_raw.append(bone.replace('ValveBiped.hlp_', 's2.'))
+
+                        #Helper bones without helper prefix, differentiated with 's.'
+                        elif bone.title().count('Ulna') or bone.title().count('Wrist') or bone.title().count('Elbow') or bone.title().count('Knee') or bone.title().count('Trapezius') or bone.title().count('Quad') or bone.title().count('Bicep') or bone.title().count('Shoulder'):
+                            helper_bones_raw.append(bone.replace(self.prefix, 's.'))
 
                         #Attachment bone prefix. They are supposed to be in other bones instead
                         elif bone.startswith('ValveBiped.attachment'):
-                            self.other_bones.append(bone.replace('ValveBiped.attachment_', 'a.'))
+                            other_bones_raw.append(bone.replace('ValveBiped.attachment_', 'a.'))
 
                         #Default prefix
                         elif bone.startswith(self.prefix + 'L_') or bone.startswith(self.prefix + 'R_'): #Symmetrical
                             self.scheme = 0
-                            self.symmetrical_bones.append(bone.replace(self.prefix, ''))
+                            symmetrical_bones_raw.append(bone.replace(self.prefix, ''))
 
                         #Blender prefix
                         elif bone.endswith('_L') or bone.endswith('_R'):
                             self.scheme = 1
-                            self.symmetrical_bones.append(bone.replace('ValveBiped.Bip01_', ''))
+                            symmetrical_bones_raw.append(bone.replace(self.prefix, ''))
 
                         #Central bones prefix
                         elif bone.startswith('ValveBiped.Bip01_'): #Central
-                            self.central_bones.append(bone.replace('ValveBiped.Bip01_', ''))
+                            central_bones_raw.append(bone.replace(self.prefix, ''))
                             
                         else: #Other
-                            self.other_bones.append(bone.replace('ValveBiped.', ''))
+                            other_bones_raw.append(bone.replace('ValveBiped.', ''))
 
                     #SFM prefix
                     elif bone.startswith('bip_'): # Central
@@ -146,31 +155,277 @@ class Armature: #Armature base
                         self.prefix = 'bip_'
 
                         if bone.endswith('_L') or bone.endswith('_R'): #Symmetrical
-                            self.symmetrical_bones.append(bone.replace('bip_', ''))
+                            symmetrical_bones_raw.append(bone.replace(self.prefix, ''))
 
                         else:
-                            self.central_bones.append(bone.replace('bip_', ''))
+                            central_bones_raw.append(bone.replace(self.prefix, ''))
 
                     #No/Different prefix
                     else:
                         #Makes sure generated IK bones are not part of list
-                        if bone.count('Pole'):
-                            pass
+                        if bone.title().count('_Pole') or bone.title().count('_Target'):
+                            if bone.count('Hand'):
+                                self.poles['hand'].append(bone)
+                                self.poles['hand'].sort()
+                            elif bone.count('Foot'):
+                                self.poles['hand'].append(bone)
+                                self.poles['hand'].sort()
+                            elif bone.count('forearm'):
+                                self.poles['forearm'].append(bone)
+                                self.poles['forearm'].sort()
+                            elif bone.count('calf'):
+                                self.poles['calf'].append(bone)
+                                self.poles['calf'].sort()
                         else:
-                            self.custom_bones.append(bone)
+                            custom_bones_raw.append(bone)
+                            custom_bones_raw.sort()
 
                 #Unknown armature
-                if self.symmetrical_bones == [] and self.central_bones == [] and self.other_bones == []:
+                if not symmetrical_bones_raw and not central_bones_raw and not self.other_bones:
                     self.scheme = -1
 
+                #Organizes dictionary from raw lists
+
+                #Symmetrical bones raw list
+                if symmetrical_bones_raw:
+                    for bone in symmetrical_bones_raw:
+
+                        if bone.title().count('Clavicle'):
+                            self.symmetrical_bones['arms']['clavicle'].append(bone)
+                            self.symmetrical_bones['arms']['clavicle'].sort()
+
+                        elif bone.title().count('Upperarm'):
+                            self.symmetrical_bones['arms']['upperarm'].append(bone)
+                            self.symmetrical_bones['arms']['upperarm'].sort()
+
+                        elif bone.title().count('Forearm'):
+                            self.symmetrical_bones['arms']['forearm'].append(bone)
+                            self.symmetrical_bones['arms']['forearm'].sort()
+
+                        elif bone.title().count('Hand'):
+                            self.symmetrical_bones['arms']['hand'].append(bone)
+                            self.symmetrical_bones['arms']['hand'].sort()
+
+                        elif bone.title().count('Thigh'):
+                            self.symmetrical_bones['legs']['thigh'].append(bone)
+                            self.symmetrical_bones['legs']['thigh'].sort()
+
+                        elif bone.title().count('Calf'):
+                            self.symmetrical_bones['legs']['calf'].append(bone)
+                            self.symmetrical_bones['legs']['calf'].sort()
+
+                        elif bone.title().count('Foot'):
+                            self.symmetrical_bones['legs']['foot'].append(bone)
+                            self.symmetrical_bones['legs']['foot'].sort()
+
+                        elif bone.title().count('Toe'):
+                            self.symmetrical_bones['legs']['toe'].append(bone)
+                            self.symmetrical_bones['legs']['toe'].sort()
+
+                        elif bone.title().count('Finger0'):
+                            if bone.count('01'):
+                                self.symmetrical_bones['fingers']['finger01'].append(bone)
+                                self.symmetrical_bones['fingers']['finger01'].sort()
+                            elif bone.count('02'):
+                                self.symmetrical_bones['fingers']['finger02'].append(bone)
+                                self.symmetrical_bones['fingers']['finger02'].sort()
+                            else:
+                                self.symmetrical_bones['fingers']['finger0'].append(bone)
+                                self.symmetrical_bones['fingers']['finger0'].sort()
+
+                        elif bone.title().count('Finger1'):
+                            if bone.count('11'):
+                                self.symmetrical_bones['fingers']['finger11'].append(bone)
+                                self.symmetrical_bones['fingers']['finger11'].sort()
+                            elif bone.count('12'):
+                                self.symmetrical_bones['fingers']['finger12'].append(bone)
+                                self.symmetrical_bones['fingers']['finger12'].sort()
+                            else:
+                                self.symmetrical_bones['fingers']['finger1'].append(bone)
+                                self.symmetrical_bones['fingers']['finger1'].sort()
+
+                        elif bone.title().count('Finger2'):
+                            if bone.count('21'):
+                                self.symmetrical_bones['fingers']['finger21'].append(bone)
+                                self.symmetrical_bones['fingers']['finger21'].sort()
+                            elif bone.count('22'):
+                                self.symmetrical_bones['fingers']['finger22'].append(bone)
+                                self.symmetrical_bones['fingers']['finger22'].sort()
+                            else:
+                                self.symmetrical_bones['fingers']['finger2'].append(bone)
+                                self.symmetrical_bones['fingers']['finger2'].sort()
+                            
+                        elif bone.title().count('Finger3'):
+                            if bone.count('31'):
+                                self.symmetrical_bones['fingers']['finger31'].append(bone)
+                                self.symmetrical_bones['fingers']['finger31'].sort()
+                            elif bone.count('32'):
+                                self.symmetrical_bones['fingers']['finger32'].append(bone)
+                                self.symmetrical_bones['fingers']['finger32'].sort()
+                            else:
+                                self.symmetrical_bones['fingers']['finger3'].append(bone)
+                                self.symmetrical_bones['fingers']['finger3'].sort()
+
+                        elif bone.title().count('Finger4'):
+                            if bone.count('41'):
+                                self.symmetrical_bones['fingers']['finger41'].append(bone)
+                                self.symmetrical_bones['fingers']['finger41'].sort()
+                            elif bone.count('42'):
+                                self.symmetrical_bones['fingers']['finger42'].append(bone)
+                                self.symmetrical_bones['fingers']['finger42'].sort()
+                            else:
+                                self.symmetrical_bones['fingers']['finger4'].append(bone)
+                                self.symmetrical_bones['fingers']['finger4'].sort()
+
+                #Central bones raw list
+                if central_bones_raw:
+                    for bone in central_bones_raw:
+                        if bone.title().count('Pelvis'):
+                            self.central_bones['pelvis'].append(bone)
+                            self.central_bones['pelvis'].sort()
+
+                        elif bone.title().count('Spine'):
+                            if bone.title().count('Spine4'):
+                                self.central_bones['spine4'].append(bone)
+                                self.central_bones['spine4'].sort()
+
+                            elif bone.title().count('Spine2'):
+                                self.central_bones['spine2'].append(bone)
+                                self.central_bones['spine2'].sort()
+
+                            elif bone.title().count('Spine1'):
+                                self.central_bones['spine1'].append(bone)
+                                self.central_bones['spine1'].sort()
+                            
+                            else:
+                                self.central_bones['spine'].append(bone)
+                                self.central_bones['spine'].sort()
+
+                        elif bone.title().count('Neck'):
+                            self.central_bones['neck'].append(bone)
+                            self.central_bones['neck'].sort()
+
+                        elif bone.title().count('Head'):
+                            self.central_bones['head'].append(bone)
+                            self.central_bones['head'].sort()
+
+                #Helper bones raw list
+                if helper_bones_raw:
+                    for bone in helper_bones_raw:
+                        if bone.title().count('Trapezius'):
+                            self.helper_bones['arms']['trapezius'].append(bone)
+                            self.helper_bones['arms']['trapezius'].sort()
+
+                        elif bone.title().count('Bicep'):
+                            self.helper_bones['arms']['bicep'].append(bone)
+                            self.helper_bones['arms']['bicep'].sort()
+
+                        elif bone.title().count('Elbow'):
+                            self.helper_bones['arms']['elbow'].append(bone)
+                            self.helper_bones['arms']['elbow'].sort()
+
+                        elif bone.title().count('Ulna'):
+                            self.helper_bones['arms']['ulna'].append(bone)
+                            self.helper_bones['arms']['ulna'].sort()
+
+                        elif bone.title().count('Wrist'):
+                            self.helper_bones['arms']['wrist'].append(bone)
+                            self.helper_bones['arms']['wrist'].sort()
+
+                        elif bone.title().count('Quad'):
+                            self.helper_bones['legs']['quadricep'].append(bone)
+                            self.helper_bones['legs']['quadricep'].sort()
+
+                        elif bone.title().count('Knee'):
+                            self.helper_bones['legs']['knee'].append(bone)
+                            self.helper_bones['legs']['knee'].sort()
+
+                        else:
+                            #Creates pairs for helper bones that aren't the conventional
+                            if bone.startswith('s.'):
+                                bone2 = bone.replace('s.', '')
+                            elif bone.startswith('s2.'):
+                                bone2 = bone.replace('s2.', '')
+
+                            if bone2.title().startswith('L_'):
+                                self.helper_bones['others'].setdefault(bone2.title().replace('L_', '').casefold(), [])
+                                self.helper_bones['others'][bone2.title().replace('L_', '').casefold()].append(bone)
+                                self.helper_bones['others'][bone2.title().replace('L_', '').casefold()].sort()
+                            elif bone2.title().endswith('_L'):
+                                self.helper_bones['others'].setdefault(bone2.replace('_L', '').casefold(), [])
+                                self.helper_bones['others'][bone2.title().replace('_L', '').casefold()].append(bone)
+                                self.helper_bones['others'][bone2.title().replace('_L', '').casefold()].sort()
+                            elif bone2.title().startswith('R_'):
+                                self.helper_bones['others'].setdefault(bone2.replace('R_', '').casefold(), [])
+                                self.helper_bones['others'][bone2.title().replace('R_', '').casefold()].append(bone)
+                                self.helper_bones['others'][bone2.title().replace('R_', '').casefold()].sort()
+                            elif bone2.title().endswith('_R'):
+                                self.helper_bones['others'].setdefault(bone2.replace('_R', '').casefold(), [])
+                                self.helper_bones['others'][bone2.title().replace('_R', '').casefold()].append(bone)
+                                self.helper_bones['others'][bone2.title().replace('_R', '').casefold().casefold()].sort()
+                            else:
+                                self.helper_bones['others']['others'].append(bone)
+                                self.helper_bones['others']['others'].sort()
+
+                #Other bones raw list
+                if other_bones_raw:
+                    for bone in other_bones_raw:
+                        if bone.title().count('Forward'):
+                            self.other_bones['forward'].append(bone)
+                            self.other_bones['forward'].sort()
+
+                        elif bone.title().count('Weapon'):
+                            self.other_bones['weapon'].append(bone)
+                            self.other_bones['weapon'].sort()
+
+                        elif bone.startswith('a.'):
+                            self.other_bones['attachment'].append(bone)
+                            self.other_bones['attachment'].sort()
+
+                        else:
+                            self.other_bones['others'].append(bone)
+                            self.other_bones['others'].sort()
+
+                if custom_bones_raw:
+                    for bone in custom_bones_raw:
+                        if bone.title().startswith('L_'):
+                            self.custom_bones.setdefault(bone.title().replace('L_', '').casefold(), [])
+                            self.custom_bones[bone.title().replace('L_', '').casefold()].append(bone)
+                            self.custom_bones[bone.title().replace('L_', '').casefold()].sort()
+                        elif bone.title().endswith('_L'):
+                            self.custom_bones.setdefault(bone.title().replace('_L', '').casefold(), [])
+                            self.custom_bones[bone.title().replace('_L', '').casefold()].append(bone)
+                            self.custom_bones[bone.title().replace('_L', '').casefold()].sort()
+                        elif bone.title().startswith('Left'):
+                            self.custom_bones.setdefault(bone.title().replace('Left', '').casefold(), [])
+                            self.custom_bones[bone.title().replace('Left', '').casefold()].append(bone)
+                            self.custom_bones[bone.title().replace('Left', '').casefold()].sort()
+                        elif bone.title().startswith('R_'):
+                            self.custom_bones.setdefault(bone.title().replace('R_', '').casefold(), [])
+                            self.custom_bones[bone.title().replace('R_', '').casefold()].append(bone)
+                            self.custom_bones[bone.title().replace('R_', '').casefold()].sort()
+                        elif bone.title().endswith('_R'):
+                            self.custom_bones.setdefault(bone.title().replace('_R', '').casefold(), [])
+                            self.custom_bones[bone.title().replace('_R', '').casefold()].append(bone)
+                            self.custom_bones[bone.title().replace('_R', '').casefold()].sort()
+                        elif bone.title().startswith('Right'):
+                            self.custom_bones.setdefault(bone.title().replace('Right', '').casefold(), [])
+                            self.custom_bones[bone.title().replace('Right', '').casefold()].append(bone)
+                            self.custom_bones[bone.title().replace('Right', '').casefold()].sort()
+                        else:
+                            self.custom_bones['others'].append(bone)
+                            self.custom_bones['others'].sort()
+                
                 #Final bone report
-                print("Symmetrical bones:", self.symmetrical_bones)
-                print("Central bones:", self.central_bones)
-                print("Helper bones:", self.helper_bones)
-                print("Other bones:", self.other_bones)
-                print("Custom bones:", self.custom_bones)
-        else:
-            self.scheme = -1
+                if report:
+                    print("Symmetrical bones:", list(self.symmetrical_bones.values()))
+                    print("Central bones:", list(self.central_bones.values()))
+                    print("Helper bones:", list(self.helper_bones.values()))
+                    print("Other bones:", list(self.other_bones.values()))
+                    print("Custom bones:", self.custom_bones)
+                
+            else:
+                self.scheme = -1
 
     def get_scheme(self): #Gets current scheme
         armature = bpy.data.objects[self.name]
@@ -179,20 +434,18 @@ class Armature: #Armature base
 
             #If not an SFM armature, check if the armature has the Source or Blender armature
             if not self.sfm:
-                bone = self.prefix + bone
-
-                if bone.startswith('ValveBiped.Bip01_L_') or bone.startswith('ValveBiped.Bip01_R_'):
-                    vatproperties.scheme = 0
+                if bone.startswith('L_') or bone.startswith('R_'):
+                    self.scheme = 0
 
                 elif bone.endswith('_L') or bone.endswith('_R'):
-                    vatproperties.scheme = 1
+                    self.scheme = 1
                 
         #Final scheme report
         if not self.sfm:
-            if vatproperties.scheme == 0:
+            if self.scheme == 0:
                 print("Current Scheme: Source")
 
-            elif vatproperties.scheme == 1:
+            elif self.scheme == 1:
                 print("Current Scheme: Blender")
 
         elif self.sfm:
@@ -268,13 +521,12 @@ class Armature: #Armature base
             armature = bpy.data.objects[self.name]
             prefix = self.prefix
             
-            for bone in self.symmetrical_bones:
-                if bone.count('Hand') or bone.count('Foot'):
-                    try:
-                        armature.pose.bones[prefix + bone].constraints['IK']
-                        self.inverse_kinematics = True
-                    except:
-                        self.inverse_kinematics = False
+            for bone in zip(self.symmetrical_bones['arms']['hand'], self.symmetrical_bones['legs']['foot']):
+                try:
+                    armature.pose.bones[prefix + bone].constraints['IK']
+                    self.inverse_kinematics = True
+                except:
+                    self.inverse_kinematics = False
 
         get_symmetry()
         get_inversekinematics()
@@ -288,85 +540,86 @@ class Armature: #Armature base
 
         if group == []:
             #Creates groups and sets their color
-            for group, color in zip(['Center', 'Left Arm', 'Right Arm', 'Left Leg', 'Right Leg', 'Helpers', 'Others', 'Custom'], ['THEME03', 'THEME01', 'THEME04', 'THEME01', 'THEME04', 'THEME09','THEME10', 'THEME06']):
+            for group, color in zip(['Center', 'Left Arm', 'Right Arm', 'Left Leg', 'Right Leg', 'Helpers', 'Attachments', 'Others', 'Custom'], ['THEME03', 'THEME01', 'THEME04', 'THEME01', 'THEME04', 'THEME09', 'THEME14', 'THEME10', 'THEME06']):
                 armature.pose.bone_groups.new(name=group)
                 armature.pose.bone_groups[group].color_set = color
                 
-            for bone in self.symmetrical_bones:
+            
+            for cat in self.symmetrical_bones.keys():
+                #Arms and fingers
+                if cat == 'arms' or cat == 'fingers':
+                    for bone in self.symmetrical_bones[cat].values():
+                        for bone in bone:
+                            if bone.startswith('L_') or bone.endswith('_L'):
+                                armature.pose.bones[prefix + bone].bone_group_index = 1
+                                armature.data.bones[prefix + bone].layers[1] = True
 
-                #Arms
-                if bone.count('Clavicle') or bone.count('Trapezius') or bone.count('UpperArm') or bone.count('Bicep') or bone.count('Forearm') or bone.count('Hand') or bone.count('Finger'):
-                    if bone.startswith('L_') or bone.endswith('_L'):
-                        armature.pose.bones[prefix + bone].bone_group_index = 1
-                        armature.data.bones[prefix + bone].layers[1] = True
-                    elif bone.startswith('R_') or bone.endswith('_R'):
-                        armature.pose.bones[prefix + bone].bone_group_index = 2
-                        armature.data.bones[prefix + bone].layers[2] = True
+                            elif bone.startswith('R_') or bone.endswith('_R'):
+                                armature.pose.bones[prefix + bone].bone_group_index = 2
+                                armature.data.bones[prefix + bone].layers[2] = True
+
+                            armature.data.bones[prefix + bone].layers[0] = False
 
                 #Legs
-                elif bone.count('Thigh') or bone.count('Calf') or bone.count('Foot') or bone.count('Toe'):
-                    if bone.startswith('L_') or bone.endswith('_L'):
-                        armature.pose.bones[prefix + bone].bone_group_index = 3
-                        armature.data.bones[prefix + bone].layers[3] = True
-                        armature.pose.bones
-                    elif bone.startswith('R_') or bone.endswith('_R'):
-                        armature.pose.bones[prefix + bone].bone_group_index = 4
-                        armature.data.bones[prefix + bone].layers[4] = True
+                elif cat == 'legs':
+                    for bone in self.symmetrical_bones[cat].values():
+                        for bone in bone:
+                            if bone.startswith('L_') or bone.endswith('_L'):
+                                armature.pose.bones[prefix + bone].bone_group_index = 3
+                                armature.data.bones[prefix + bone].layers[3] = True
+                                
+                            elif bone.startswith('R_') or bone.endswith('_R'):
+                                armature.pose.bones[prefix + bone].bone_group_index = 4
+                                armature.data.bones[prefix + bone].layers[4] = True
 
-                armature.data.bones[prefix + bone].layers[0] = False
+                            armature.data.bones[prefix + bone].layers[0] = False
+                    
+            for bone in self.central_bones.values():
+                for bone in bone:
+                    armature.pose.bones[prefix + bone].bone_group_index = 0
 
-            for bone in self.central_bones:
-                armature.pose.bones[prefix + bone].bone_group_index = 0
+            if self.helper_bones:
+                for cat in self.helper_bones.keys():
+                    for bone in self.helper_bones[cat].values():
+                        for bone in bone:
+                            if bone.startswith('s.'):
+                                prefix = self.prefix
+                                bone = bone.replace('s.', '')
 
-            for bone in self.helper_bones:
+                            elif bone.startswith('s2.'):
+                                prefix = Prefixes.helper2
+                                bone = bone.replace('s2.', '')
+                            else:
+                                prefix = Prefixes.helper
 
-                if bone.startswith('s.'):
-                    prefix = self.prefix
-                    armature.pose.bones[prefix + bone.replace('s.', '')].bone_group_index = 5
-                    armature.data.bones[prefix + bone.replace('s.', '')].layers[5] = True
-                    armature.data.bones[prefix + bone.replace('s.', '')].layers[0] = False
+                            armature.pose.bones[prefix + bone].bone_group_index = 5
+                            armature.data.bones[prefix + bone].layers[5] = True
+                            armature.data.bones[prefix + bone].layers[0] = False
 
-                #Special helper bones
-                elif bone.startswith('s2.'): 
-                    prefix = Prefixes.helper2
-                    armature.pose.bones[prefix + bone.replace('s2.', '')].bone_group_index = 5
-                    armature.data.bones[prefix + bone.replace('s2.', '')].layers[5] = True
-                    armature.data.bones[prefix + bone.replace('s2.', '')].layers[0] = False
-                else: #Helper bones
-                    prefix = Prefixes.helper
-                    armature.pose.bones[prefix + bone].bone_group_index = 5
-                    armature.data.bones[prefix + bone].layers[5] = True
-                    armature.data.bones[prefix + bone].layers[0] = False
-
-            for bone in self.other_bones:
-
-                #Weapon bones
-                if bone.count('weapon'):
-                    prefix = Prefixes.other
-                    armature.pose.bones[prefix + bone].bone_group_index = 6
-                    armature.data.bones[prefix + bone].layers[6] = True
-                    armature.data.bones[prefix + bone].layers[0] = False
-
-                #Attachments
-                elif bone.startswith('a.'):
-                    prefix = Prefixes.attachment
-                    armature.pose.bones[prefix + bone.replace('a.', '')].bone_group_index = 6
-                    armature.data.bones[prefix + bone.replace('a.', '')].layers[6] = True
-                    armature.data.bones[prefix + bone.replace('a.', '')].layers[0] = False
-                else: #Others
-                    prefix = Prefixes.other
-                    armature.pose.bones[prefix + bone].bone_group_index = 6
-                    armature.data.bones[prefix + bone].layers[6] = True
-                    armature.data.bones[prefix + bone].layers[0] = False
-
+    
+            for container, bone in self.other_bones.items():
+                for bone in bone:
+                    if container == 'attachment':
+                        prefix = Prefixes.attachment
+                        bone = bone.replace('a.', '')
+                        armature.pose.bones[prefix + bone].bone_group_index = 6
+                        armature.data.bones[prefix + bone].layers[6] = True
+                    else:
+                        prefix = Prefixes.other
+                
+                        armature.pose.bones[prefix + bone].bone_group_index = 7
+                        armature.data.bones[prefix + bone].layers[7] = True
+                        armature.data.bones[prefix + bone].layers[0] = False
+                
             #Custom bones
-            for bone in self.custom_bones:
-                armature.pose.bones[bone].bone_group_index = 7
-                armature.data.bones[bone].layers[7] = True
-                armature.data.bones[bone].layers[0] = False
+            for bone in self.custom_bones.values():
+                for bone in bone:
+                    armature.pose.bones[bone].bone_group_index = 8
+                    armature.data.bones[bone].layers[8] = True
+                    armature.data.bones[bone].layers[0] = False
 
             #Reveals used layers
-            for i in [0,1,2,3,4,5,6,7]:
+            for i in [0,1,2,3,4,5,6,7,8]:
                 armature.data.layers[i] = True
 
             print("Bone groups set!")
@@ -375,141 +628,83 @@ class Armature: #Armature base
         armature = bpy.data.objects[self.name]
         prefix = self.prefix
 
-        #Gets position for helper bone transforms
-        for bone in self.symmetrical_bones:
-            if bone.count('Hand'):
-                if bone.startswith('L_') or bone.endswith('_L'):
-                    hand_l = armature.pose.bones[prefix + bone]
-                elif bone.startswith('R_') or bone.endswith('_R'):
-                    hand_r = armature.pose.bones[prefix + bone]
-            elif bone.count('Forearm'):
-                if bone.startswith('L_') or bone.endswith('_L'):
-                    forearm_l = armature.pose.bones[prefix + bone]
-                elif bone.startswith('R_') or bone.endswith('_R'):
-                    forearm_r = armature.pose.bones[prefix + bone]
-            elif bone.count('Calf'):
-                if bone.startswith('L_') or bone.endswith('_L'):
-                    calf_l = armature.pose.bones[prefix + bone]
-                elif bone.startswith('R_') or bone.endswith('_R'):
-                    calf_r = armature.pose.bones[prefix + bone]
-            elif bone.count('Thigh'):
-                if bone.startswith('L_') or bone.endswith('_L'):
-                    thigh_l = armature.pose.bones[prefix + bone]
-                elif bone.startswith('R_') or bone.endswith('_R'):
-                    thigh_r = armature.pose.bones[prefix + bone]
+        new = False
 
-        for bone in self.helper_bones:
+        for bone in self.helper_bones['arms']['elbow'] + self.helper_bones['arms']['ulna'] + self.helper_bones['arms']['wrist'] + self.helper_bones['legs']['quadricep'] + self.helper_bones['legs']['knee']:
+            if bone.startswith('s.'):
+                prefix = self.prefix
+                bone = bone.replace('s.', '')
 
+            elif bone.startswith('s2.'):
+                prefix = Prefixes.helper2
+                bone = bone.replace('s2.', '')
+            else:
+                prefix = Prefixes.helper
+            
             #Adds transforms to only these helper bones unless already existing
-            if bone.title().count('Wrist') or bone.title().count('Ulna') or bone.title().count('Elbow') or bone.title().count('Knee') or bone.title().count('Quad'):
-                new = 0
-                if bone.startswith('s.'):
+            try:
+                transform = armature.pose.bones[prefix + bone].constraints["Procedural Bone"]
+            except:
+                new = True
+                transform = armature.pose.bones[prefix + bone].constraints.new('TRANSFORM')
+
+                #Initial parameters
+                transform.name = "Procedural Bone"
+                transform.target = self.name_full
+                transform.map_from = 'ROTATION'
+                transform.map_to = 'ROTATION'
+                transform.target_space = 'LOCAL'
+                transform.owner_space = 'LOCAL'
+            
+                #Hand rotation
+                if bone.title().count('Wrist') or bone.title().count('Ulna'):
+                    transform.from_min_x_rot = math.radians(-90)
+                    transform.from_max_x_rot = math.radians(90)
+
                     prefix = self.prefix
-                    try:
-                        transform = armature.pose.bones[prefix + bone.replace('s.', '')].constraints["Procedural Bone"]
-                    except:
-                        transform = armature.pose.bones[prefix + bone.replace('s.', '')].constraints.new('TRANSFORM')
-                        new = 1
 
-                elif bone.startswith('s2.'):
-                    prefix = Prefixes.helper2
-                    try:
-                        transform = armature.pose.bones[prefix + bone.replace('s2.', '')].constraints["Procedural Bone"]
-                    except:
-                        transform = armature.pose.bones[prefix + bone.replace('s2.', '')].constraints.new('TRANSFORM')
-                        new = 1
-                else:
-                    try:
-                        transform = armature.pose.bones[prefix + bone].constraints["Procedural Bone"]
-                    except:
-                        transform = armature.pose.bones[prefix + bone].constraints.new('TRANSFORM')
-                        new = 1
+                    if bone.startswith('L_') or bone.endswith('_L'):
+                        transform.subtarget = prefix + self.symmetrical_bones['arms']['hand'][0]
+                    elif bone.startswith('R_') or bone.endswith('_R'):
+                        transform.subtarget = prefix + self.symmetrical_bones['arms']['hand'][1]
+                    else:
+                        #Fix for Nick's left wrist
+                        transform.subtarget = prefix + self.symmetrical_bones['arms']['hand'][1]
 
-                if new == 1:
-                    #Initial parameters
-                    transform.name = "Procedural Bone"
-                    transform.target = self.name_full
-                    transform.map_from = 'ROTATION'
-                    transform.map_to = 'ROTATION'
-                    transform.target_space = 'LOCAL'
-                    transform.owner_space = 'LOCAL'
-                
-                    #Hand rotation
-                    if bone.title().count('Wrist') or bone.title().count('Ulna'):
-                        transform.from_min_x_rot = math.radians(-90)
-                        transform.from_max_x_rot = math.radians(90)
+                    if bone.title().count('Wrist'):
+                        transform.to_min_x_rot = math.radians(-75)
+                        transform.to_max_x_rot = math.radians(75)
 
-                        if bone.startswith('s.'):
-                            if bone.replace('s.', '').title().startswith('L_') or bone.replace('s.', '').title().endswith('_L'):
-                                transform.subtarget = hand_l.name
-                            elif bone.replace('s.', '').title().startswith('R_') or bone.replace('s.', '').title().endswith('_R'):
-                                transform.subtarget = hand_r.name
-                        elif bone.startswith('s2.'):
-                            if bone.replace('s2.', '').title().startswith('L_') or bone.replace('s2.', '').title().endswith('_L'):
-                                transform.subtarget = hand_l.name
-                            elif bone.replace('s2.', '').title().startswith('R_') or bone.replace('s2.', '').title().endswith('_R'):
-                                transform.subtarget = hand_r.name
+                    elif bone.title().count('Ulna'):
+                        transform.to_min_x_rot = math.radians(-50)
+                        transform.to_max_x_rot = math.radians(50)
 
-                        if bone.title().count('Wrist'):
-                            transform.to_min_x_rot = math.radians(-75)
-                            transform.to_max_x_rot = math.radians(75)
+                #Forearm and thigh rotation
+                elif bone.title().count('Elbow') or bone.title().count('Knee') or bone.title().count('Quad'):
+                    transform.from_min_z_rot = math.radians(-90)
+                    transform.from_max_z_rot = math.radians(90)
 
-                            #Lame fix for Nick's left wrist bone not being labeled as left
-                            if bone.replace('s2.', '').title().startswith('R_') or bone.replace('s2.', '').title().endswith('_R') or bone.replace('s2.', '').title().startswith('L_') or bone.replace('s2.', '').title().endswith('_L'):
-                                pass
-                            elif bone.replace('s2.', '').title().count('Wrist'):
-                                transform.subtarget = hand_l.name
+                    transform.to_min_z_rot = math.radians(-45)
+                    transform.to_max_z_rot = math.radians(45)
+                    
+                    if bone.title().count('Elbow'):
+                        if bone.startswith('L_') or bone.endswith('_L'):
+                            transform.subtarget = prefix + self.symmetrical_bones['arms']['forearm'][0]
+                        elif bone.startswith('R_') or bone.endswith('_R'):
+                            transform.subtarget = prefix + self.symmetrical_bones['arms']['forearm'][1]
 
-                        elif bone.title().count('Ulna'):
-                            transform.to_min_x_rot = math.radians(-50)
-                            transform.to_max_x_rot = math.radians(50)
+                    elif bone.title().count('Knee'):
+                        if bone.startswith('L_') or bone.endswith('_L'):
+                            transform.subtarget = prefix + self.symmetrical_bones['legs']['calf'][0]
+                        elif bone.startswith('R_') or bone.endswith('_R'):
+                            transform.subtarget = prefix + self.symmetrical_bones['legs']['calf'][1]
 
-                    #Forearm and thigh rotation
-                    elif bone.title().count('Elbow') or bone.title().count('Knee') or bone.title().count('Quad'):
-                        transform.from_min_z_rot = math.radians(-90)
-                        transform.from_max_z_rot = math.radians(90)
-
-                        transform.to_min_z_rot = math.radians(-45)
-                        transform.to_max_z_rot = math.radians(45)
-                        
-                        if bone.title().count('Elbow'):
-                            if bone.startswith('s.'):
-                                if bone.replace('s.', '').title().startswith('L_') or bone.replace('s.', '').title().endswith('_L'):
-                                    transform.subtarget = forearm_l.name
-                                elif bone.replace('s.', '').title().startswith('R_') or bone.replace('s.', '').title().endswith('_R'):
-                                    transform.subtarget = forearm_r.name
-                            elif bone.startswith('s2.'):
-                                if bone.replace('s2.', '').title().startswith('L_') or bone.replace('s2.', '').title().endswith('_L'):
-                                    transform.subtarget = forearm_l.name
-                                elif bone.replace('s2.', '').title().startswith('R_') or bone.replace('s2.', '').title().endswith('_R'):
-                                    transform.subtarget = forearm_r.name
-
-                        elif bone.title().count('Knee'):
-                            if bone.startswith('s.'):
-                                if bone.replace('s.', '').title().startswith('L_') or bone.replace('s.', '').title().endswith('_L'):
-                                    transform.subtarget = calf_l.name
-                                elif bone.replace('s.', '').title().startswith('R_') or bone.replace('s.', '').title().endswith('_R'):
-                                    transform.subtarget = calf_r.name
-
-                            elif bone.startswith('s2.'):
-                                if bone.replace('s2.', '').title().startswith('L_') or bone.replace('s2.', '').title().endswith('_L'):
-                                    transform.subtarget = calf_l.name
-                                elif bone.replace('s2.', '').title().startswith('R_') or bone.replace('s2.', '').title().endswith('_R'):
-                                    transform.subtarget = calf_r.name
-
-                        elif bone.title().count('Quad'):
-                            if bone.startswith('s.'):
-                                if bone.replace('s.', '').title().startswith('L_') or bone.replace('s.', '').title().endswith('_L'):
-                                    transform.subtarget = thigh_l.name
-                                elif bone.replace('s.', '').title().startswith('R_') or bone.replace('s.', '').title().endswith('_R'):
-                                    transform.subtarget = thigh_r.name
-                            elif bone.startswith('s2.'):
-                                if bone.replace('s2.', '').title().startswith('L_') or bone.replace('s2.', '').title().endswith('_L'):
-                                    transform.subtarget = thigh_l.name
-                                elif bone.replace('s2.', '').title().startswith('R_') or bone.replace('s2.', '').title().endswith('_R'):
-                                    transform.subtarget = thigh_r.name
-
-        if new == 1:
+                    elif bone.title().count('Quad'):
+                        if bone.startswith('L_') or bone.endswith('_L'):
+                            transform.subtarget = prefix + self.symmetrical_bones['legs']['thigh'][0]
+                        elif bone.startswith('R_') or bone.endswith('_R'):
+                            transform.subtarget = prefix + self.symmetrical_bones['legs']['thigh'][1]
+        if new:
             print("Procedural bones configured!")
 
 #Some functions (Namely creating new bones) do not add the newly created info to the object data until a mode change occurs at least once
@@ -573,374 +768,495 @@ def generate_armature(type, action): #Creates or deletes the weight armature
         trapezius = []
         quadricep = []
 
-        ulna_present = 0
-        wrist_present = 0
-        bicep_present = 0
-        trapezius_present = 0
-        quadricep_present = 0
-
         #Bone connection
         update(1, armature)
 
         #Keeps only the bare minimum bones for Rigify and connects the rest
         if type == 'anim':
-            for bone in arm.helper_bones:
-                if bone.startswith('s.'):
-                    prefix = arm.prefix
-                    ebone = armature.data.edit_bones[prefix + bone.replace('s.', '')]
-                elif bone.startswith('s2.'):
-                    prefix = Prefixes.helper2
-                    ebone = armature.data.edit_bones[prefix + bone.replace('s2.', '')]
-                else:
-                    prefix = Prefixes.helper
-                    ebone = armature.data.edit_bones[prefix + bone]
-                    
-                armature.data.edit_bones.remove(ebone)
+            for cat in arm.helper_bones.keys():
+                for bone in arm.helper_bones[cat].values():
+                    for bone in bone:
+                        bone, prefix = helper_convert(bone)
 
-        prefix = arm.prefix
+                        ebone = armature.data.edit_bones[prefix + bone]
+                    
+                        armature.data.edit_bones.remove(ebone)
+
+        #Refreshes bone list
+        arm.get_bones(False)
     
-        for bone in arm.symmetrical_bones:
-            parent = armature.pose.bones[prefix + bone].parent.name
+        #Setup for armatures, tweaking bone positions and the like
+        for cat in arm.symmetrical_bones.keys():
+            if cat == 'fingers':
+                prefix = arm.prefix
+                for container, bone in arm.symmetrical_bones[cat].items():
+                    for bone in bone:
+                        parent = armature.pose.bones[prefix + bone].parent.name
 
-            #Makes it so the hand bone is facing straight
-            if parent.count('Hand'):
-                if bone.count('Finger0'):
-                    pass
-                else:
-                    pbone = armature.pose.bones[prefix + bone].head
-                    
-                    armature.data.edit_bones[parent].tail.xz = pbone.x, pbone.z
-                    armature.data.edit_bones[parent].length = 3
+                        #Makes it so the hand bone is facing straight
+                        if parent.title().count('Hand'):
+                            if container == 'finger0':
+                                continue
+                            else:
+                                pbone = armature.pose.bones[prefix + bone]
+                                
+                                armature.data.edit_bones[parent].tail.xz = pbone.head.x, pbone.head.z
+                                armature.data.edit_bones[parent].length = 3
+                        else:
+                            loc = armature.pose.bones[prefix + bone].head
+                            armature.data.edit_bones[parent].tail = loc
+                            
+                            armature.data.edit_bones[prefix + bone].use_connect = True
             else:
-                loc = armature.pose.bones[prefix + bone].head
-                armature.data.edit_bones[parent].tail = loc
-                    
-                #Bones that should not be connected to parent on weight armatures
+                prefix = arm.prefix
+                for container, bone in list(arm.symmetrical_bones[cat].items()):
+                    for bone in bone:
+                        parent = armature.pose.bones[prefix + bone].parent.name
+
+                        loc = armature.pose.bones[prefix + bone].head
+                        armature.data.edit_bones[parent].tail = loc
+                        
+                        #Filters out bones whose parent should not be connected to them
+                        if container == 'thigh' or container == 'clavicle':
+                            continue
+                        else:
+                            if type == 'weight':
+                                if container == 'calf' or container == 'upperarm' or container == 'forearm' or container == 'hand':
+                                    continue
+                                
+                        armature.data.edit_bones[prefix + bone].use_connect = True
+
+                        #Bone tweaks
+
+                        #Extends toe tip to be where the actual tip should be
+                        if container == 'toe':
+                            pbone = armature.pose.bones[prefix + bone].head
+
+                            if bone.startswith('L_') or bone.endswith('_L'):
+                                armature.data.edit_bones[prefix + bone].tail = pbone.x+0.5, pbone.y-2.5, pbone.z
+                            elif bone.startswith('R_') or bone.endswith('_R'):
+                                armature.data.edit_bones[prefix + bone].tail = pbone.x-0.5, pbone.y-2.5, pbone.z
+
+                        #Fix for legs rotating the wrong way in most characters with the animation armature
+                        if type == 'anim':
+                            if container == 'calf':
+                                armature.data.edit_bones[prefix + bone].head.y = armature.data.edit_bones[prefix + bone].head.y - 1
+
                 if type == 'weight':
-                    if bone.count('Thigh') or bone.count('Clavicle') or bone.count('Forearm') or bone.count('Hand') or bone.count('Elbow') or bone.count('Wrist') or bone.count('UpperArm') or bone.count('Calf') or bone.count('Knee'):
-                        pass
-                    else:
-                        armature.data.edit_bones[prefix + bone].use_connect = True
-                #Bones that will not be connected to parent on anim armatures, the rest were deleted and would cause an error
-                elif type == 'anim':
-                    if bone.count('Thigh') or bone.count('Clavicle') or bone.count('Trapezius') or bone.count('Bicep') or bone.count('Elbow') or bone.count('Ulna') or bone.count('Wrist') or bone.count('Knee') or bone.count('Quadricep'):
-                        pass
-                    else:
-                        armature.data.edit_bones[prefix + bone].use_connect = True
+                    for container, bone in list(arm.helper_bones[cat].items()):
+                        for bone in bone:
+                            bone, prefix = helper_convert(bone)
+                            parent = armature.pose.bones[prefix + bone].parent.name
 
-            #Extends toe tip to be where the actual tip should be
-            if bone.title().count('Toe'):
-                pbone = armature.pose.bones[prefix + bone].head
+                            loc = armature.pose.bones[prefix + bone].head
+                            armature.data.edit_bones[parent].tail = loc
 
-                if bone.startswith('L_') or bone.endswith('_L'):
-                    armature.data.edit_bones[prefix + bone].tail = pbone.x+0.5, pbone.y-2.5, pbone.z
-                elif bone.startswith('R_') or bone.endswith('_R'):
-                    armature.data.edit_bones[prefix + bone].tail = pbone.x-0.5, pbone.y-2.5, pbone.z
-
-            #Fix for legs rotating the wrong way in most characters
-            if type == 'anim':
-                if bone.count('Calf'):
-                    armature.data.edit_bones[prefix + bone].head.y = armature.data.edit_bones[prefix + bone].head.y - 1
-
-        for bone in arm.central_bones:
-            if bone.casefold() == 'pelvis': #No parent
-                pass
-            else:
-                parent = armature.pose.bones[prefix + bone].parent.name
-                loc = armature.pose.bones[prefix + bone].head
-                armature.data.edit_bones[parent].tail = loc
-                if bone.count('Neck'):
-                    pass
+                            #Filters out bones whose parent should not be connected to them
+                            if container == 'knee' or container == 'elbow' or container == 'wrist' or container == 'quadruped':
+                                continue
+                            else:
+                                armature.data.edit_bones[prefix + bone].use_connect = True
+        
+        for container, bone in arm.central_bones.items():
+            for bone in bone:
+                #No parent
+                if container == 'pelvis':
+                    continue
                 else:
-                    armature.data.edit_bones[prefix + bone].use_connect = True
-                
-            #Extends head's length to be on par with actual head height
-            if bone.casefold().count('head'):
-                pbone = armature.pose.bones[prefix + bone].head
-                
-                armature.data.edit_bones[prefix + bone].tail = pbone.x, pbone.y, pbone.z+6
+                    #Connects current bone's parent to itself
+                    parent = armature.pose.bones[prefix + bone].parent.name
+                    loc = armature.pose.bones[prefix + bone].head
+                    armature.data.edit_bones[parent].tail = loc
+
+                    #Neck should not be connected to its parent
+                    if container == 'neck':
+                        continue
+                    else:
+                        armature.data.edit_bones[prefix + bone].use_connect = True
+
+                #Extends head's length to be on par with actual head height
+                if container == 'head':
+                    pbone = armature.pose.bones[prefix + bone]
+                    
+                    armature.data.edit_bones[prefix + bone].tail.xyz = pbone.head.x, pbone.head.y, pbone.head.z+6
 
         if type == 'weight':
-            for bone in arm.helper_bones:
-                #Helper bones
-                if bone.count('Knee'):
-                    pbone = armature.pose.bones[prefix + bone.replace('s.', '')].tail
+            for cat in arm.helper_bones.keys():
+                if cat != 'others':
+                    for container, bone in arm.helper_bones[cat].items():
+                        for bone in bone:
+                            bone, prefix = helper_convert(bone)
 
-                    armature.data.edit_bones[prefix + bone.replace('s.', '')].tail.y = pbone.y-5
+                            pbone = armature.pose.bones[prefix + bone].tail
 
-                if bone.count('Elbow'):
-                    pbone = armature.pose.bones[prefix + bone.replace('s.', '')].tail
+                            #Modifies bones and gets other bones for further modification
+                            if container == 'knee':
+                                armature.data.edit_bones[prefix + bone].tail.y = pbone.y-5
+                            elif container == 'elbow':
+                                armature.data.edit_bones[prefix + bone].tail.y = pbone.y+5
+                            elif container == 'ulna':
+                                ulna.append(bone)
+                                bone, ulna_prefix = helper_convert(arm.helper_bones['arms']['ulna'][0])
+                                pulna = armature.pose.bones[prefix + bone]
+                            elif container == 'wrist':
+                                wrist.append(bone)
+                                bone, wrist_prefix = helper_convert(arm.helper_bones['arms']['wrist'][0])
+                                pwrist = armature.pose.bones[prefix + bone]
+                            elif container == 'bicep':
+                                bicep.append(bone)
+                                bone, bicep_prefix = helper_convert(arm.helper_bones['arms']['bicep'][0])
+                                pbicep = armature.pose.bones[prefix + bone]
+                            elif container == 'trapezius':
+                                trapezius.append(bone)
+                                bone, trap_prefix = helper_convert(arm.helper_bones['arms']['trapezius'][0])
+                                ptrapezius = armature.pose.bones[prefix + bone]
+                            elif container == 'quadricep':
+                                quadricep.append(bone)
+                                bone, quad_prefix = helper_convert(arm.helper_bones['legs']['quadricep'][0])
+                                pquadricep = armature.pose.bones[prefix + bone]
 
-                    armature.data.edit_bones[prefix + bone.replace('s.', '')].tail.y = pbone.y+5
+            prefix = arm.prefix
 
-                #Other helper bones that need additional tweaking on their positioning
-                if bone.count('Ulna'):
-                    ulna.append(bone)
-                    if bone.replace('s.', '').startswith('L_') or bone.replace('s.', '').endswith('_L'):
-                        ulna_l = armature.pose.bones[prefix + bone.replace('s.', '')].head
-                    elif bone.replace('s.', '').startswith('R_') or bone.replace('s.', '').endswith('_R'):
-                        ulna_r = armature.pose.bones[prefix + bone.replace('s.', '')].head
-                    ulna_present = 1
-                
-                if bone.count('Wrist'):
-                    wrist.append(bone)
-                    wrist_present = 1
-
-                if bone.count('Bicep'):
-                    bicep.append(bone)
-                    if bone.replace('s.', '').startswith('L_') or bone.replace('s.', '').endswith('_L'):
-                        bicep_l = armature.pose.bones[prefix + bone.replace('s.', '')].head
-                    elif bone.replace('s.', '').startswith('R_') or bone.replace('s.', '').endswith('_R'):
-                        bicep_r = armature.pose.bones[prefix + bone.replace('s.', '')].head
-                    bicep_present = 1
-
-                if bone.count('Trapezius'):
-                    trapezius.append(bone)
-                    trapezius_present = 1
-
-                if bone.count('Quadricep'):
-                    quadricep.append(bone)
-                    if bone.replace('s.', '').startswith('L_') or bone.replace('s.', '').endswith('_L'):
-                        quadricep_l = armature.pose.bones[prefix + bone.replace('s.', '')].head
-                    elif bone.replace('s.', '').startswith('R_') or bone.replace('s.', '').endswith('_R'):
-                        quadricep_r = armature.pose.bones[prefix + bone.replace('s.', '')].head
-                    quadricep_present = 1
-            
-            #Gets certain bone positions and avoids some bones not using bicep or ulna's location when they should
-            for bone in arm.symmetrical_bones:
-                if bicep_present == 1:
-                    #Gets position
-                    if bone.count('Forearm'):
-                        if bone.startswith('L_') or bone.endswith('_L'):
-                            forearm_l = armature.pose.bones[prefix + bone].head
-                        elif bone.startswith('R_') or bone.endswith('_R'):
-                            forearm_r = armature.pose.bones[prefix + bone].head
-
-                    #Forces upperarm to use bicep position
-                    if bone.count('UpperArm'):
-                        if bone.startswith('L_') or bone.endswith('_L'):
-                            armature.data.edit_bones[prefix + bone].tail = bicep_l
-                        elif bone.startswith('R_') or bone.endswith('_R'):
-                            armature.data.edit_bones[prefix + bone].tail = bicep_r
-                else:
-                    if bone.count('Forearm'):
-                        armature.data.edit_bones[prefix + bone].use_connect = True
-
-                if ulna_present == 1 or wrist_present == 1:
-                    #Gets position
-                    if bone.count('Hand'):
-                        if bone.startswith('L_') or bone.endswith('_L'):
-                            hand_l = armature.pose.bones[prefix + bone].head
-                        elif bone.startswith('R_') or bone.endswith('_R'):
-                            hand_r = armature.pose.bones[prefix + bone].head
-
-                    #Forces forearm to use ulna position
-                    if bone.count('Forearm'):
-                        if bone.startswith('L_') or bone.endswith('_L'):
-                            armature.data.edit_bones[prefix + bone].tail = ulna_l
-                        elif bone.startswith('R_') or bone.endswith('_R'):
-                            armature.data.edit_bones[prefix + bone].tail = ulna_r
-                else:
-                    if bone.count('Hand'):
-                        armature.data.edit_bones[prefix + bone].use_connect = True
-
-                if quadricep_present == 1:
-                    #Gets position
-                    if bone.count('Calf'):
-                        if bone.startswith('L_') or bone.endswith('_L'):
-                            calf_l = armature.pose.bones[prefix + bone].head
-                        elif bone.startswith('R_') or bone.endswith('_R'):
-                            calf_r = armature.pose.bones[prefix + bone].head
-                        
-                    #Forces thigh to use quadricep position
-                    if bone.count('Thigh'):
-                        if bone.startswith('L_') or bone.endswith('_L'):
-                            armature.data.edit_bones[prefix + bone].tail = quadricep_l
-                        elif bone.startswith('R_') or bone.endswith('_R'):
-                            armature.data.edit_bones[prefix + bone].tail = quadricep_r
-                else:
-                    if bone.count('Calf'):
-                        armature.data.edit_bones[prefix + bone].use_connect = True
-
-                if trapezius_present == 1:
-                    if bone.count('UpperArm'):
-                        if bone.startswith('L_') or bone.endswith('_L'):
-                            upperarm_l = armature.pose.bones[prefix + bone].head
-                        elif bone.startswith('R_') or bone.endswith('_R'):
-                            upperarm_r = armature.pose.bones[prefix + bone].head
-                else:
-                    if bone.count('UpperArm'):
-                        armature.data.edit_bones[prefix + bone].use_connect = True
-
-            #Tweaks positioning of some helper bones
-
-            #Bicep repositioning
+            #Bicep tweak
             if bicep:
+                forearm = armature.pose.bones[prefix + arm.symmetrical_bones['arms']['forearm'][0]]
+
+                #Check for characters who only have helper bone on one side (Like Louis)
+                left = False
+                right = False
+
                 for bone in bicep:
-                    if bone.startswith('s.'):
-                        prefix = arm.prefix
-                        bone = bone.replace('s.', '')
-                    elif bone.startswith('s2.'):
-                        prefix = Prefixes.helper2
-                        bone = bone.replace('s2.', '')
-                    else:
-                        prefix = Prefixes.helper
+                    if bone.title().startswith('L_') or bone.title().endswith('_L'):
+                        left = True
+                    elif bone.title().startswith('R_') or bone.title().endswith('_R'):
+                        right = True
 
+                #Forces uppeararm to use bicep's position
+                for bone in arm.symmetrical_bones['arms']['upperarm']:
+                    if left:
+                        if bone.startswith('L_') or bone.endswith('_L'):
+                            armature.data.edit_bones[prefix + bone].tail.xyz = math.copysign(pbicep.head.x, 1), pbicep.head.y, pbicep.head.z
+                    if right:
+                        if bone.startswith('R_') or bone.endswith('_R'):
+                                armature.data.edit_bones[prefix + bone].tail.xyz = math.copysign(pbicep.head.x, -1), pbicep.head.y, pbicep.head.z
+
+                #Connects to parent if helper does not exist
+                for bone in arm.symmetrical_bones['arms']['forearm']:
+                    if not left:
+                        if bone.startswith('L_') or bone.endswith('_L'):
+                            armature.data.edit_bones[prefix + bone].use_connect = True
+                    if not right:
+                        if bone.startswith('R_') or bone.endswith('_R'):
+                            armature.data.edit_bones[prefix + bone].use_connect = True
+
+                #Tweaks bicep position 
+                for bone in bicep:
                     if bone.startswith('L_') or bone.endswith('_L'):
-                        armature.data.edit_bones[prefix + bone].tail = forearm_l
+                        armature.data.edit_bones[bicep_prefix + bone].tail.xyz = math.copysign(forearm.head.x, 1), forearm.head.y, forearm.head.z
                     elif bone.startswith('R_') or bone.endswith('_R'):
-                        armature.data.edit_bones[prefix + bone].tail = forearm_r
+                        armature.data.edit_bones[bicep_prefix + bone].tail.xyz = math.copysign(forearm.head.x, -1), forearm.head.y, forearm.head.z
+            else:
+                for bone in arm.symmetrical_bones['arms']['upperarm']:
+                    armature.data.edit_bones[prefix + bone].use_connect = True
 
-            if trapezius:
-                for bone in trapezius:
-                    if bone.startswith('s.'):
-                        prefix = arm.prefix
-                        bone = bone.replace('s.', '')
-                    elif bone.startswith('s2.'):
-                        prefix = Prefixes.helper2
-                        bone = bone.replace('s2.', '')
-                    else:
-                        prefix = Prefixes.helper
+            prefix = arm.prefix
 
-                    if bone.startswith('L_') or bone.endswith('_L'):
-                        armature.data.edit_bones[prefix + bone].tail = upperarm_l
-                    elif bone.startswith('R_') or bone.endswith('_R'):
-                        armature.data.edit_bones[prefix + bone].tail = upperarm_r
-
-            if quadricep:
-                for bone in quadricep:
-                    if bone.startswith('s.'):
-                        prefix = arm.prefix
-                        bone = bone.replace('s.', '')
-                    elif bone.startswith('s2.'):
-                        prefix = Prefixes.helper2
-                        bone = bone.replace('s2.', '')
-                    else:
-                        prefix = Prefixes.helper
-
-                    if bone.startswith('L_') or bone.endswith('_L'):
-                        armature.data.edit_bones[prefix + bone].tail = calf_l
-                    elif bone.startswith('R_') or bone.endswith('_R'):
-                        armature.data.edit_bones[prefix + bone].tail = calf_r
-
-            #Ulna and wrist repositioning
+            #Ulna/wrist tweak
             if ulna or wrist:
+                hand = armature.pose.bones[prefix + arm.symmetrical_bones['arms']['hand'][0]]
+                forearm = armature.pose.bones[prefix + arm.symmetrical_bones['arms']['forearm'][0]]
+
+                #Check for characters who only have helper bone on one side (Like Louis)
+                left = False
+                left2 = False
+
+                right = False
+                right2 = False
+
+                for bone in ulna:
+                    if bone.title().startswith('L_') or bone.title().endswith('_L'):
+                        left = True
+                    elif bone.title().startswith('R_') or bone.title().endswith('_R'):
+                        right = True
+
+                for bone in wrist:
+                    if bone.title().startswith('L_') or bone.title().endswith('_L'):
+                        left2 = True
+                    elif bone.title().startswith('R_') or bone.title().endswith('_R'):
+                        right2 = True
+
+                #Forces forearm to use ulna's position
+                for bone in arm.symmetrical_bones['arms']['forearm']:
+                    if left:
+                        if bone.startswith('L_') or bone.endswith('_L'):
+                            armature.data.edit_bones[prefix + bone].tail.xyz = math.copysign(pulna.head.x, 1), pulna.head.y, pulna.head.z
+                    if right:
+                        if bone.startswith('R_') or bone.endswith('_R'):
+                            armature.data.edit_bones[prefix + bone].tail.xyz = math.copysign(pulna.head.x, -1), pulna.head.y, pulna.head.z
 
                 #If both ulna and wrist are present
                 if ulna and wrist:
                     for bone in ulna:
-                        if bone.startswith('s.'):
-                            prefix = arm.prefix
-                            bone = bone.replace('s.', '')
-                        elif bone.startswith('s2.'):
-                            prefix = Prefixes.helper2
-                            bone = bone.replace('s2.', '')
-                        else:
-                            prefix = Prefixes.helper
+                        if bone.title().startswith('L_') or bone.title().endswith('_L'):
+                            armature.data.edit_bones[ulna_prefix + bone].tail.xyz = math.copysign(+hand.head.x, 1), hand.head.y, hand.head.z
+                        elif bone.title().startswith('R_') or bone.title().endswith('_R'):
+                            armature.data.edit_bones[ulna_prefix + bone].tail.xyz = math.copysign(hand.head.x, -1), hand.head.y, hand.head.z
 
-                        if bone.startswith('L_') or bone.endswith('_L'):
-                            armature.data.edit_bones[prefix + bone].tail = hand_l
-                            ulna_l = armature.pose.bones[prefix + bone].tail
-                        elif bone.startswith('R_') or bone.endswith('_R'):
-                            armature.data.edit_bones[prefix + bone].tail = hand_r
-                            ulna_r = armature.pose.bones[prefix + bone].tail
-                        
-                        armature.data.edit_bones[prefix + bone].length = armature.data.edit_bones[prefix + bone].length / 1.6
+                        armature.data.edit_bones[ulna_prefix + bone].length = armature.data.edit_bones[ulna_prefix + bone].length / 1.6
+
+                        bone, prefix = helper_convert(arm.helper_bones['arms']['ulna'][0])
 
                     update(0)
 
                     for bone in wrist:
-                        if bone.startswith('s.'):
-                            prefix = arm.prefix
-                            bone = bone.replace('s.', '')
-                        elif bone.startswith('s2.'):
-                            prefix = Prefixes.helper2
-                            bone = bone.replace('s2.', '')
+                        if bone.title().startswith('L_') or bone.title().endswith('_L'):
+                            armature.data.edit_bones[wrist_prefix + bone].head.xyz = math.copysign(pulna.tail.x, 1), pulna.tail.y, pulna.tail.z
+                            armature.data.edit_bones[wrist_prefix + bone].tail.xyz = math.copysign(hand.head.x, 1), hand.head.y, hand.head.z
+                        elif bone.title().startswith('R_') or bone.title().endswith('_R'):
+                            armature.data.edit_bones[wrist_prefix + bone].head.xyz = math.copysign(pulna.tail.x, -1), pulna.tail.y, pulna.tail.z
+                            armature.data.edit_bones[wrist_prefix + bone].tail.xyz = math.copysign(hand.head.x, -1), hand.head.y, hand.head.z
                         else:
-                            prefix = Prefixes.helper
-
-                        if bone.startswith('L_') or bone.endswith('_L'):
-                            armature.data.edit_bones[prefix + bone].head = ulna_l
-                            armature.data.edit_bones[prefix + bone].tail = hand_l
-                        elif bone.startswith('R_') or bone.endswith('_R'):
-                            armature.data.edit_bones[prefix + bone].head = ulna_r
-                            armature.data.edit_bones[prefix + bone].tail = hand_r
+                            #Fix for Nick's wrist
+                            armature.data.edit_bones[wrist_prefix + bone].head.xyz = math.copysign(pulna.tail.x, 1), pulna.tail.y, pulna.tail.z
+                            armature.data.edit_bones[wrist_prefix + bone].tail.xyz = math.copysign(hand.head.x, 1), hand.head.y, hand.head.z
 
                 #Else if only ulna is present
                 elif ulna:
                     for bone in ulna:
-                        if bone.startswith('s.'):
-                            prefix = arm.prefix
-                            bone = bone.replace('s.', '')
-                        elif bone.startswith('s2.'):
-                            prefix = Prefixes.helper2
-                            bone = bone.replace('s2.', '')
-                        else:
-                            prefix = Prefixes.helper
+                        bone, prefix = helper_convert(bone)
 
-                        if bone.startswith('L_') or bone.endswith('_L'):
-                            armature.data.edit_bones[prefix + bone].tail = hand_l
-                        elif bone.startswith('R_') or bone.endswith('_R'):
-                            armature.data.edit_bones[prefix + bone].tail = hand_r
+                        if bone.title().startswith('L_') or bone.title().endswith('_L'):
+                            armature.data.edit_bones[ulna_prefix + bone].tail.xyz = math.copysign(hand.head.x, 1), hand.head.y, hand.head.z
+                        elif bone.title().startswith('R_') or bone.title().endswith('_R'):
+                            armature.data.edit_bones[ulna_prefix + bone].tail.xyz = math.copysign(hand.head.x, -1), hand.head.y, hand.head.z
 
                 #Else if only wrist is present
                 elif wrist:
-                    for bone in arm.symmetrical_bones:
-                        if bone.count('Forearm'):
-                            armature.data.edit_bones[prefix + bone].length = armature.data.edit_bones[prefix + bone].length / 1.3
-                            if bone.startswith('L_') or bone.endswith('_L'):
-                                forearm_l = armature.pose.bones[prefix + bone].tail
-                            elif bone.startswith('R_') or bone.endswith('_R'):
-                                forearm_r = armature.pose.bones[prefix + bone].tail
+                    for bone in arm.symmetrical_bones['arms']['forearm']:
+                        armature.data.edit_bones[prefix + bone].length = armature.data.edit_bones[prefix + bone].length / 1.3
+
+                        #Updates variable
+                        forearm = armature.pose.bones[prefix + arm.symmetrical_bones['arms']['forearm'][0]]
 
                     update(0)
 
                     for bone in wrist:
-                        if bone.startswith('s.'):
-                            prefix = arm.prefix
-                            bone = bone.replace('s.', '')
-                        elif bone.startswith('s2.'):
-                            prefix = Prefixes.helper2
-                            bone = bone.replace('s2.', '')
-                        else:
-                            prefix = Prefixes.helper
+                        bone, prefix = helper_convert(bone)
 
+                        if bone.title().startswith('L_') or bone.title().endswith('_L'):
+                            armature.data.edit_bones[wrist_prefix + bone].head.xyz = math.copysign(forearm.tail.x, 1), forearm.tail.y, forearm.tail.z
+                            armature.data.edit_bones[wrist_prefix + bone].tail.xyz = math.copysign(hand.head.x, 1), hand.head.y, hand.head.z
+                        elif bone.title().startswith('R_') or bone.title().endswith('_R'):
+                            armature.data.edit_bones[wrist_prefix + bone].head.xyz = math.copysign(forearm.tail.x, -1), forearm.tail.y, forearm.tail.z
+                            armature.data.edit_bones[wrist_prefix + bone].tail.xyz = math.copysign(hand.head.x, -1), hand.head.y, hand.head.z
+                        else:
+                            #Fix for Nick's wrist
+                            armature.data.edit_bones[wrist_prefix + bone].head.xyz = math.copysign(forearm.tail.x, 1), forearm.tail.y, forearm.tail.z
+                            armature.data.edit_bones[wrist_prefix + bone].tail.xyz = math.copysign(hand.head.x, 1), hand.head.y, hand.head.z
+
+                #Updates wrist location variable if available
+                if wrist:
+                    update(0)
+                    pwrist = armature.pose.bones[wrist_prefix + wrist[0]]
+
+                #Connects to parent if helper is not present
+                
+                prefix = arm.prefix
+
+                #Left side
+                if not left and not left2: # No Ulna/Wrist
+                    for bone in arm.symmetrical_bones['arms']['forearm']:
                         if bone.startswith('L_') or bone.endswith('_L'):
-                            armature.data.edit_bones[prefix + bone].head = forearm_l
-                        elif bone.startswith('R_') or bone.endswith('_R'):
-                            armature.data.edit_bones[prefix + bone].head = forearm_r
+                            armature.data.edit_bones[prefix + bone].tail.xyz = math.copysign(hand.head.x, 1), hand.head.y, hand.head.z
+                    for bone in arm.symmetrical_bones['arms']['hand']:
+                        if bone.startswith('L_') or bone.endswith('_L'):
+                            armature.data.edit_bones[prefix + bone].use_connect = True
+
+                elif not left: #No Ulna
+                    for bone in arm.symmetrical_bones['arms']['forearm']:
+                        if bone.startswith('L_') or bone.endswith('_L'):
+                            armature.data.edit_bones[prefix + bone].tail.xyz = math.copysign(pwrist.head.x, 1), pwrist.head.y, pwrist.head.z
+                    for bone in wrist:
+                        if bone.startswith('L_') or bone.endswith('_L'):
+                            armature.data.edit_bones[wrist_prefix + bone].use_connect = True
+
+                elif not left2: #No Wrist
+                    for bone in ulna:
+                        if bone.startswith('L_') or bone.endswith('_L'):
+                            armature.data.edit_bones[ulna_prefix + bone].tail.xyz = math.copysign(hand.head.x, 1), hand.head.y, hand.head.z
+
+                #Right side
+                if not right and not right2: #No Ulna/Wrist
+                    for bone in arm.symmetrical_bones['arms']['forearm']:
+                        if bone.startswith('R_') or bone.endswith('_R'):
+                            armature.data.edit_bones[prefix + bone].tail.xyz = math.copysign(hand.head.x, -1), hand.head.y, hand.head.z
+                    for bone in arm.symmetrical_bones['arms']['hand']:
+                        if bone.startswith('R_') or bone.endswith('_R'):
+                            armature.data.edit_bones[prefix + bone].use_connect = True
+
+                elif not right: #No Ulna
+                    for bone in arm.symmetrical_bones['arms']['forearm']:
+                        if bone.startswith('R_') or bone.endswith('_R'):
+                            armature.data.edit_bones[prefix + bone].tail.xyz = math.copysign(pwrist.head.x, -1), pwrist.head.y, pwrist.head.z
+                    for bone in wrist:
+                        if bone.startswith('R_') or bone.endswith('_R'):
+                            armature.data.edit_bones[wrist_prefix + bone].use_connect = True
+
+                elif not right2: #No Wrist
+                    for bone in ulna:
+                        if bone.startswith('R_') or bone.endswith('_R'):
+                            armature.data.edit_bones[ulna_prefix + bone].tail.xyz = math.copysign(hand.head.x, -1), hand.head.y, hand.head.z
+            else:
+                for bone in arm.symmetrical_bones['arms']['hand']:
+                    armature.data.edit_bones[prefix + bone].use_connect = True
+
+            prefix = arm.prefix
+
+            #Quadricep tweak
+            if quadricep:
+                calf = armature.pose.bones[prefix + arm.symmetrical_bones['legs']['calf'][0]]
+
+                #Check for characters who only have helper bone on one side (Like Louis)
+                left = False
+                right = False
+
+                for bone in quadricep:
+                    if bone.title().startswith('L_') or bone.title().endswith('_L'):
+                        left = True
+                    elif bone.title().startswith('R_') or bone.title().endswith('_R'):
+                        right = True
+
+                #Forces thigh to use quadricep's position
+                for bone in arm.symmetrical_bones['legs']['thigh']:
+                    if left:
+                        if bone.startswith('L_') or bone.endswith('_L'):
+                            armature.data.edit_bones[prefix + bone].tail = math.copysign(pquadricep.tail.x, 1), pquadricep.tail.y, pquadricep.tail.z
+                    if right:
+                        if bone.startswith('R_') or bone.endswith('_R'):
+                            armature.data.edit_bones[prefix + bone].tail = math.copysign(pquadricep.tail.x, -1), pquadricep.tail.y, pquadricep.tail.z
+
+                #Connects to parent if helper does not exist
+                for bone in arm.symmetrical_bones['legs']['calf']:
+                    if not left:
+                        if bone.startswith('L_') or bone.endswith('_L'):
+                            armature.data.edit_bones[prefix + bone].use_connect = True
+                    if not right:
+                        if bone.startswith('R_') or bone.endswith('_R'):
+                            armature.data.edit_bones[prefix + bone].use_connect = True
+
+                for bone in quadricep:
+                    bone, prefix = helper_convert(bone)
+
+                    if bone.title().startswith('L_') or bone.title().endswith('_L'):
+                        armature.data.edit_bones[quad_prefix + bone].tail.xyz = math.copysign(calf.head.x, 1), calf.head.y, calf.head.z
+                    elif bone.title().startswith('R_') or bone.title().endswith('_R'):
+                        armature.data.edit_bones[quad_prefix + bone].tail.xyz = math.copysign(calf.head.x, -1), calf.head.y, calf.head.z
+            else:
+                for bone in arm.symmetrical_bones['legs']['calf']:
+                    armature.data.edit_bones[prefix + bone].use_connect = True
+
+            prefix = arm.prefix
+
+            #Trapezius tweak
+            if trapezius:
+                upperarm = armature.pose.bones[prefix + arm.symmetrical_bones['arms']['upperarm'][0]]
+
+                #Check for characters who only have helper bone on one side
+                left = False
+                right = False
+
+                for bone in trapezius:
+                    if bone.title().startswith('L_') or bone.title().endswith('_L'):
+                        left = True
+                    elif bone.title().startswith('R_') or bone.title().endswith('_R'):
+                        right = True
+
+                #(Can't find an example that would make clavicle not use trapezius' position, hope this works)
+                #Forces clavicle to use trapezius' position
+                for bone in arm.symmetrical_bones['arms']['clavicle']:
+                    if left:
+                        if bone.startswith('L_') or bone.endswith('_L'):
+                            armature.data.edit_bones[prefix + bone].tail = math.copysign(ptrapezius.head.x, 1), ptrapezius.head.y, ptrapezius.head.z
+                    if right:
+                        if bone.startswith('R_') or bone.endswith('_R'):
+                            armature.data.edit_bones[prefix + bone].tail = math.copysign(ptrapezius.head.x, -1), ptrapezius.head.y, ptrapezius.head.z
+
+                #Connects to parent if helper does not exist
+                for bone in arm.symmetrical_bones['arms']['upperarm']:
+                    if not left:
+                        if bone.startswith('L_') or bone.endswith('_L'):
+                            armature.data.edit_bones[prefix + bone].use_connect = True
+                    if not right:
+                        if bone.startswith('R_') or bone.endswith('_R'):
+                            armature.data.edit_bones[prefix + bone].use_connect = True
+
+                #Tweaks trapezius' position
+                for bone in trapezius:
+                    bone, prefix = helper_convert(bone)
+
+                    if bone.title().startswith('L_') or bone.title().endswith('_L'):
+                        armature.data.edit_bones[trap_prefix + bone].tail = math.copysign(upperarm.head.x, 1), upperarm.head.y, upperarm.head.z
+                    elif bone.title().startswith('R_') or bone.title().endswith('_R'):
+                        armature.data.edit_bones[trap_prefix + bone].tail = math.copysign(upperarm.head.x, -1), upperarm.head.y, upperarm.head.z
+            else:
+                for bone in arm.symmetrical_bones['arms']['upperarm']:
+                    armature.data.edit_bones[prefix + bone].use_connect = True
+
+        #Finger tips tweak
+        prefix = arm.prefix
+
+        for container, bone in arm.symmetrical_bones['fingers'].items():
+            for bone in bone:
+                if container == 'finger01' or container == 'finger11' or container == 'finger21' or container == 'finger31' or container == 'finger41':
+                    ebone = armature.data.edit_bones[prefix + bone]
+                    length = ebone.length
+                    
+                    ebone.length = length * 2
+
+                    tip = container[0:7] + '2'
+
+                    if bone.startswith('L_') or bone.endswith('_L'):
+                        armature.data.edit_bones[prefix + arm.symmetrical_bones['fingers'][tip][0]].tail.xyz = math.copysign(ebone.tail.x, 1), ebone.tail.y, ebone.tail.z
+                    elif bone.startswith('R_') or bone.endswith('_R'):
+                        armature.data.edit_bones[prefix + arm.symmetrical_bones['fingers'][tip][1]].tail.xyz = math.copysign(ebone.tail.x, -1), ebone.tail.y, ebone.tail.z
+
+                    armature.data.edit_bones[prefix + bone].length = length
 
         #Removes unimportant bones such as weapon or attachment bones
         if arm.other_bones:
-            for bone in arm.other_bones:
-                if bone.count('weapon'):
-                    prefix = Prefixes.other
-                    bone = armature.data.edit_bones[prefix + bone]
-                    armature.data.edit_bones.remove(bone)
-                elif bone.startswith('a.'):
-                    prefix = Prefixes.attachment
-                    bone = armature.data.edit_bones[prefix + bone.replace('a.', '')]
-                    armature.data.edit_bones.remove(bone)
-                elif bone.count('forward'):
-                    prefix = Prefixes.other
-                    bone = armature.data.edit_bones[prefix + bone]
-                    armature.data.edit_bones.remove(bone)
+            for container, bone in arm.other_bones.items():
+                for bone in bone:
+                    if container == 'weapon':
+                        prefix = Prefixes.other
+                        bone = armature.data.edit_bones[prefix + bone]
+                        armature.data.edit_bones.remove(bone)
+                    elif container == 'attachment':
+                        prefix = Prefixes.attachment
+                        bone = bone.replace('a.', '')
+                        bone = armature.data.edit_bones[prefix + bone]
+                        armature.data.edit_bones.remove(bone)
+                    elif container == 'forward':
+                        prefix = Prefixes.other
+                        bone = armature.data.edit_bones[prefix + bone]
+                        armature.data.edit_bones.remove(bone)
 
         #Removes pole bones if simple IK was used prior and not removed
         if arm.inverse_kinematics:
-            for bone in ['ForearmPole_L', 'ForearmPole_R', 'CalfPole_L', 'CalfPole_R']:
+            for bone in arm.poles:
                 bone = armature.data.edit_bones[bone]
                 armature.data.edit_bones.remove(bone)
 
         #Final touches to the armature
         armature.data.display_type = 'OCTAHEDRAL'
-        armature.data.show_bone_custom_shapes = False
+
+        if type == 'weight':
+            armature.data.show_bone_custom_shapes = False
             
         armature.show_in_front = 1
 
         bpy.ops.object.mode_set(mode='OBJECT')
 
-    #Deletion    
+    #Deletion
     elif action == 1 or action == 2:
 
         #Checks if they weren't deleted already
@@ -1007,20 +1323,22 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                 prefix = arm.prefix
 
                 #Removes original armature constraints
-                for bone in arm.symmetrical_bones:
-                    try:
-                        loc = armature.pose.bones[prefix + bone].constraints["Retarget Location"]
-                        armature.pose.bones[prefix + bone].constraints.remove(loc)
-                    except:
-                        pass
+                for cat in arm.symmetrical_bones.keys():
+                    for bone in arm.symmetrical_bones[cat].values():
+                        for bone in bone:
+                            try:
+                                loc = armature.pose.bones[prefix + bone].constraints["Retarget Location"]
+                                armature.pose.bones[prefix + bone].constraints.remove(loc)
+                            except:
+                                pass
                         
-                    try:
-                        rot = armature.pose.bones[prefix + bone].constraints["Retarget Rotation"]
-                        armature.pose.bones[prefix + bone].constraints.remove(rot)
-                    except:
-                        pass
+                            try:
+                                rot = armature.pose.bones[prefix + bone].constraints["Retarget Rotation"]
+                                armature.pose.bones[prefix + bone].constraints.remove(rot)
+                            except:
+                                pass
 
-                for bone in arm.central_bones:
+                for bone in arm.central_bones.values():
                     try:
                         loc = armature.pose.bones[prefix + bone].constraints["Retarget Location"]
                         armature.pose.bones[prefix + bone].constraints.remove(loc)
@@ -1041,5 +1359,56 @@ def generate_armature(type, action): #Creates or deletes the weight armature
         #Reselects original armature for the sake of convenience
         armature = bpy.data.objects[arm.name]
 
-        armature.select_set(True)
-        bpy.context.view_layer.objects.active = armature
+        if armature.visible_get():
+            armature.select_set(True)
+            bpy.context.view_layer.objects.active = armature
+
+#Does not work inside this file, for some reason
+def helper_convert(bone):
+    if bone.startswith('s.'):
+        prefix = arm.prefix
+        bone = bone.replace('s.', '')
+
+    elif bone.startswith('s2.'):
+        prefix = Prefixes.helper2
+        bone = bone.replace('s2.', '')
+    else:
+        prefix = Prefixes.helper
+
+    return bone, prefix
+
+def define_bone(bone, location=[], sign='+', parent=False, type=0):
+    armature = bpy.data.objects[arm.animation_armature_name]
+    ebone = armature.data.edit_bones[bone[0]]
+    ebone2 = armature.data.edit_bones[bone[1]]
+
+    if type == 0:
+        if location:
+            if sign == '+':
+                ebone.head.xyz = math.copysign(ebone2.head.x, 1) + location[0], ebone2.head.y - location[2], ebone2.head.z + location[4]
+                ebone.tail.xyz = math.copysign(ebone2.tail.x, 1) + location[1], ebone2.tail.y - location[3], ebone.head.z + location[5]
+            elif sign == '-':
+                ebone.head.xyz = math.copysign(ebone2.head.x, -1) - location[0], ebone2.head.y - location[2], ebone2.head.z + location[4]
+                ebone.tail.xyz = math.copysign(ebone2.tail.x, -1) - location[1], ebone2.tail.y - location[3], ebone.head.z + location[5]
+    elif type == 1:
+        if sign == '+':
+            ebone.tail.xyz = math.copysign(ebone.head.x, 1), ebone.head.y, ebone.head.z
+            ebone.head.xyz = math.copysign(ebone2.head.x, 1), ebone.head.y, ebone.head.z
+        elif sign == '-':
+            ebone.tail.xyz = math.copysign(ebone.head.x, -1), ebone.head.y, ebone.head.z
+            ebone.head.xyz = math.copysign(ebone2.head.x, -1), ebone.head.y, ebone.head.z
+    elif type == 2:
+        ebone3 = armature.data.edit_bones[bone[2]]
+
+        if sign == '+':
+            ebone.tail.xyz = math.copysign(ebone2.head.x, 1), ebone2.head.y, ebone2.head.z
+            ebone.head.xyz = math.copysign(ebone3.head.x, 1), ebone2.head.y, ebone3.head.z
+        elif sign == '-':
+            ebone.tail.xyz = math.copysign(ebone2.head.x, -1), ebone2.head.y, ebone2.head.z
+            ebone.head.xyz = math.copysign(ebone3.head.x, -1), ebone2.head.y, ebone3.head.z
+        
+    if parent:
+        if bone[0].startswith('L_') or bone[0].endswith('_L'):
+            ebone.parent = ebone2
+        elif bone[0].startswith('R_') or bone[0].endswith('_R'):
+            ebone.parent = ebone3
