@@ -145,8 +145,9 @@ class VAT_PT_rigifyretarget(bpy.types.Panel): #Rigify Retargetting panel
         row.operator('vat.rigifyretarget_create', text='Generate')
         row.operator('vat.rigifyretarget_delete', text='Delete')
 
-        layout.prop(vatproperties, 'target_object')
-        layout.label(text="Used to check for facial expressions")
+        if not utils.arm.animation_armature:
+            layout.prop(vatproperties, 'target_object')
+            layout.label(text="Used to check for facial expressions")
 
         if vatproperties.target_armature:
             if utils.arm.animation_armature:
@@ -154,8 +155,9 @@ class VAT_PT_rigifyretarget(bpy.types.Panel): #Rigify Retargetting panel
                     col = layout.column()
                     try:
                         if bpy.context.object.name != 'rig':
+                            col.label(text="Reposition facial drivers correctly", icon='INFO')
+                            col.label(text="and edit bone parameters to your need")
                             col.operator('pose.rigify_generate', text="Generate rig", icon='OUTLINER_DATA_ARMATURE')
-                            col.label(text="Edit to your need before generating", icon='INFO')
                     except:
                         col.label(text="Rigify is not installed", icon='CANCEL')
 

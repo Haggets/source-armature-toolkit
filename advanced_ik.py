@@ -96,9 +96,9 @@ def anim_armature(action):
                                     elif bone == 'UpperEye_R':
                                         define_bone([bone, head], [1.2, 1.2, 4, 3.5, 3.5, 0], '-')
                                     elif bone == 'LowerEye_L':
-                                        define_bone([bone, head], [1.2, 1.2, 4, 3.5, 3, 0], '+')
+                                        define_bone([bone, head], [1.2, 1.2, 4, 3.5, 2.9, 0], '+')
                                     elif bone == 'LowerEye_R':
-                                        define_bone([bone, head], [1.2, 1.2, 4, 3.5, 3, 0], '-')
+                                        define_bone([bone, head], [1.2, 1.2, 4, 3.5, 2.9, 0], '-')
                             
                         #Cheek
                         elif shapekey.count('AU6L+AU6R') or shapekey.count('AU6ZL+AU6ZR') or shapekey.count('AU13L+AU13R'):
@@ -205,8 +205,30 @@ def anim_armature(action):
                                     ebone = armature.data.edit_bones.new(bone)
                                     ebone.use_deform = False
                                 
-                                    if bone == 'Chin':
-                                        define_bone([bone, head], [0, 0, 4.5, 4, -1.5, 0.15])
+                                    define_bone([bone, head], [0, 0, 4.5, 4, -1.5, 0.15])
+
+                eyes = []
+                utils.arm.eyes_material = []
+
+                for material in bpy.data.objects[vatproperties.target_object.name].data.materials:
+                    if material.name.casefold().count('eyeball_l'):
+                        eyes.append('EyeLeft')
+                        utils.arm.eyes_material.append(material)
+                    elif material.name.casefold().count('eyeball_r'):
+                        eyes.append('EyeRight')
+                        utils.arm.eyes_material.append(material)
+                    
+                if eyes:
+                    for bone in eyes:
+                        utils.arm.facial_bones.append(bone)
+
+                        ebone = armature.data.edit_bones.new(bone)
+                        ebone.use_deform = False
+
+                        if bone == 'EyeLeft':
+                            define_bone([bone, head], [1.2, 1.2, 10, 9.5, 3.2, 0], '+')
+                        elif bone == 'EyeRight':
+                            define_bone([bone, head], [1.2, 1.2, 10, 9.5, 3.2, 0], '-')
 
             #Creates 2 pelvis bones for whatever Rigify does with em
             rigify_pelvis = ['Pelvis_L', 'Pelvis_R']
@@ -337,6 +359,9 @@ def anim_armature(action):
                 elif bone == 'Nostril_R':
                     limit_loc.min_x = -0.5
 
+                elif bone == 'EyeLeft' or bone == 'EyeRight':
+                    limit_loc.min_x = -4
+
                 else:
                     limit_loc.min_x = -1
 
@@ -347,6 +372,10 @@ def anim_armature(action):
 
                 elif bone == 'Nostril_R':
                     limit_loc.max_x = 0
+
+                elif bone == 'EyeLeft' or bone == 'EyeRight':
+                    limit_loc.max_x = 4
+
                 else:
                     limit_loc.max_x = 1
 
@@ -357,6 +386,7 @@ def anim_armature(action):
 
                 elif bone.count('MiddleLip') or bone.count('LowerLip'):
                     limit_loc.min_y = -0.5
+
                 else:
                     limit_loc.min_y = 0
 
@@ -376,7 +406,11 @@ def anim_armature(action):
                     limit_loc.min_z = -0.5
 
                 elif bone.count('Chin'):
-                    limit_loc.min_z = -2
+                    limit_loc.min_z = -1.5
+                    
+                elif bone == 'EyeLeft' or bone == 'EyeRight':
+                    limit_loc.min_z = -4
+
                 else:
                     limit_loc.min_z = -1
 
@@ -388,6 +422,10 @@ def anim_armature(action):
 
                 elif bone.count('Eyebrow') or bone.count('UpperLip') or bone.count('MouthCorner') or bone.count('Nostril') or bone.count('LowerLip'):
                     limit_loc.max_z = 0.5
+
+                elif bone == 'EyeLeft' or bone == 'EyeRight':
+                    limit_loc.max_z = 4
+
                 else:
                     limit_loc.max_z = 1
 
@@ -442,6 +480,11 @@ def anim_armature(action):
                     widget = bpy.data.objects['MouthCorner']
                     pbone.custom_shape = widget
                     pbone.custom_shape_scale = 0.4
+
+                elif bone == 'EyeLeft' or bone == 'EyeRight':
+                    widget = bpy.data.objects['Circle']
+                    pbone.custom_shape = widget
+                    pbone.custom_shape_scale = 1.5
 
                 if bone.count('Inner_Eyebrow') or bone.count('Outer_Eyebrow') or bone.count('Nostril') or bone.count('Cheek') or bone.count('MiddleLip'):
                     ebone.layers[1] = True
@@ -1074,13 +1117,12 @@ def anim_armature(action):
                 object[shapekey].value = 0
 
                 #Appends central shapekeys, since they don't need L/R versions of them
-                if shapekey.count('AU17L+AU17R') or shapekey.count('AU26L+AU26R') or shapekey.count('AU27ZL+AU27ZR') or shapekey.count('AD30L') or shapekey.count('AD30R') or shapekey.count('AU22ZL+AU22ZR') or shapekey.count('AD96L') or shapekey.count('AD96R'):
+                if shapekey.count('AU17L+AU17R') or shapekey.count('AU26L+AU26R') or shapekey.count('AU27L+AU27R') or shapekey.count('AU27ZL+AU27ZR') or shapekey.count('AD30L') or shapekey.count('AD30R') or shapekey.count('AU22ZL+AU22ZR') or shapekey.count('AD96L') or shapekey.count('AD96R'):
                     new_shapekeys.append(shapekey)
 
                 #Skips basis, redundant halfway close eye, reduntant halfway squint, reduntant harsher frown, redudant lower lip drop, reduntant halfway puckering level 1 and 2 mouth open and odd individual eye shapekeys
-                elif shapekey.lower().count('basis') or shapekey.count('AU42') or shapekey.count('AU22L+AU22R') or shapekey.count('AU20L+AU20R') or shapekey.count('AU6L+AU6R') or shapekey.count('AU18L+AU18R') or shapekey.count('AU27L+AU27R') or shapekey.count('AU26ZL+AU26ZR') or shapekey.count('AU25L+AU25R') or shapekey.count('AU22ZL+AU22ZR') or shapekey.count('lower_right') or shapekey.count('lower_left') or shapekey.count('upper_right') or shapekey.count('upper_left') or shapekey.count('lower_right.001') or shapekey.count('lower_left.001') or shapekey.count('upper_right.001') or shapekey.count('upper_left.001'):
+                elif shapekey.lower().count('basis') or shapekey.count('AU22L+AU22R') or shapekey.count('AU20L+AU20R') or shapekey.count('AU6L+AU6R') or shapekey.count('AU18L+AU18R')or shapekey.count('AU26ZL+AU26ZR') or shapekey.count('AU25L+AU25R') or shapekey.count('AU22ZL+AU22ZR') or shapekey.count('lower_right') or shapekey.count('lower_left') or shapekey.count('upper_right') or shapekey.count('upper_left') or shapekey.count('lower_right.001') or shapekey.count('lower_left.001') or shapekey.count('upper_right.001') or shapekey.count('upper_left.001'):
                     pass
-
                 else:
                     object[shapekey].value = 1
                     left_shapekey = bpy.data.objects[vatproperties.target_object.name].shape_key_add(name=shapekey + '_L', from_mix=True)
@@ -1148,29 +1190,64 @@ def anim_armature(action):
                         driver.modifiers[0].coefficients[1] = 2
 
                 #Eyes
-                elif shapekey.count('f01') or shapekey.count('f02') or shapekey.count('f03') or shapekey.count('f04'):
+                elif shapekey.count('f01') or shapekey.count('f02') or shapekey.count('f03') or shapekey.count('f04') or shapekey.count('AU42'):
                     
-                    #f01 = Upper eyelids drop
+                    #f01 = Upper eyelids close
                     #f02 = Upper eyelids raise
                     #f03 = Lower eyelids drop
                     #f04 = Lower eyelids raise
+                    #AU42 = Upper eyelids drop
 
                     target.transform_space = 'LOCAL_SPACE'
                     target.transform_type = 'LOC_Z'
 
-                    if shapekey.count('f01') or shapekey.count('f02'):
+                    if shapekey.count('f01'):
+                        pass
+                    elif shapekey.count('AU42'):
+                        driver.driver.expression = variable.name + '/4'
+                    else:
+                        #Creates another driver controlled by the corresponding eye bone
+                        variable2 = driver.driver.variables.new()
+                        variable2.name = "eye"
+                            
+                        driver.driver.expression = variable.name + '+' + variable2.name + '/4' #Combines the old driver with the new driver, making the latter have less influence
+                        variable2.type = 'TRANSFORMS'
+
+                        target2 = variable2.targets[0]
+                        target2.id = bpy.data.objects[utils.arm.animation_armature_name]
+
+                        target2.transform_space = 'LOCAL_SPACE'
+                        target2.transform_type = 'LOC_Z'
+
+                    if shapekey.count('f01'):
                         if shapekey.endswith('_L'):
                             target.bone_target = "UpperEye_L"
                         elif shapekey.endswith('_R'):
                             target.bone_target = "UpperEye_R"
+                    
+                    elif shapekey.count('f02'):
+                        if shapekey.endswith('_L'):
+                            target.bone_target = "UpperEye_L"
+                            target2.bone_target = 'EyeLeft'
+                        elif shapekey.endswith('_R'):
+                            target.bone_target = "UpperEye_R"
+                            target2.bone_target = 'EyeRight'
 
                     elif shapekey.count('f03') or shapekey.count('f04'):
                         if shapekey.endswith('_L'):
                             target.bone_target = "LowerEye_L"
+                            target2.bone_target = 'EyeLeft'
                         elif shapekey.endswith('_R'):
                             target.bone_target = "LowerEye_R"
+                            target2.bone_target = 'EyeRight'
 
-                    if shapekey.count('f01') or shapekey.count('f03'):
+                    elif shapekey.count('AU42'):
+                        if shapekey.endswith('_L'):
+                            target.bone_target = 'EyeLeft'
+                        elif shapekey.endswith('_R'):
+                            target.bone_target = 'EyeRight'
+                        
+                    if shapekey.count('f01') or shapekey.count('f03') or shapekey.count('AU42'):
                         driver.modifiers[0].coefficients[1] = -5
                     
                     elif shapekey.count('f02') or shapekey.count('f04'):
@@ -1300,7 +1377,8 @@ def anim_armature(action):
                         target.transform_type = 'LOC_Z'
 
                         if shapekey.count('AU16L+AU16R'):
-                            driver.modifiers[0].coefficients[1] = -2
+                            driver.modifiers[0].coefficients[1] = -3
+                            object[shapekey].slider_max = 1.5
                         elif shapekey.count('AU17DL+AU17DR'):
                             driver.modifiers[0].coefficients[1] = 2
 
@@ -1309,10 +1387,11 @@ def anim_armature(action):
                         driver.modifiers[0].coefficients[1] = -2
 
                 #Chin
-                elif shapekey.count('AU17L+AU17R') or shapekey.count('AU26L+AU26R') or shapekey.count('AU27ZL+AU27ZR') or shapekey.count('AD30L') or shapekey.count('AD30R'):
+                elif shapekey.count('AU17L+AU17R') or shapekey.count('AU26L+AU26R') or shapekey.count('AU27L+AU27R') or shapekey.count('AU27ZL+AU27ZR') or shapekey.count('AD30L') or shapekey.count('AD30R'):
 
                     #AU17L+AU17R = Chin raise (sort of)
                     #AU26L+AU26R = Chin drop
+                    #AU27L+AU27R = Chin drop 2
                     #AU27ZL+AU27ZR = Full mouth open
                     #AD30L/R = Chin sideways
 
@@ -1320,30 +1399,126 @@ def anim_armature(action):
                     target.transform_space = 'LOCAL_SPACE'
                     
                     #Upwards/Downwards movement
-                    if shapekey.count('AU17L+AU17R') or shapekey.count('AU26L+AU26R') or shapekey.count('AU27ZL+AU27ZR'):
+                    if shapekey.count('AU17L+AU17R') or shapekey.count('AU26L+AU26R') or shapekey.count('AU27L+AU27R') or shapekey.count('AU27ZL+AU27ZR'):
                         target.transform_type = 'LOC_Z'
+
+                        #Documentation (Since i may be the first human on earth to find and/or utilize this)
+                        #driver.keyframe_points.add(count) = Add keyframe
+                        #driver.keyframe_points[keyframe] = Keyframe
+                        #driver.keyframe_points[0].co_ui[0] = Horizontal position
+                        #driver.keyframe_points[0].co_ui[1] = Vertical position
+                        #driver.keyframe_points[0].handle_(left/right) = Keyframe handle (Location and type)
+                        #driver.keyframe_points[0].handle_(left/right)_type = Interpolation type
 
                         #Chin lowers
                         if shapekey.count('AU26L+AU26R'):
-                            driver.modifiers[0].coefficients[1] = -1
-                            driver.modifiers[0].use_restricted_range = True
-                            driver.modifiers[0].frame_start = -0.6
-                            driver.modifiers[0].blend_in = 0.1
+                            driver.keyframe_points.add(3)
+
+                            #Keyframe positions and values
+                            driver.keyframe_points[0].co_ui[0] = 0
+                            driver.keyframe_points[0].co_ui[1] = 0
+                            driver.keyframe_points[1].co_ui[0] = -0.6
+                            driver.keyframe_points[1].co_ui[1] = 1
+                            driver.keyframe_points[2].co_ui[0] = -1.2
+                            driver.keyframe_points[2].co_ui[1] = 0
+
+                            #Handles
+                            driver.keyframe_points[1].handle_left_type = 'FREE'
+                            driver.keyframe_points[1].handle_right_type = 'FREE'
+                            driver.keyframe_points[1].handle_left[0] = -0.75
+                            driver.keyframe_points[1].handle_left[1] = 1
+                            driver.keyframe_points[1].handle_right[0] = -0.45
+                            driver.keyframe_points[1].handle_right[1] = 0.5
+
+                            driver.keyframe_points[2].handle_left_type = 'ALIGNED'
+                            driver.keyframe_points[2].handle_right_type = 'ALIGNED'
+                            driver.keyframe_points[2].handle_left[0] = -1.3
+                            driver.keyframe_points[2].handle_left[1] = 0
+                            driver.keyframe_points[2].handle_right[0] = -0.945
+                            driver.keyframe_points[2].handle_right[1] = 0
+
+                            #Forces refresh
+                            driver.auto_smoothing = 'CONT_ACCEL'
+
+                            try:
+                                driver.modifiers.remove(driver.modifiers[0])
+                            except:
+                                pass
+
+                        elif shapekey.count('AU27L+AU27R'):
+                            driver.keyframe_points.add(4)
+
+                            driver.keyframe_points[0].co_ui[0] = 0
+                            driver.keyframe_points[0].co_ui[1] = 0
+                            driver.keyframe_points[1].co_ui[0] = -0.6
+                            driver.keyframe_points[1].co_ui[1] = 0
+                            driver.keyframe_points[2].co_ui[0] = -1
+                            driver.keyframe_points[2].co_ui[1] = 0.95
+                            driver.keyframe_points[3].co_ui[0] = -1.5
+                            driver.keyframe_points[3].co_ui[1] = 0
+
+                            driver.keyframe_points[1].handle_left_type = 'AUTO'
+                            driver.keyframe_points[1].handle_right_type = 'AUTO'
+
+                            driver.keyframe_points[2].handle_left_type = 'ALIGNED'
+                            driver.keyframe_points[2].handle_right_type = 'ALIGNED'
+                            driver.keyframe_points[2].handle_left[0] = -1.1
+                            driver.keyframe_points[2].handle_left[1] = 0.95
+                            driver.keyframe_points[2].handle_right[0] = -0.9
+                            driver.keyframe_points[2].handle_right[1] = 0.95
+
+                            driver.keyframe_points[3].handle_left_type = 'ALIGNED'
+                            driver.keyframe_points[3].handle_right_type = 'ALIGNED'
+                            driver.keyframe_points[3].handle_left[0] = -2
+                            driver.keyframe_points[3].handle_left[1] = 0
+                            driver.keyframe_points[3].handle_right[0] = -1.3
+                            driver.keyframe_points[3].handle_right[1] = 0
+
+                            #Forces refresh
+                            driver.auto_smoothing = 'CONT_ACCEL'
+
+                            try:
+                                driver.modifiers.remove(driver.modifiers[0])
+                            except:
+                                pass
 
                         #Mouth fully opens
                         elif shapekey.count('AU27ZL+AU27ZR'):
-                            driver.modifiers[0].coefficients[1] = -0.5 #Negative coefficient = Activated when moved down
-                            driver.modifiers[0].use_restricted_range = True
-                            driver.modifiers[0].frame_start = -2.1
-                            driver.modifiers[0].frame_end = -0.3
-                            driver.modifiers[0].blend_out = 0.25
+                            driver.keyframe_points.add(2)
+
+                            driver.keyframe_points[0].co_ui[0] = -0.95
+                            driver.keyframe_points[0].co_ui[1] = 0
+                            driver.keyframe_points[1].co_ui[0] = -1.5
+                            driver.keyframe_points[1].co_ui[1] = 1
+
+                            driver.keyframe_points[0].handle_left_type = 'ALIGNED'
+                            driver.keyframe_points[0].handle_right_type = 'ALIGNED'
+                            driver.keyframe_points[0].handle_left[0] = -1.135
+                            driver.keyframe_points[0].handle_left[1] = 0.275
+                            driver.keyframe_points[0].handle_right[0] = -0.825
+                            driver.keyframe_points[0].handle_right[1] = -0.185
+
+                            driver.keyframe_points[1].handle_left_type = 'ALIGNED'
+                            driver.keyframe_points[1].handle_right_type = 'ALIGNED'
+                            driver.keyframe_points[1].handle_left[0] = -1.6
+                            driver.keyframe_points[1].handle_left[1] = 1
+                            driver.keyframe_points[1].handle_right[0] = -1.3
+                            driver.keyframe_points[1].handle_right[1] = 1
+
+                            #Forces refresh
+                            driver.auto_smoothing = 'CONT_ACCEL'
+
+                            try:
+                                driver.modifiers.remove(driver.modifiers[0])
+                            except:
+                                pass
                     
                     #Sideways movement
                     elif shapekey.count('AD30L') or shapekey.count('AD30R'):
                         target.transform_type = 'LOC_X'
 
                         if shapekey.count('AD30R'):
-                                driver.modifiers[0].coefficients[1] = -1
+                            driver.modifiers[0].coefficients[1] = -1
 
                 #MiddleLip
                 elif shapekey.count('AD96L') or shapekey.count('AD96R') or shapekey.count('AU22ZL+AU22ZR'):
@@ -1365,6 +1540,95 @@ def anim_armature(action):
 
                         driver.modifiers[0].coefficients[1] = -2
 
+            if utils.arm.eyes_material:
+                for material in utils.arm.eyes_material:
+                    material = bpy.data.objects[vatproperties.target_object.name].data.materials[material.name]
+
+                    eye_texture = False
+
+                    if not material.use_nodes:
+                        material.use_nodes = True
+
+                    link = material.node_tree.links
+                    node = material.node_tree.nodes
+
+                    if node['Image Texture']:
+                        imgtexture = node['Image Texture']
+                        output_loc = imgtexture.location
+                        eye_texture = True
+                    elif node['Material Output']:
+                        output_loc = node['Material Output'].location
+                    else:
+                        output_loc = (0,0)
+
+                    #Checks if mapping node already exists
+                    try:
+                        mapping = node['VAT Eye Movement']
+                    except:
+                        mapping = node.new('ShaderNodeMapping')
+                        mapping.name = "VAT Eye Movement"
+                        mapping.label = "Connect to iris(+Normal/Specular) texture's vector input"
+                        mapping.width = 315 #So all the label is visible
+                        if eye_texture:
+                            mapping.location = output_loc[0] - 400, output_loc[1]
+                        else:
+                            mapping.location = output_loc[0], output_loc[1] + 420
+
+                    #Checks if texture coordinates node already exists
+                    try:
+                        texcoord = node['VAT Eye Movement Origin']
+                    except:
+                        texcoord = node.new('ShaderNodeTexCoord')
+                        texcoord.name = "VAT Eye Movement Origin"
+                        texcoord.location = mapping.location[0] - 200, mapping.location[1]
+                    
+                    if not texcoord.outputs['UV'].links:
+                        link.new(texcoord.outputs['UV'], mapping.inputs['Vector'])
+
+                    if eye_texture:
+                        if not mapping.outputs['Vector'].links:
+                            link.new(mapping.outputs['Vector'], imgtexture.inputs['Vector'])
+                        imgtexture.extension = 'EXTEND'
+
+                    #Driver portion
+                    driver = mapping.inputs['Location'].driver_add('default_value')
+
+                    variable = driver[0].driver.variables.new() #Creates new variable onto the shapekey
+                    variable.name = "eye_x"
+                    driver[0].driver.expression = variable.name #Changes expression to created variable's name
+                    variable.type = 'TRANSFORMS' #Changes type of variable to transform
+
+                    target = variable.targets[0]
+                    target.id = bpy.data.objects[utils.arm.animation_armature_name]
+                    target.transform_space = 'LOCAL_SPACE'
+                    target.transform_type = 'LOC_X'
+
+                    if material.name.count('eyeball_l'):
+                        target.bone_target = 'EyeLeft'
+                        driver[0].modifiers[0].coefficients[1] = -0.25
+                    elif material.name.count('eyeball_r'):
+                        target.bone_target = 'EyeRight'
+                        driver[0].modifiers[0].coefficients[1] = 0.25
+
+                    variable = driver[1].driver.variables.new() #Creates new variable onto the shapekey
+                    variable.name = "eye_z"
+                    driver[1].driver.expression = variable.name #Changes expression to created variable's name
+                    variable.type = 'TRANSFORMS' #Changes type of variable to transform
+
+                    target = variable.targets[0]
+                    target.id = bpy.data.objects[utils.arm.animation_armature_name]
+                    target.transform_space = 'LOCAL_SPACE'
+                    target.transform_type = 'LOC_Z'
+
+                    driver[1].modifiers[0].coefficients[1] = -0.25
+
+                    if material.name.count('eyeball_l'):
+                        target.bone_target = 'EyeLeft'
+                    elif material.name.count('eyeball_r'):
+                        target.bone_target = 'EyeRight'
+
+                del utils.arm.eyes_material
+                
     def create_widgets():
 
         #Creates widgets collection before Rigify
@@ -1376,18 +1640,25 @@ def anim_armature(action):
         #Empty that stores all the generated widgets for easier storage/manipulation
         parent = bpy.data.objects.new('parent_widgets', None)
 
-        for widget in ['Chin', 'MouthCorner', 'Cheek', 'LowerLip', 'MiddleLip', 'UpperLip', 'Nostril_L', 'Nostril_R', 'UpDown']:
+        for widget in ['Chin', 'MouthCorner', 'Cheek', 'LowerLip', 'MiddleLip', 'UpperLip', 'Nostril_L', 'Nostril_R', 'UpDown', 'Circle']:
             try:
                 bpy.data.objects[widget]
             except:
                 #Creates mesh datablock and object
                 mesh = bpy.data.meshes.new(widget)
-                object = bpy.data.objects.new(widget, mesh)
+                if widget == 'Circle':
+                    object = bpy.data.objects.new(widget, None)
+                else:
+                    object = bpy.data.objects.new(widget, mesh)
                 object.parent = parent
 
                 #Gets Rigify's collection and links to it
                 collection = bpy.data.collections['Widgets']
                 collection.objects.link(object)
+
+                if widget == 'Circle':
+                    object.empty_display_type = 'CIRCLE'
+                    continue
 
                 faces = []
 
@@ -1426,6 +1697,7 @@ def anim_armature(action):
                 elif widget == 'UpDown':
                     vertices = [(0.0000, 0.0000, 1.0000), (-0.3827, 0.0000, 0.9239), (-0.7071, 0.0000, 0.7071), (-0.9239, 0.0000, 0.3827), (-1.0000, 0.0000, 0.0000), (-0.9239, -0.0000, -0.3827), (-0.7071, -0.0000, -0.7071), (-0.3827, -0.0000, -0.9239), (0.0000, -0.0000, -1.0000), (0.3827, -0.0000, -0.9239), (0.7071, -0.0000, -0.7071), (0.9239, -0.0000, -0.3827), (1.0000, 0.0000, 0.0000), (0.9239, 0.0000, 0.3827), (0.7071, 0.0000, 0.7071), (0.3827, 0.0000, 0.9239), (0.3718, 0.0000, -1.8058), (0.6592, 0.0000, -1.3381), (-0.3718, 0.0000, -1.8058), (-0.6592, 0.0000, -1.3381), (-0.4179, 0.0000, -1.0882), (-0.7722, 0.0000, -0.8515), (0.7722, 0.0000, -0.8515), (0.4179, 0.0000, -1.0882), (-0.0000, 0.0000, -1.1805), (-0.0000, 0.0000, -2.2000), (-0.0000, 0.0000, 2.2000), (0.0000, 0.0000, 1.1805), (-0.4179, 0.0000, 1.0882), (-0.7722, 0.0000, 0.8515), (0.7722, 0.0000, 0.8515), (0.4179, 0.0000, 1.0882), (0.6592, 0.0000, 1.3381), (0.3718, 0.0000, 1.8058), (-0.6592, 0.0000, 1.3381), (-0.3718, 0.0000, 1.8058)]
                     edges = [(1, 0), (2, 1), (3, 2), (4, 3), (5, 4), (6, 5), (7, 6), (8, 7), (9, 8), (10, 9), (11, 10), (12, 11), (13, 12), (14, 13), (15, 14), (0, 15), (16, 25), (17, 22), (18, 25), (19, 21), (17, 16), (19, 18), (24, 20), (20, 21), (22, 23), (23, 24), (28, 27), (31, 30), (27, 31), (34, 35), (29, 28), (32, 33), (32, 30), (33, 26), (34, 29), (35, 26)]
+                    
 
                 object.data.from_pydata(vertices, edges, faces)
 
