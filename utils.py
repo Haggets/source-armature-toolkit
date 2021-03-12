@@ -1307,6 +1307,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
 
             #Checks if retarget empties are present, if so, remove them
             if action == 1:
+                bpy.data.objects[arm.name].driver_remove('scale')
                 try:
                     collection = bpy.data.collections["Retarget Empties ({})".format(arm.name)]
                 except:
