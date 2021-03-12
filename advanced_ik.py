@@ -12,7 +12,7 @@ def anim_armature(action):
 
     def generate_rigify(action): #Creates Rigify armature and fills in all the Rigify parameters
 
-        #Armature ceration
+        #Armature creation
         generate_armature('anim', action)
         
         #Creation
@@ -22,6 +22,26 @@ def anim_armature(action):
             #Selects animation armature
             update(1, armature)
 
+            #Creates driver so the original armature mimics the animation armature's scale
+            driver = bpy.data.objects[utils.arm.name].driver_add('scale')
+
+            for index, driver in enumerate(driver):
+                #Parameters and target
+                variable = driver.driver.variables.new() #Creates new variable onto the shapekey
+                variable.name = "scale"
+                driver.driver.expression = variable.name #Changes expression to created variable's name
+                variable.type = 'TRANSFORMS' #Changes type of variable to transform
+
+                target = variable.targets[0]
+                target.id = armature #Links variable to animation armature
+                target.transform_space = 'LOCAL_SPACE'
+                if index == 0:
+                    target.transform_type = 'SCALE_X'
+                elif index == 1:
+                    target.transform_type = 'SCALE_Y'
+                elif index == 2:
+                    target.transform_type = 'SCALE_Z'
+                
             #Hides all but the first layer
             for i in [1,2,3,5,4,6,7]:
                     armature.data.layers[i] = False
@@ -669,17 +689,19 @@ def anim_armature(action):
             print("Animation armature created!")
 
         elif action == 1:
-
+            bpy.data.objects[utils.arm.name].driver_remove('scale')
             #Deletes Left/Right vertex groups if present
             try:
                 left_group = bpy.data.objects[vatproperties.target_object.name].vertex_groups['Left']
                 bpy.data.objects[vatproperties.target_object.name].vertex_groups.remove(left_group)
+                del left_group
             except:
                 pass
             
             try:
                 right_group = bpy.data.objects[vatproperties.target_object.name].vertex_groups['Right']
                 bpy.data.objects[vatproperties.target_object.name].vertex_groups.remove(right_group)
+                del right_group
             except:
                 pass
 
@@ -698,8 +720,10 @@ def anim_armature(action):
     def empty_rotation(container, bone, type): #Sets empty rotation
         prefix = utils.arm.prefix
 
-        base = bpy.data.objects['base_{}{} ({})'.format(prefix, bone, utils.arm.name)]
-        target = bpy.data.objects['target_{}{} ({})'.format(prefix, bone, utils.arm.name)]
+        scale = bpy.data.objects[utils.arm.animation_armature_name].scale
+
+        base = bpy.data.objects['base_{} ({})'.format(bone, utils.arm.name)[0:60]]
+        target = bpy.data.objects['target_{} ({})'.format(bone, utils.arm.name)[0:60]]
         
         #Default empty rotation, fit for most bones
 
@@ -712,11 +736,6 @@ def anim_armature(action):
             target.rotation_euler[1] = 0
             target.rotation_euler[2] = 0
         
-        #Counterweight for the small bump applied to the calf
-        if container == 'calf':
-            target.location[2] = 1
-            target.location[1] = 0.10000000149011612 #0.1°
-
         #Upper body
         if vatproperties.retarget_top_preset == 'OP1':
             if container == 'clavicle':
@@ -972,15 +991,15 @@ def anim_armature(action):
             
             #Retarget empties creation
             try:
-                collection = bpy.data.collections["Retarget Empties ({})".format(utils.arm.name)]
+                collection = bpy.data.collections["Retarget Empties ({})".format(utils.arm.name)[0:60]] #Name length limit
             except:
-                collection = bpy.data.collections.new("Retarget Empties ({})".format(utils.arm.name))
+                collection = bpy.data.collections.new("Retarget Empties ({})".format(utils.arm.name)[0:60])
                 bpy.context.scene.collection.children.link(collection)
 
             collection.hide_viewport = True
 
             #Creates base empty and links
-            base = bpy.data.objects.new('base_{}{} ({})'.format(prefix, bone, utils.arm.name), None)
+            base = bpy.data.objects.new('base_{} ({})'.format(bone, utils.arm.name)[0:60], None)
             collection.objects.link(base)
             base.empty_display_type = 'CUBE'
             base.hide_select = True
@@ -996,7 +1015,7 @@ def anim_armature(action):
             rot.subtarget = 'ORG-' + prefix + bone
 
             #Creates target empty and links
-            target = bpy.data.objects.new('target_{}{} ({})'.format(prefix, bone, utils.arm.name), None)
+            target = bpy.data.objects.new('target_{} ({})'.format(bone, utils.arm.name)[0:60], None)
             collection.objects.link(target)
             target.empty_display_type = 'SPHERE'
 
@@ -1012,6 +1031,30 @@ def anim_armature(action):
             rot = armature.pose.bones[prefix + bone].constraints.new('COPY_ROTATION')
             rot.name = "Retarget Rotation"
             rot.target = target
+
+            #Counterweight for the small bump applied to the calf
+            if container == 'calf':
+                #Creates driver so the calf follows the animation armature's scale
+                driver = bpy.data.objects[target.name].driver_add('location')
+
+                for index, driver in enumerate(driver):
+                    armature = bpy.data.objects['rig']
+                    #Parameters and target
+                    variable = driver.driver.variables.new() #Creates new variable onto the shapekey
+                    variable.name = "scale"
+                    if index == 1:
+                        driver.driver.expression = '0.1*' + variable.name
+                    elif index == 2:
+                        driver.driver.expression = '1*' + variable.name #Changes expression to created variable's name
+                    variable.type = 'TRANSFORMS' #Changes type of variable to transform
+
+                    target = variable.targets[0]
+                    target.id = armature #Links variable to animation armature
+                    target.transform_space = 'LOCAL_SPACE'
+                    if index == 1:
+                        target.transform_type = 'SCALE_Y'
+                    elif index == 2:
+                        target.transform_type = 'SCALE_X'
 
         #Creates parent for all bases for easier storage/manipulation
         parent = bpy.data.objects.new('parent_' + utils.arm.name, None)
@@ -1043,13 +1086,28 @@ def anim_armature(action):
                 empty_rotation(container, bone, 1)
 
         #Connects parent to collection
-        collection = bpy.data.collections["Retarget Empties ({})".format(utils.arm.name)]
+        collection = bpy.data.collections["Retarget Empties ({})".format(utils.arm.name)[0:60]]
         collection.objects.link(parent)
+
+        #Forces Rigify armature to use setup armature's scale
+        scale = bpy.data.objects[utils.arm.animation_armature_name].scale
 
         #Renames armature to prior generated armature
         armature = bpy.data.objects['rig']
         armature.name = utils.arm.name + '.anim'
         armature.data.name = utils.arm.name_real.name + '.anim'
+        armature.scale = scale
+
+        #Overrides driver so it now follows animation armature
+        driver = bpy.data.objects[utils.arm.name].driver_add('scale')
+
+        for index, driver in enumerate(driver):
+            #Parameters and target
+            variable = driver.driver.variables[0] #Creates new variable onto the shapekey
+            driver.driver.expression = variable.name #Changes expression to created variable's name
+
+            target = variable.targets[0]
+            target.id = armature #Links variable to animation armature
 
         #Deletes generated armature
         generate_armature('anim', 2)
@@ -1101,6 +1159,8 @@ def anim_armature(action):
                     left_group.add([vertex.index], 0.5, 'REPLACE')
                     right_group.add([vertex.index], 0.5, 'REPLACE')
 
+            del vertex
+
             #Still need to add center vertices to both groups, will do once i figure out
 
             #Shapekey creation
@@ -1121,7 +1181,7 @@ def anim_armature(action):
                     new_shapekeys.append(shapekey)
 
                 #Skips basis, redundant halfway close eye, reduntant halfway squint, reduntant harsher frown, redudant lower lip drop, reduntant halfway puckering level 1 and 2 mouth open and odd individual eye shapekeys
-                elif shapekey.lower().count('basis') or shapekey.count('AU22L+AU22R') or shapekey.count('AU20L+AU20R') or shapekey.count('AU6L+AU6R') or shapekey.count('AU18L+AU18R')or shapekey.count('AU26ZL+AU26ZR') or shapekey.count('AU25L+AU25R') or shapekey.count('AU22ZL+AU22ZR') or shapekey.count('lower_right') or shapekey.count('lower_left') or shapekey.count('upper_right') or shapekey.count('upper_left') or shapekey.count('lower_right.001') or shapekey.count('lower_left.001') or shapekey.count('upper_right.001') or shapekey.count('upper_left.001'):
+                elif shapekey.lower().count('basis') or shapekey.lower().count('base') or shapekey.count('AU22L+AU22R') or shapekey.count('AU20L+AU20R') or shapekey.count('AU6L+AU6R') or shapekey.count('AU18L+AU18R')or shapekey.count('AU26ZL+AU26ZR') or shapekey.count('AU25L+AU25R') or shapekey.count('AU22ZL+AU22ZR') or shapekey.count('lower_right') or shapekey.count('lower_left') or shapekey.count('upper_right') or shapekey.count('upper_left') or shapekey.count('lower_right.001') or shapekey.count('lower_left.001') or shapekey.count('upper_right.001') or shapekey.count('upper_left.001'):
                     pass
                 else:
                     object[shapekey].value = 1
@@ -1136,6 +1196,9 @@ def anim_armature(action):
                     right_shapekey.vertex_group = right_group.name
 
                     object[shapekey].value = 0
+
+            del left_shapekey
+            del right_shapekey
 
             for shapekey in new_shapekeys:
                 #Creates driver
@@ -1540,6 +1603,8 @@ def anim_armature(action):
 
                         driver.modifiers[0].coefficients[1] = -2
 
+            del shapekey
+
             if utils.arm.eyes_material:
                 for material in utils.arm.eyes_material:
                     material = bpy.data.objects[vatproperties.target_object.name].data.materials[material.name]
@@ -1552,14 +1617,15 @@ def anim_armature(action):
                     link = material.node_tree.links
                     node = material.node_tree.nodes
 
-                    if node['Image Texture']:
+                    try:
                         imgtexture = node['Image Texture']
                         output_loc = imgtexture.location
                         eye_texture = True
-                    elif node['Material Output']:
-                        output_loc = node['Material Output'].location
-                    else:
-                        output_loc = (0,0)
+                    except:
+                        try:
+                            output_loc = node['Material Output'].location
+                        except:
+                            output_loc = (0,0)
 
                     #Checks if mapping node already exists
                     try:
@@ -1567,12 +1633,12 @@ def anim_armature(action):
                     except:
                         mapping = node.new('ShaderNodeMapping')
                         mapping.name = "VAT Eye Movement"
-                        mapping.label = "Connect to iris(+Normal/Specular) texture's vector input"
                         mapping.width = 315 #So all the label is visible
                         if eye_texture:
                             mapping.location = output_loc[0] - 400, output_loc[1]
                         else:
                             mapping.location = output_loc[0], output_loc[1] + 420
+                            mapping.label = "Connect to iris(+Normal/Specular) texture's vector input"
 
                     #Checks if texture coordinates node already exists
                     try:
