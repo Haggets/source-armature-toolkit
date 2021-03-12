@@ -22,12 +22,7 @@ Yet another quirk of the Source armature is that bones are not connected to each
 
 This function procedurally creates a weight armature that connects all the bones it finds in a way that allows for a more convenient automatic vertex weighting, requiring less tweaking overall.
 
-### Inverse Kinematics (Simple IK)
-In a connected armature, when you try moving a bone that has a parent, it'll instead rotate it using the parent's tail as a pivot point, however, as the Source armature is not connected, it instead allows for the bone to actually move from its position, which in most cases is not the intended effect if you're trying to animate a realistic moving character.
-
-This function simply adds IK constraints to the character's limbs (Hands, Feet), allowing for easier manipulation of them, which is ideal for simple animations.
-
-### Rigify Retarget (Advanced IK)
-This functions is a heavy duty version of the previous function, instead creating a procedural armature with Rigify and retargetting the Source armature onto it, allowing for the usage of an animation ready armature, giving animators a WAY easier time animating characters, and allowing for a lot more flexibility overall. This also includes the ability to use facial flexes with the armature, and said animations can be baked and imported into Source without much hassle. (Not including facial flexes of course)
+### Rigify Retarget
+Function that creates a procedural armature with Rigify and retarge the Source armature onto it, allowing for the usage of an animation ready armature, giving animators a WAY easier time animating characters, and allowing for a lot more flexibility overall. This also includes the ability to use facial flexes with the armature, and said animations can be baked and imported into Source without much hassle. (Not including facial flexes of course)
 
 Remember to bake the animation onto the Source armature before exporting, otherwise the animation will not show up in the game, that's due to it only following another armature's actions, it is not doing anything on its own.
