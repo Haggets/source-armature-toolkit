@@ -16,7 +16,7 @@ from . import ui
 bl_info = {
     "name": "Valve Armature Toolkit",
     "author": "Haggets",
-    "version": (0, 6, 0),
+    "version": (0, 7, 0),
     "blender": (2, 83, 10),
     "location": "Properties > Object Data (Armature)",
     "description": "Various utilities to ease the work while working with Source engine armatures.",
@@ -37,10 +37,7 @@ def register():
         bpy.utils.register_class(cls)
         
     bpy.types.Scene.vatproperties = bpy.props.PointerProperty(type=props.VAT_properties)
-        
-    #bpy.app.handlers.undo_post.append(utils.restore_variables)
-    bpy.app.handlers.load_post.append(utils.create_armature)
-
+    
 def unregister():
 
     addon_updater_ops.unregister()

@@ -118,7 +118,7 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
     #Updates bone list in case it was modified
     utils.arm.get_bones(False)
 
-    armature = utils.arm.armature
+    armature = bpy.data.objects[utils.arm.name]
     prefix = utils.arm.prefix
 
     loc = {}
@@ -156,6 +156,8 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
 
                         bone, prefix = utils.helper_convert(bone)
                         loc, rot = constraint(bone, cat, container, utils.arm.helper_bones)
+
+    constraint_space
 
     #Final report that checks if some constraints are somehow missing or already applied
     final_report_loc = []
