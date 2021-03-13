@@ -129,6 +129,7 @@ class VAT_PT_inversekinematics(bpy.types.Panel): #Inverse Kinematics panel
         box.label(text="Meant for simple animation", icon='INFO')
         box.label(text="Adds IK to hand and feet", icon='INFO')
         box.label(text="as well as pole bones")
+        
 class VAT_PT_rigifyretarget(bpy.types.Panel): #Rigify Retargetting panel
     bl_label = "Rigify Retarget (Advanced IK)"
     bl_parent_id = 'VAT_PT_mainpanel'
@@ -145,12 +146,12 @@ class VAT_PT_rigifyretarget(bpy.types.Panel): #Rigify Retargetting panel
         row.operator('vat.rigifyretarget_create', text='Generate')
         row.operator('vat.rigifyretarget_delete', text='Delete')
 
-        if not utils.arm.animation_armature:
+        if not utils.arm.animation_armature_created:
             layout.prop(vatproperties, 'target_object')
             layout.label(text="Used to check for facial expressions")
 
         if vatproperties.target_armature:
-            if utils.arm.animation_armature:
+            if utils.arm.animation_armature_created:
                 if utils.arm.animation_armature_setup:
                     col = layout.column()
                     try:
