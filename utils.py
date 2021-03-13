@@ -1,5 +1,6 @@
 import bpy
 import math
+from bpy.app.handlers import persistent
 
 class Prefixes: #Container for other prefixes
     helper = 'hlp_'
@@ -7,21 +8,34 @@ class Prefixes: #Container for other prefixes
     attachment = 'ValveBiped.attachment_'
     other = 'ValveBiped.'
 
+@persistent
 def create_armature(self, context): #Creates new armature class
     global vatproperties
     vatproperties = bpy.context.scene.vatproperties
     if vatproperties.target_armature:
         global arm
-        #bpy.data.objects[vatproperties.target_armature.name]['vatidentifier'] = float(hash(vatproperties.target_armature.name))
         arm = Armature(vatproperties.target_armature)
+
+'''
+def restore_variables(vat_restore):
+    arm.armature = bpy.data.objects[arm._armature]
+    
+    if arm.weight_armature_created:
+        arm.weight_armature = bpy.data.objects[arm._weight_armature]
+    if arm.animation_armature_created:
+        arm.animation_armature = bpy.data.objects[arm._animation_armature]
+
+    if arm._scheme != arm.scheme:
+        arm.scheme = arm._scheme
+'''
 
 class Armature: #Armature base
 
     def __init__(self, armature):
         #Basic armature information
-        self.name = armature.name
-        self.name_full = armature
-        self.name_real = armature.data
+        self.armature = armature
+        self._armature = armature.name
+        self.armature_real = armature.data
 
         #Armature type, scheme and prefix
         self.scheme = -1 #-1 = No armature, 0 = Source, 1 = Blender, 2 = SFM, 3 = Custom 1, 4 = Custom 2
@@ -45,17 +59,19 @@ class Armature: #Armature base
         self.poles = {'hand': [], 'foot': [], 'forearm': [], 'calf': []}
 
         #Weight armature
-        self.weight_armature = False
-        self.weight_armature_name = None
-        self.weight_armature_name_full = None
+        self.weight_armature_created = False
+        self.weight_armature = None
         self.weight_armature_real = None
 
         #Animation armature
-        self.animation_armature = False
+        self.animation_armature_created = False
         self.animation_armature_setup = True
-        self.animation_armature_name = None
+        self.animation_armature = None
         self.animation_armature_real = None
         self.facial_bones = []
+
+        #Object information
+        self.shapekeys = None
 
         #Functions executed to gather previous information
         self.get_bones(True)
@@ -70,10 +86,9 @@ class Armature: #Armature base
             print("Empty armature, cannot proceed")
             
     def get_bones(self, report): #Builds bone lists
-        armature = bpy.data.objects[self.name]
+        armature = self.armature
 
-        if self.name:
-
+        if self.armature:
             #Cleans bone list
             self.full_bonelist = []
             self.symmetrical_bones = {'arms': {'clavicle': [], 'upperarm': [], 'forearm': [], 'hand': []}, 'legs': {'thigh': [], 'calf': [], 'foot': [], 'toe': []}, 'fingers': {'finger0': [], 'finger01': [], 'finger02': [], 'finger1': [], 'finger11': [], 'finger12': [], 'finger2': [], 'finger21': [], 'finger22': [], 'finger3': [], 'finger31': [], 'finger32': [], 'finger4': [], 'finger41': [], 'finger42': []}}
@@ -428,7 +443,7 @@ class Armature: #Armature base
                 self.scheme = -1
 
     def get_scheme(self): #Gets current scheme
-        armature = bpy.data.objects[self.name]
+        armature = self.armature
 
         for bone in self.symmetrical_bones:
 
@@ -455,41 +470,39 @@ class Armature: #Armature base
 
         def get_weight_armature():
             try:
-                self.weight_armature_name_full = bpy.data.objects[self.name + '.weight']
-                self.weight_armature_name = self.weight_armature_name_full.name
-                self.weight_armature_real = bpy.data.armatures[self.name_real.name + '.weight']
-                self.weight_armature = True
+                self.weight_armature = bpy.data.objects[self.armature.name + '.weight']
+                self.weight_armature_real = bpy.data.armatures[self.armature_real.name + '.weight']
+                self.weight_armature_created = True
                 print("Weight armature detected")
             except:
-                self.weight_armature = False
+                self.weight_armature_created = False
         
         def get_anim_armature():
             #Checks if it's a setup armature or a proper armature
             try:
                 try:
-                    self.animation_armature_name_full = bpy.data.objects[self.name + '.anim']
+                    self.animation_armature = bpy.data.objects[self.armature.name + '.anim']
                     self.animation_armature_setup = False
                 except:
-                    self.animation_armature_name_full = bpy.data.objects[self.name + '.anim_setup']
+                    self.animation_armature_name = bpy.data.objects[self.armature.name + '.anim_setup']
                     self.animation_armature_setup = True
-
-                self.animation_armature_name = self.animation_armature_name_full.name
 
                 try:
-                    self.animation_armature_real = bpy.data.armatures[self.name_real.name + '.anim']
+                    self.animation_armature_real = bpy.data.armatures[self.armature_real.name + '.anim']
                     self.animation_armature_setup = False
                 except:
-                    self.animation_armature_real = bpy.data.armatures[self.name_real.name + '.anim_setup']
+                    self.animation_armature_real = bpy.data.armatures[self.armature_real.name + '.anim_setup']
                     self.animation_armature_setup = True
 
-                self.animation_armature = True
+                self.animation_armature_created = True
+
                 if self.animation_armature_setup:
                     print("Setup animation armature detected")
                 elif not self.animation_armature_setup:
                     print("Animation armature detected")
 
             except:
-                self.animation_armature = False
+                self.animation_armature_created = False
 
         get_weight_armature()
         get_anim_armature()
@@ -497,7 +510,7 @@ class Armature: #Armature base
     def get_constraints(self): #Gets previously added constraints that have not been removed
 
         def get_symmetry(): 
-            armature = bpy.data.objects[self.name]
+            armature = self.armature
             prefix = self.prefix
 
             for bone in self.symmetrical_bones:
@@ -518,7 +531,7 @@ class Armature: #Armature base
                         self.symmetry_right = False
             
         def get_inversekinematics():
-            armature = bpy.data.objects[self.name]
+            armature = self.armature
             prefix = self.prefix
             
             for bone in zip(self.symmetrical_bones['arms']['hand'], self.symmetrical_bones['legs']['foot']):
@@ -532,7 +545,7 @@ class Armature: #Armature base
         get_inversekinematics()
 
     def set_groups(self): #Organizes bones by bone group and bone layers
-        armature = bpy.data.objects[self.name]
+        armature = self.armature
         prefix = self.prefix
 
         #Checks if any groups exist already
@@ -625,7 +638,7 @@ class Armature: #Armature base
             print("Bone groups set!")
             
     def set_procedural_bones(self):
-        armature = bpy.data.objects[self.name]
+        armature = self.armature
         prefix = self.prefix
 
         new = False
@@ -650,7 +663,7 @@ class Armature: #Armature base
 
                 #Initial parameters
                 transform.name = "Procedural Bone"
-                transform.target = self.name_full
+                transform.target = self.armature.name
                 transform.map_from = 'ROTATION'
                 transform.map_to = 'ROTATION'
                 transform.target_space = 'LOCAL'
@@ -708,7 +721,7 @@ class Armature: #Armature base
             print("Procedural bones configured!")
 
 #Some functions (Namely creating new bones) do not add the newly created info to the object data until a mode change occurs at least once
-def update(type, object = None):
+def update(type, object=None):
     if type == 0: #Simple update, used for making new bones show up in data
         bpy.ops.object.mode_set(mode='OBJECT')
         bpy.ops.object.mode_set(mode='EDIT')
@@ -720,7 +733,7 @@ def update(type, object = None):
         bpy.ops.object.mode_set(mode='EDIT')
 
 def generate_armature(type, action): #Creates or deletes the weight armature
-    real_armature = bpy.data.armatures[arm.name_real.name]
+    real_armature = bpy.data.armatures[arm.armature_real.name]
     
     #Creation
     if action == 0:
@@ -728,38 +741,37 @@ def generate_armature(type, action): #Creates or deletes the weight armature
         #Weight armature datablock
         if type == 'weight':
             arm.weight_armature_real = real_armature.copy()
-            arm.weight_armature_real.name = arm.name_real.name + '.weight'
+            arm.weight_armature_real.name = arm.armature_real.name + '.weight'
 
             #Creation and link to current scene
-            arm.weight_armature_name_full = bpy.data.objects.new(arm.name + '.weight', arm.weight_armature_real)
-            arm.weight_armature = True
-            arm.weight_armature_name = arm.weight_armature_name_full.name
+            arm.weight_armature_created = True
+            arm.weight_armature = bpy.data.objects.new(arm.armature.name + '.weight', arm.weight_armature_real)
+
             try:
                 collection = bpy.data.collections['Weight Amature']
             except:
                 collection = bpy.data.collections.new("Weight Armature")
                 bpy.context.scene.collection.children.link(collection)
-            collection.objects.link(arm.weight_armature_name_full)
+            collection.objects.link(arm.weight_armature)
 
-            armature = bpy.data.objects[arm.weight_armature_name]
+            armature = arm.weight_armature
             
         #Animation armature datablock
         elif type == 'anim':
             arm.animation_armature_real = real_armature.copy()
-            arm.animation_armature_real.name = arm.name_real.name + '.anim_setup'
+            arm.animation_armature_real.name = arm.armature_real.name + '.anim_setup'
 
             #Creation and link to current scene
-            arm.animation_armature_name_full = bpy.data.objects.new(arm.name + '.anim_setup', arm.animation_armature_real)
-            arm.animation_armature = True
-            arm.animation_armature_name = arm.animation_armature_name_full.name
+            arm.animation_armature = bpy.data.objects.new(arm.armature.name + '.anim_setup', arm.animation_armature_real)
+            arm.animation_armature_created = True
             try:
                 collection = bpy.data.collections["Animation Armature"]
             except:
                 collection = bpy.data.collections.new("Animation Armature")
                 bpy.context.scene.collection.children.link(collection)
-            collection.objects.link(arm.animation_armature_name_full)
+            collection.objects.link(arm.animation_armature)
 
-            armature = bpy.data.objects[arm.animation_armature_name]
+            armature = arm.animation_armature
         
         #Variables for certain bones that require additional position tweaking
         ulna = []
@@ -1262,7 +1274,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
         #Checks if they weren't deleted already
         if type == 'weight':
             try:
-                bpy.data.objects.remove(arm.weight_armature_name_full)
+                bpy.data.objects.remove(arm.weight_armature)
             except:
                 print("Weight armature already deleted, cleaning rest")
             try:
@@ -1280,9 +1292,8 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                 if collection.objects.keys() == []:
                     bpy.data.collections.remove(collection)
 
-            arm.weight_armature = False
-            arm.weight_armature_name = None
-            arm.weight_armature_name_full = None
+            arm.weight_armature_created = False
+            arm.weight_armature = None
             arm.weight_armature_real = None
             
         elif type == 'anim':
@@ -1307,9 +1318,9 @@ def generate_armature(type, action): #Creates or deletes the weight armature
 
             #Checks if retarget empties are present, if so, remove them
             if action == 1:
-                bpy.data.objects[arm.name].driver_remove('scale')
+                arm.armature.driver_remove('scale')
                 try:
-                    collection = bpy.data.collections["Retarget Empties ({})".format(arm.name)]
+                    collection = bpy.data.collections["Retarget Empties ({})".format(arm.armature.name)]
                 except:
                     collection = None
 
@@ -1320,7 +1331,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
 
                     bpy.data.collections.remove(collection)
 
-                armature = bpy.data.objects[arm.name]
+                armature = arm.armature
                 prefix = arm.prefix
 
                 #Removes original armature constraints
@@ -1352,13 +1363,12 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                     except:
                         pass
 
-            arm.animation_armature = False
-            arm.animation_armature_name = None
-            arm.animation_armature_name_full = None
+            arm.animation_armature_created = False
+            arm.animation_armature = None
             arm.animation_armature_real = None
             
         #Reselects original armature for the sake of convenience
-        armature = bpy.data.objects[arm.name]
+        armature = arm.armature
 
         if armature.visible_get():
             armature.select_set(True)
@@ -1379,7 +1389,7 @@ def helper_convert(bone):
     return bone, prefix
 
 def define_bone(bone, location=[], sign='+', parent=False, type=0):
-    armature = bpy.data.objects[arm.animation_armature_name]
+    armature = arm.animation_armature
     ebone = armature.data.edit_bones[bone[0]]
     ebone2 = armature.data.edit_bones[bone[1]]
 

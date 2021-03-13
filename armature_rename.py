@@ -24,7 +24,7 @@ def armature_rename(scheme): #Bone prefix/suffix repositioning
     utils.arm.get_bones(False)
 
     prefix = utils.arm.prefix
-    armature = bpy.data.armatures[utils.arm.name_real.name]
+    armature = utils.arm.armature_real
 
     current_mode = bpy.context.object.mode
 
@@ -47,8 +47,8 @@ def armature_rename(scheme): #Bone prefix/suffix repositioning
     prefix = utils.arm.prefix
 
     #Weight armature
-    if utils.arm.weight_armature:
-        armature = bpy.data.armatures[utils.arm.weight_armature_real.name]
+    if utils.arm.weight_armature_created:
+        armature = utils.arm.weight_armature_real
         for cat in utils.arm.symmetrical_bones.keys():
             for bone in utils.arm.symmetrical_bones[cat].values():
                 for bone in bone:
@@ -64,8 +64,8 @@ def armature_rename(scheme): #Bone prefix/suffix repositioning
     prefix = utils.arm.prefix
 
     #Animation armature
-    if utils.arm.animation_armature:
-        armature = bpy.data.armatures[utils.arm.animation_armature_real.name]
+    if utils.arm.animation_armature_created:
+        armature = utils.arm.animation_armature_real
         for cat in utils.arm.symmetrical_bones.keys():
             for bone in utils.arm.symmetrical_bones[cat].values():
                 for bone in bone:
