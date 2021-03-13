@@ -5,6 +5,8 @@ from .utils import Prefixes
 from .utils import update
 from .utils import generate_armature
 from .utils import define_bone
+from .utils import generate_shapekey_dict
+from .utils import helper_convert
 
 def anim_armature(action):
 
@@ -52,13 +54,18 @@ def anim_armature(action):
             #Checks if there are shapekeys, if so, create driver bones for them
             if vatproperties.target_object:
                 try:
-                    shapekeys = bpy.data.objects[vatproperties.target_object.name].data.shape_keys.key_blocks.keys()
+                    shapekeys_raw = bpy.data.objects[vatproperties.target_object.name].data.shape_keys.key_blocks.keys()
                 except:
-                    shapekeys = None
+                    shapekeys_raw = None
                     print("No shape keys detected")
 
-                if shapekeys:
+                utils.arm.shapekeys = {'basis': {'basis': ''}, 'eyebrows': {'AU1': '', 'AU2': '', 'AU4': '', 'AU1AU2': '', 'AU1AU4': '', 'AU2AU4': ''}, 'eyes': {'f01': '', 'f02': '', 'f03': '', 'f04': '', 'AU42': ''}, 'cheek': {'AU6Z': '', 'AU13': ''}, 'nose': {'AU9': '', 'AU38': ''}, 'mouth': {'AU12': '', 'AU15': '', 'AU10': '', 'AU17D': '', 'AU16': '', 'AU32': '', 'AU24': '', 'AU18Z': '', 'AU22Z': '', 'AD96L': '', 'AD96R': ''}, 'chin': {'AU31': '', 'AU26': '', 'AU27': '', 'AU27Z': '', 'AD30L': '', 'AD30R': '', 'AU17': ''}}
 
+                if shapekeys_raw:
+                    utils.arm.shapekeys = generate_shapekey_dict(utils.arm.shapekeys, shapekeys_raw)
+
+                if utils.arm.shapekeys:
+                    print(utils.arm.shapekeys)
                     head = prefix + utils.arm.central_bones['head'][0]
                     
                     #Generates widgets for easier representation of every driver bone
@@ -75,157 +82,158 @@ def anim_armature(action):
                     middle_lip = False
                     chin = False
 
-                    for shapekey in shapekeys:
-                        #Eyebrows
-                        if shapekey.count('AU1L+AU1R') or shapekey.count('AU2L+AU2R') or shapekey.count('AU4L+AU4R') or shapekey.count('AU1AU2L+AU1AU2R') or shapekey.count('AU1AU4L+AU1AU4R') or shapekey.count('AU2AU4L+AU2AU4R'):
-                            if not eyebrows: 
-                                #Inner, outer and full eyebrows
-                                for bone in ['Eyebrow_L', 'Eyebrow_R', 'Inner_Eyebrow_L', 'Inner_Eyebrow_R', 'Outer_Eyebrow_L', 'Outer_Eyebrow_R']:
-                                    eyebrows = True
-                                    utils.arm.facial_bones.append(bone)
+                    for cat in utils.arm.shapekeys.keys():
+                        for container, shapekey in utils.arm.shapekeys[cat].items():
+                            if cat == 'eyebrows':
+                                if container:
+                                    if not eyebrows: 
+                                        #Inner, outer and full eyebrows
+                                        for bone in ['Eyebrow_L', 'Eyebrow_R', 'Inner_Eyebrow_L', 'Inner_Eyebrow_R', 'Outer_Eyebrow_L', 'Outer_Eyebrow_R']:
+                                            eyebrows = True
+                                            utils.arm.facial_bones.append(bone)
 
-                                    ebone = armature.data.edit_bones.new(bone)
-                                    ebone.use_deform = False
+                                            ebone = armature.data.edit_bones.new(bone)
+                                            ebone.use_deform = False
 
-                                    if bone == 'Eyebrow_L':
-                                        define_bone([bone, head], [1.2, 1.2, 4.5, 4, 4, 0], '+')
-                                    elif bone == 'Eyebrow_R':
-                                        define_bone([bone, head], [1.2, 1.2, 4.5, 4, 4, 0], '-')
-                                    elif bone == 'Inner_Eyebrow_L':
-                                        define_bone([bone, head], [0.6, 0.6, 4.5, 4, 3.75, 0], '+')
-                                    elif bone == 'Inner_Eyebrow_R':
-                                        define_bone([bone, head], [0.6, 0.6, 4.5, 4, 3.75, 0], '-')
-                                    elif bone == 'Outer_Eyebrow_L':
-                                        define_bone([bone, head], [1.8, 1.8, 4.5, 4, 3.75, 0], '+')
-                                    elif bone == 'Outer_Eyebrow_R':
-                                        define_bone([bone, head], [1.8, 1.8, 4.5, 4, 3.75, 0], '-')
+                                            if bone == 'Eyebrow_L':
+                                                define_bone([bone, head], [1.2, 1.2, 4.5, 4, 4, 0], '+')
+                                            elif bone == 'Eyebrow_R':
+                                                define_bone([bone, head], [1.2, 1.2, 4.5, 4, 4, 0], '-')
+                                            elif bone == 'Inner_Eyebrow_L':
+                                                define_bone([bone, head], [0.6, 0.6, 4.5, 4, 3.75, 0], '+')
+                                            elif bone == 'Inner_Eyebrow_R':
+                                                define_bone([bone, head], [0.6, 0.6, 4.5, 4, 3.75, 0], '-')
+                                            elif bone == 'Outer_Eyebrow_L':
+                                                define_bone([bone, head], [1.8, 1.8, 4.5, 4, 3.75, 0], '+')
+                                            elif bone == 'Outer_Eyebrow_R':
+                                                define_bone([bone, head], [1.8, 1.8, 4.5, 4, 3.75, 0], '-')
 
-                        #Eyes
-                        elif shapekey.count('f01') or shapekey.count('f02') or shapekey.count('f03') or shapekey.count('f04') or shapekey.count('AU42'):
-                            if not eyes:
-                                #Upper and lower eyelids
-                                for bone in ['UpperEye_L', 'UpperEye_R', 'LowerEye_L', 'LowerEye_R']:
-                                    eyes = True
-                                    utils.arm.facial_bones.append(bone)
+                            elif cat == 'eyes':
+                                if container:
+                                    if not eyes:
+                                        #Upper and lower eyelids
+                                        for bone in ['UpperEye_L', 'UpperEye_R', 'LowerEye_L', 'LowerEye_R']:
+                                            eyes = True
+                                            utils.arm.facial_bones.append(bone)
 
-                                    ebone = armature.data.edit_bones.new(bone)
-                                    ebone.use_deform = False
+                                            ebone = armature.data.edit_bones.new(bone)
+                                            ebone.use_deform = False
+                                        
+                                            if bone == 'UpperEye_L':
+                                                define_bone([bone, head], [1.2, 1.2, 4, 3.5, 3.5, 0], '+')
+                                            elif bone == 'UpperEye_R':
+                                                define_bone([bone, head], [1.2, 1.2, 4, 3.5, 3.5, 0], '-')
+                                            elif bone == 'LowerEye_L':
+                                                define_bone([bone, head], [1.2, 1.2, 4, 3.5, 2.9, 0], '+')
+                                            elif bone == 'LowerEye_R':
+                                                define_bone([bone, head], [1.2, 1.2, 4, 3.5, 2.9, 0], '-')
                                 
-                                    if bone == 'UpperEye_L':
-                                        define_bone([bone, head], [1.2, 1.2, 4, 3.5, 3.5, 0], '+')
-                                    elif bone == 'UpperEye_R':
-                                        define_bone([bone, head], [1.2, 1.2, 4, 3.5, 3.5, 0], '-')
-                                    elif bone == 'LowerEye_L':
-                                        define_bone([bone, head], [1.2, 1.2, 4, 3.5, 2.9, 0], '+')
-                                    elif bone == 'LowerEye_R':
-                                        define_bone([bone, head], [1.2, 1.2, 4, 3.5, 2.9, 0], '-')
-                            
-                        #Cheek
-                        elif shapekey.count('AU6L+AU6R') or shapekey.count('AU6ZL+AU6ZR') or shapekey.count('AU13L+AU13R'):
-                            if not cheek:
-                                #Cheeks for puffing and squinting
-                                for bone in ['Cheek_L', 'Cheek_R']:
-                                    cheek = True
-                                    utils.arm.facial_bones.append(bone)
+                            elif cat == 'cheek':
+                                if container:
+                                    if not cheek:
+                                        #Cheeks for puffing and squinting
+                                        for bone in ['Cheek_L', 'Cheek_R']:
+                                            cheek = True
+                                            utils.arm.facial_bones.append(bone)
 
-                                    ebone = armature.data.edit_bones.new(bone)
-                                    ebone.use_deform = False
+                                            ebone = armature.data.edit_bones.new(bone)
+                                            ebone.use_deform = False
 
-                                    if bone == 'Cheek_L':
-                                        define_bone([bone, head], [2, 1.5, 3, 2.5, 1, 0], '+')
-                                    elif bone == 'Cheek_R':
-                                        define_bone([bone, head], [2, 1.5, 3, 2.5, 1, 0], '-')
+                                            if bone == 'Cheek_L':
+                                                define_bone([bone, head], [2, 1.5, 3, 2.5, 1, 0], '+')
+                                            elif bone == 'Cheek_R':
+                                                define_bone([bone, head], [2, 1.5, 3, 2.5, 1, 0], '-')
 
-                                    ebone.length = 0.5
+                                            ebone.length = 0.5
 
-                        #Nose
-                        elif shapekey.count('AU9L+AU9R') or shapekey.count('AU38'):
-                            if not nose:
-                                #Nostrils
-                                for bone in ['Nostril_L', 'Nostril_R']:
-                                    nose = True
-                                    utils.arm.facial_bones.append(bone)
+                            elif cat == 'nose':
+                                if container:
+                                    if not nose:
+                                        #Nostrils
+                                        for bone in ['Nostril_L', 'Nostril_R']:
+                                            nose = True
+                                            utils.arm.facial_bones.append(bone)
 
-                                    ebone = armature.data.edit_bones.new(bone)
-                                    ebone.use_deform = False
+                                            ebone = armature.data.edit_bones.new(bone)
+                                            ebone.use_deform = False
 
-                                    if bone == 'Nostril_L':
-                                        define_bone([bone, head], [0.8, 0.8, 4, 3.5, 1, 0], '+')
-                                    elif bone == 'Nostril_R':
-                                        define_bone([bone, head], [0.8, 0.8, 4, 3.5, 1, 0], '-')
+                                            if bone == 'Nostril_L':
+                                                define_bone([bone, head], [0.8, 0.8, 4, 3.5, 1, 0], '+')
+                                            elif bone == 'Nostril_R':
+                                                define_bone([bone, head], [0.8, 0.8, 4, 3.5, 1, 0], '-')
 
-                        #Mouth 
-                        elif shapekey.count('AU12L+AU12R') or shapekey.count('AU15L+AU15R') or shapekey.count('AU17L+AU17R') or shapekey.count('AU10L+AU10R') or shapekey.count('AU17DL+AU17DR') or shapekey.count('AU16L+AU16R') or shapekey.count('AU25L+AU25R') or shapekey.count('AU22L+AU22R') or shapekey.count('AU20L+AU20R') or shapekey.count('AU32') or shapekey.count('AU24') or shapekey.count('AU18L+AU18R') or shapekey.count('AU12AU25L+AU12AU25R') or shapekey.count('AU18ZL+AU18ZR') or shapekey.count('AU22ZL+AU22ZR') or shapekey.count('AU13L+AU13R') or shapekey.count('AD96L') or shapekey.count('AD96R'):
-                            if not mouth:
-                                #Mouth corners
-                                if shapekey.count('AU12L+AU12R') or shapekey.count('AU15L+AU15R') or shapekey.count('AU22L+AU22R') or shapekey.count('AU20L+AU20R') or shapekey.count('AU24') or shapekey.count('AU18L+AU18R') or shapekey.count('AU12AU25L+AU12AU25R') or shapekey.count('AU18ZL+AU18ZR') or shapekey.count('AU22ZL+AU22ZR'):
-                                    for bone in ['MouthCorner_L', 'MouthCorner_R']:
-                                        mouth = True
-                                        utils.arm.facial_bones.append(bone)
+                            if cat == 'mouth':
+                                if container:
+                                    if not mouth:
+                                        #Mouth corners
+                                        if container == 'AU12' or container == 'AU15' or container == 'AU24' or container == 'AU18Z' or container == 'AU22Z':
+                                            for bone in ['MouthCorner_L', 'MouthCorner_R']:
+                                                mouth = True
+                                                utils.arm.facial_bones.append(bone)
 
-                                        ebone = armature.data.edit_bones.new(bone)
-                                        ebone.use_deform = False
+                                                ebone = armature.data.edit_bones.new(bone)
+                                                ebone.use_deform = False
 
-                                        if bone == 'MouthCorner_L':
-                                            define_bone([bone, head], [1.2, 1, 4, 3.5, 0.25, 0], '+')
-                                        elif bone == 'MouthCorner_R':
-                                            define_bone([bone, head], [1.2, 1, 4, 3.5, 0.25, 0], '-')
+                                                if bone == 'MouthCorner_L':
+                                                    define_bone([bone, head], [1.2, 1, 4, 3.5, 0.25, 0], '+')
+                                                elif bone == 'MouthCorner_R':
+                                                    define_bone([bone, head], [1.2, 1, 4, 3.5, 0.25, 0], '-')
 
-                                        ebone.length = 0.5
+                                                ebone.length = 0.5
 
-                            elif not upper_lip:
-                                #Upper lip
-                                if shapekey.count('AU10L+AU10R'):
-                                    for bone in ['UpperLip_L', 'UpperLip_R']:
-                                        upper_lip = True
-                                        utils.arm.facial_bones.append(bone)
+                                    elif not upper_lip:
+                                        #Upper lip
+                                        if container == 'AU10':
+                                            for bone in ['UpperLip_L', 'UpperLip_R']:
+                                                upper_lip = True
+                                                utils.arm.facial_bones.append(bone)
 
-                                        ebone = armature.data.edit_bones.new(bone)
-                                        ebone.use_deform = False
+                                                ebone = armature.data.edit_bones.new(bone)
+                                                ebone.use_deform = False
 
-                                        if bone == 'UpperLip_L':
-                                            define_bone([bone, head], [0.5, 0.5, 4.5, 4, 0.5, 0], '+')
-                                        elif bone == 'UpperLip_R':
-                                            define_bone([bone, head], [-0.5, -0.5, 4.5, 4, 0.5, 0], '+')
+                                                if bone == 'UpperLip_L':
+                                                    define_bone([bone, head], [0.5, 0.5, 4.5, 4, 0.5, 0], '+')
+                                                elif bone == 'UpperLip_R':
+                                                    define_bone([bone, head], [-0.5, -0.5, 4.5, 4, 0.5, 0], '+')
 
-                            elif not lower_lip:
-                                #Lower lip
-                                if shapekey.count('AU17L+AU17R') or shapekey.count('AU17DL+AU17DR') or shapekey.count('AU16L+AU16R') or shapekey.count('AU25L+AU25R') or shapekey.count('AU32'):
-                                    for bone in ['LowerLip_L', 'LowerLip_R']:
-                                        lower_lip = True
-                                        utils.arm.facial_bones.append(bone)
+                                    elif not lower_lip:
+                                        #Lower lip
+                                        if container == 'AU17D' or container == 'AU16' or container == 'AU32':
+                                            for bone in ['LowerLip_L', 'LowerLip_R']:
+                                                lower_lip = True
+                                                utils.arm.facial_bones.append(bone)
 
-                                        ebone = armature.data.edit_bones.new(bone)
-                                        ebone.use_deform = False
+                                                ebone = armature.data.edit_bones.new(bone)
+                                                ebone.use_deform = False
 
-                                        if bone == 'LowerLip_L':
-                                            define_bone([bone, head], [0.5, 0.5, 4.5, 4, 0, 0], '+')
-                                        elif bone == 'LowerLip_R':
-                                            define_bone([bone, head], [0.5, 0.5, 4.5, 4, 0, 0], '-')
+                                                if bone == 'LowerLip_L':
+                                                    define_bone([bone, head], [0.5, 0.5, 4.5, 4, 0, 0], '+')
+                                                elif bone == 'LowerLip_R':
+                                                    define_bone([bone, head], [0.5, 0.5, 4.5, 4, 0, 0], '-')
 
-                            elif not middle_lip:
-                                #Middle lip
-                                if shapekey.count('AD96L') or shapekey.count('AD96R'):
-                                    for bone in ['MiddleLip']:
-                                        middle_lip = True
-                                        utils.arm.facial_bones.append(bone)
+                                    elif not middle_lip:
+                                        #Middle lip
+                                        if container == 'AD96L' or container == 'AD96R':
+                                            for bone in ['MiddleLip']:
+                                                middle_lip = True
+                                                utils.arm.facial_bones.append(bone)
 
-                                        ebone = armature.data.edit_bones.new(bone)
-                                        ebone.use_deform = False
+                                                ebone = armature.data.edit_bones.new(bone)
+                                                ebone.use_deform = False
 
-                                        define_bone([bone, head], [0, 0, 4.5, 4, 0.25, 0])
+                                                define_bone([bone, head], [0, 0, 4.5, 4, 0.25, 0])
 
-                        #Chin
-                        elif shapekey.count('AU31') or shapekey.count('AU26L+AU26R') or shapekey.count('AU27L+AU27R') or shapekey.count('AU26ZL+AU26ZR') or shapekey.count('AU27ZL+AU27ZR') or shapekey.count('AD30L') or shapekey.count('AD30R'):
-                            if not chin:
-                                for bone in ['Chin']:
-                                    chin = True
-                                    utils.arm.facial_bones.append(bone)
+                            if cat == 'chin':
+                                if container:
+                                    if not chin:
+                                        for bone in ['Chin']:
+                                            chin = True
+                                            utils.arm.facial_bones.append(bone)
 
-                                    ebone = armature.data.edit_bones.new(bone)
-                                    ebone.use_deform = False
-                                
-                                    define_bone([bone, head], [0, 0, 4.5, 4, -1.5, 0.15])
+                                            ebone = armature.data.edit_bones.new(bone)
+                                            ebone.use_deform = False
+                                        
+                                            define_bone([bone, head], [0, 0, 4.5, 4, -1.5, 0.15])
 
                 eyes = []
                 utils.arm.eyes_material = []
@@ -401,7 +409,7 @@ def anim_armature(action):
 
                 #Min Y
                 limit_loc.use_min_y = True
-                if bone.count('Cheek') or bone.count('MouthCorner'):
+                if bone.count('Cheek'):
                     limit_loc.min_y = -1
 
                 elif bone.count('MiddleLip') or bone.count('LowerLip'):
@@ -492,12 +500,12 @@ def anim_armature(action):
                     pbone.custom_shape_scale = 0.25
 
                 elif bone.count('Chin'):
-                    widget = bpy.data.objects['Chin']
+                    widget = bpy.data.objects['4Directions']
                     pbone.custom_shape = widget
                     pbone.custom_shape_scale = 0.7
                     
                 elif bone.count('MouthCorner'):
-                    widget = bpy.data.objects['MouthCorner']
+                    widget = bpy.data.objects['4Directions']
                     pbone.custom_shape = widget
                     pbone.custom_shape_scale = 0.4
 
@@ -986,51 +994,61 @@ def anim_armature(action):
 
     def link(): #Organizes armature after empty creation
 
-        def retarget(container, bone): #Creates empties and links them to Rigify armature/Source armature
+        def retarget(container, bone, helper=False, helper_target=None): #Creates empties and links them to Rigify armature/Source armature
             armature = bpy.data.objects['rig']
             
-            #Retarget empties creation
-            try:
-                collection = bpy.data.collections["Retarget Empties ({})".format(utils.arm.name)[0:60]] #Name length limit
-            except:
-                collection = bpy.data.collections.new("Retarget Empties ({})".format(utils.arm.name)[0:60])
-                bpy.context.scene.collection.children.link(collection)
+            if not helper:
+                #Retarget empties creation
+                try:
+                    collection = bpy.data.collections["Retarget Empties ({})".format(utils.arm.name)[0:60]] #Name length limit
+                except:
+                    collection = bpy.data.collections.new("Retarget Empties ({})".format(utils.arm.name)[0:60])
+                    bpy.context.scene.collection.children.link(collection)
 
-            collection.hide_viewport = True
+                collection.hide_viewport = True
 
-            #Creates base empty and links
-            base = bpy.data.objects.new('base_{} ({})'.format(bone, utils.arm.name)[0:60], None)
-            collection.objects.link(base)
-            base.empty_display_type = 'CUBE'
-            base.hide_select = True
+                #Creates base empty and links
+                base = bpy.data.objects.new('base_{} ({})'.format(bone, utils.arm.name)[0:60], None)
+                collection.objects.link(base)
+                base.empty_display_type = 'CUBE'
+                base.hide_select = True
 
-            #Location constraint
-            loc = base.constraints.new('COPY_LOCATION')
-            loc.target = armature
-            loc.subtarget = 'ORG-' + prefix + bone
+                #Location constraint
+                loc = base.constraints.new('COPY_LOCATION')
+                loc.target = armature
+                loc.subtarget = 'ORG-' + prefix + bone
 
-            #Rotation constraint
-            rot = base.constraints.new('COPY_ROTATION')
-            rot.target = armature
-            rot.subtarget = 'ORG-' + prefix + bone
+                #Rotation constraint
+                rot = base.constraints.new('COPY_ROTATION')
+                rot.target = armature
+                rot.subtarget = 'ORG-' + prefix + bone
 
-            #Creates target empty and links
-            target = bpy.data.objects.new('target_{} ({})'.format(bone, utils.arm.name)[0:60], None)
-            collection.objects.link(target)
-            target.empty_display_type = 'SPHERE'
+                #Creates target empty and links
+                target = bpy.data.objects.new('target_{} ({})'.format(bone, utils.arm.name)[0:60], None)
+                collection.objects.link(target)
+                target.empty_display_type = 'SPHERE'
 
-            #Parent to base
-            base.parent = parent
-            target.parent = base
+                #Parent to base
+                base.parent = parent
+                target.parent = base
 
-            #Bone connection
-            armature = bpy.data.objects[utils.arm.name]
-            loc = armature.pose.bones[prefix + bone].constraints.new('COPY_LOCATION')
-            loc.name = "Retarget Location"
-            loc.target = target
-            rot = armature.pose.bones[prefix + bone].constraints.new('COPY_ROTATION')
-            rot.name = "Retarget Rotation"
-            rot.target = target
+                #Bone connection
+                armature = bpy.data.objects[utils.arm.name]
+                loc = armature.pose.bones[prefix + bone].constraints.new('COPY_LOCATION')
+                loc.name = "Retarget Location"
+                loc.target = target
+                rot = armature.pose.bones[prefix + bone].constraints.new('COPY_ROTATION')
+                rot.name = "Retarget Rotation"
+                rot.target = target
+            elif helper:
+                armature = bpy.data.objects[utils.arm.name]
+                if bone.startswith('L_') or bone.endswith('_L'):
+                    target = bpy.data.objects['target_{} ({})'.format(helper_target[0], armature.name)[0:60]]
+                elif bone.startswith('R_') or bone.endswith('_R'):
+                    target = bpy.data.objects['target_{} ({})'.format(helper_target[1], armature.name)[0:60]]
+                loc = armature.pose.bones[prefix + bone].constraints.new('COPY_LOCATION')
+                loc.name = "Retarget Location"
+                loc.target = target
 
             #Counterweight for the small bump applied to the calf
             if container == 'calf':
@@ -1085,6 +1103,15 @@ def anim_armature(action):
                 retarget(container, bone)
                 empty_rotation(container, bone, 1)
 
+        for bone in utils.arm.helper_bones['legs']['knee'] + utils.arm.helper_bones['arms']['elbow']:
+            bone, prefix = helper_convert(bone)
+            if bone.casefold().count('knee'):
+                retarget(container, bone, True, utils.arm.symmetrical_bones['legs']['calf'])
+            elif bone.casefold().count('elbow'):
+                retarget(container, bone, True, utils.arm.symmetrical_bones['arms']['forearm'])
+
+        prefix = utils.arm.prefix
+
         #Connects parent to collection
         collection = bpy.data.collections["Retarget Empties ({})".format(utils.arm.name)[0:60]]
         collection.objects.link(parent)
@@ -1130,15 +1157,9 @@ def anim_armature(action):
     def face_flex_setup(): #Sets up drivers for face flexes that will be controlled by face bones
         prefix = utils.arm.prefix
             
-        if vatproperties.target_object:
-            try:
-                shapekeys = bpy.data.objects[vatproperties.target_object.name].data.shape_keys.key_blocks.keys()
-                object = bpy.data.objects[vatproperties.target_object.name].data.shape_keys.key_blocks
-            except:
-                shapekeys = None
-                print("No shape keys detected")
+        if utils.arm.shapekeys:
+            keyblocks = bpy.data.objects[vatproperties.target_object.name].data.shape_keys.key_blocks
 
-        if shapekeys:
             #Vertex group creation
 
             #Creates vertex groups
@@ -1164,444 +1185,427 @@ def anim_armature(action):
             #Still need to add center vertices to both groups, will do once i figure out
 
             #Shapekey creation
-
-            #Container for generated shapekeys
-            new_shapekeys = []
+            utils.arm.rigify_shapekeys = {'basis': {'basis': ''}, 'eyebrows': {'AU1': [], 'AU2': [], 'AU4': [], 'AU1AU2': [], 'AU1AU4': [], 'AU2AU4': []}, 'eyes': {'f01': [], 'f02': [], 'f03': [], 'f04': [], 'AU42': []}, 'cheek': {'AU6Z': [], 'AU13': []}, 'nose': {'AU9': [], 'AU38': []}, 'mouth': {'AU12': [], 'AU15': [], 'AU10': [], 'AU17D': [], 'AU16': [], 'AU32': [], 'AU24': [], 'AU18Z': [], 'AU22Z': [], 'AD96L': [], 'AD96R': []}, 'chin': {'AU31': [], 'AU26': [], 'AU27': [], 'AU27Z': [], 'AD30L': [], 'AD30R': [], 'AU17': []}}
 
             #Divides old shapekeys from generated ones
             bpy.data.objects[vatproperties.target_object.name].shape_key_add(name='----------', from_mix=False)
             bpy.data.objects[vatproperties.target_object.name].show_only_shape_key = False
 
-            for shapekey in shapekeys:
-                #Makes sure no other shapekey is active
-                object[shapekey].value = 0
+            for cat in utils.arm.shapekeys.keys():
+                for container, shapekey in utils.arm.shapekeys[cat].items():
+                    if shapekey:
+                        #Makes sure no other shapekey is active
+                        if container != 'basis':
+                            keyblocks[shapekey].value = 0
 
-                #Appends central shapekeys, since they don't need L/R versions of them
-                if shapekey.count('AU17L+AU17R') or shapekey.count('AU26L+AU26R') or shapekey.count('AU27L+AU27R') or shapekey.count('AU27ZL+AU27ZR') or shapekey.count('AD30L') or shapekey.count('AD30R') or shapekey.count('AU22ZL+AU22ZR') or shapekey.count('AD96L') or shapekey.count('AD96R'):
-                    new_shapekeys.append(shapekey)
+                        #Appends central shapekeys, since they don't need L/R versions of them
+                        if container == 'AU17' or container == 'AU26' or container == 'AU27' or container == 'AU27Z' or container == 'AD30L' or container == 'AD30R' or container == 'AU22Z' or container == 'AD96L' or container == 'AD96R':
+                            utils.arm.rigify_shapekeys[cat][container].append(shapekey)
+                            continue
 
-                #Skips basis, redundant halfway close eye, reduntant halfway squint, reduntant harsher frown, redudant lower lip drop, reduntant halfway puckering level 1 and 2 mouth open and odd individual eye shapekeys
-                elif shapekey.lower().count('basis') or shapekey.lower().count('base') or shapekey.count('AU22L+AU22R') or shapekey.count('AU20L+AU20R') or shapekey.count('AU6L+AU6R') or shapekey.count('AU18L+AU18R')or shapekey.count('AU26ZL+AU26ZR') or shapekey.count('AU25L+AU25R') or shapekey.count('AU22ZL+AU22ZR') or shapekey.count('lower_right') or shapekey.count('lower_left') or shapekey.count('upper_right') or shapekey.count('upper_left') or shapekey.count('lower_right.001') or shapekey.count('lower_left.001') or shapekey.count('upper_right.001') or shapekey.count('upper_left.001'):
-                    pass
-                else:
-                    object[shapekey].value = 1
-                    left_shapekey = bpy.data.objects[vatproperties.target_object.name].shape_key_add(name=shapekey + '_L', from_mix=True)
-                    right_shapekey = bpy.data.objects[vatproperties.target_object.name].shape_key_add(name=shapekey + '_R', from_mix=True)
+                        if container != 'basis':
+                            keyblocks[shapekey].value = 1
+                            left_shapekey = bpy.data.objects[vatproperties.target_object.name].shape_key_add(name=shapekey + '_L', from_mix=True)
+                            right_shapekey = bpy.data.objects[vatproperties.target_object.name].shape_key_add(name=shapekey + '_R', from_mix=True)
 
-                    new_shapekeys.append(left_shapekey.name)
-                    new_shapekeys.append(right_shapekey.name)
+                            utils.arm.rigify_shapekeys[cat][container].append(left_shapekey.name)
+                            utils.arm.rigify_shapekeys[cat][container].append(right_shapekey.name)
 
-                    #Assigns shapekeys to group
-                    left_shapekey.vertex_group = left_group.name
-                    right_shapekey.vertex_group = right_group.name
+                            #Assigns shapekeys to group
+                            left_shapekey.vertex_group = left_group.name
+                            right_shapekey.vertex_group = right_group.name
 
-                    object[shapekey].value = 0
+                            keyblocks[shapekey].value = 0
 
             del left_shapekey
             del right_shapekey
 
-            for shapekey in new_shapekeys:
-                #Creates driver
-                driver = object[shapekey].driver_add('value') #Creates new driver for shapekey
+            for cat in utils.arm.rigify_shapekeys.keys():
+                for container, shapekey in utils.arm.rigify_shapekeys[cat].items():
+                    for shapekey in shapekey:
+                        #Creates driver
+                        driver = keyblocks[shapekey].driver_add('value') #Creates new driver for shapekey
 
-                #Parameters and target
-                variable = driver.driver.variables.new() #Creates new variable onto the shapekey
-                variable.name = "flex"
-                driver.driver.expression = variable.name #Changes expression to created variable's name
-                variable.type = 'TRANSFORMS' #Changes type of variable to transform
+                        #Parameters and target
+                        variable = driver.driver.variables.new() #Creates new variable onto the shapekey
+                        variable.name = "flex"
+                        driver.driver.expression = variable.name #Changes expression to created variable's name
+                        variable.type = 'TRANSFORMS' #Changes type of variable to transform
 
-                target = variable.targets[0]
-                target.id = bpy.data.objects[utils.arm.animation_armature_name] #Links variable to animation armature
+                        target = variable.targets[0]
+                        target.id = bpy.data.objects[utils.arm.animation_armature_name] #Links variable to animation armature
 
-                #Specific tweaks for each bone
+                        #Specific tweaks for each bone
 
-                #Eyebrows
-                if shapekey.count('AU1L+AU1R') or shapekey.count('AU2L+AU2R') or shapekey.count('AU4L+AU4R') or shapekey.count('AU1AU2L+AU1AU2R') or shapekey.count('AU1AU4L+AU1AU4R') or shapekey.count("AU2AU4L+AU2AU4R"): 
+                        #Eyebrows
+                        if cat == 'eyebrows':
+                            #AU1 = Inner eyebrow raise
+                            #AU2 = Outer eyebrow raise
+                            #AU4 = Full eyebrow drop
+                            #AU1AU2 = Full eyebrow raise
+                            #AU1AU4 = Outer eyebrow drop
+                            #AU2AU4 = Inner eyebrow drop
 
-                    #AU1L+AU1R = Inner eyebrow raise
-                    #AU2L+AU2R = Outer eyebrow raise
-                    #AU4L+AU4R = Full eyebrow drop
-                    #AU1AU2L+AU1AU2R = Full eyebrow raise
-                    #AU1AU4L+AU1AU4R = Outer eyebrow drop
-                    #AU2AU4L+AU2AU4R = Inner eyebrow drop
+                            target.transform_space = 'LOCAL_SPACE'
+                            target.transform_type = 'LOC_Z'
 
-                    target.transform_space = 'LOCAL_SPACE'
-                    target.transform_type = 'LOC_Z'
+                            if container == 'AU1' or container == 'AU2AU4':
+                                if shapekey.endswith('_L'):
+                                    target.bone_target = "Inner_Eyebrow_L"
+                                elif shapekey.endswith('_R'):
+                                    target.bone_target = "Inner_Eyebrow_R"
 
-                    if shapekey.count('AU1L+AU1R') or shapekey.count('AU2AU4L+AU2AU4R'):
-                        if shapekey.endswith('_L'):
-                            target.bone_target = "Inner_Eyebrow_L"
-                        elif shapekey.endswith('_R'):
-                            target.bone_target = "Inner_Eyebrow_R"
+                            elif container == 'AU2' or container == 'AU1AU4':
+                                if shapekey.endswith('_L'):
+                                    target.bone_target = "Outer_Eyebrow_L"
+                                elif shapekey.endswith('_R'):
+                                    target.bone_target = "Outer_Eyebrow_R"
 
-                    elif shapekey.count('AU2L+AU2R') or shapekey.count('AU1AU4L+AU1AU4R'):
-                        if shapekey.endswith('_L'):
-                            target.bone_target = "Outer_Eyebrow_L"
-                        elif shapekey.endswith('_R'):
-                            target.bone_target = "Outer_Eyebrow_R"
+                            elif container == 'AU4' or container == 'AU1AU2':
+                                if shapekey.endswith('_L'):
+                                    target.bone_target = "Eyebrow_L"
+                                elif shapekey.endswith('_R'):
+                                    target.bone_target = "Eyebrow_R"
 
-                    elif shapekey.count('AU4L+AU4R') or shapekey.count('AU1AU2L+AU1AU2R'):
-                        if shapekey.endswith('_L'):
-                            target.bone_target = "Eyebrow_L"
-                        elif shapekey.endswith('_R'):
-                            target.bone_target = "Eyebrow_R"
+                            if container == 'AU4' or container == 'AU1AU4' or container == 'AU2AU4':
+                                driver.modifiers[0].coefficients[1] = -2
 
-                    if shapekey.count('AU4L+AU4R') or shapekey.count('AU1AU4L+AU1AU4R') or shapekey.count('AU2AU4L+AU2AU4R'):
-                        driver.modifiers[0].coefficients[1] = -2
+                            elif container == 'AU1' or container == 'AU2' or container == 'AU1AU2':
+                                driver.modifiers[0].coefficients[1] = 2
 
-                    elif shapekey.count('AU1L+AU1R') or shapekey.count('AU2L+AU2R') or shapekey.count('AU1AU2L+AU1AU2R'):
-                        driver.modifiers[0].coefficients[1] = 2
+                        if cat == 'eyes':
+                            #f01 = Upper eyelids close
+                            #f02 = Upper eyelids raise
+                            #f03 = Lower eyelids drop
+                            #f04 = Lower eyelids raise
+                            #AU42 = Upper eyelids drop
 
-                #Eyes
-                elif shapekey.count('f01') or shapekey.count('f02') or shapekey.count('f03') or shapekey.count('f04') or shapekey.count('AU42'):
-                    
-                    #f01 = Upper eyelids close
-                    #f02 = Upper eyelids raise
-                    #f03 = Lower eyelids drop
-                    #f04 = Lower eyelids raise
-                    #AU42 = Upper eyelids drop
+                            target.transform_space = 'LOCAL_SPACE'
+                            target.transform_type = 'LOC_Z'
 
-                    target.transform_space = 'LOCAL_SPACE'
-                    target.transform_type = 'LOC_Z'
+                            if container == 'AU42':
+                                driver.driver.expression = variable.name + '/4'
+                            elif container != 'f01':                                
+                                #Creates another driver controlled by the corresponding eye bone
+                                variable2 = driver.driver.variables.new()
+                                variable2.name = "eye"
+                                    
+                                driver.driver.expression = variable.name + '+' + variable2.name + '/4' #Combines the old driver with the new driver, making the latter have less influence
+                                variable2.type = 'TRANSFORMS'
 
-                    if shapekey.count('f01'):
-                        pass
-                    elif shapekey.count('AU42'):
-                        driver.driver.expression = variable.name + '/4'
-                    else:
-                        #Creates another driver controlled by the corresponding eye bone
-                        variable2 = driver.driver.variables.new()
-                        variable2.name = "eye"
+                                target2 = variable2.targets[0]
+                                target2.id = bpy.data.objects[utils.arm.animation_armature_name]
+
+                                target2.transform_space = 'LOCAL_SPACE'
+                                target2.transform_type = 'LOC_Z'
+
+                            if container == 'f01':
+                                if shapekey.endswith('_L'):
+                                    target.bone_target = "UpperEye_L"
+                                elif shapekey.endswith('_R'):
+                                    target.bone_target = "UpperEye_R"
                             
-                        driver.driver.expression = variable.name + '+' + variable2.name + '/4' #Combines the old driver with the new driver, making the latter have less influence
-                        variable2.type = 'TRANSFORMS'
+                            elif container == 'f02':
+                                if shapekey.endswith('_L'):
+                                    target.bone_target = "UpperEye_L"
+                                    target2.bone_target = 'EyeLeft'
+                                elif shapekey.endswith('_R'):
+                                    target.bone_target = "UpperEye_R"
+                                    target2.bone_target = 'EyeRight'
 
-                        target2 = variable2.targets[0]
-                        target2.id = bpy.data.objects[utils.arm.animation_armature_name]
+                            elif container == 'f03' or container == 'f04':
+                                if shapekey.endswith('_L'):
+                                    target.bone_target = "LowerEye_L"
+                                    target2.bone_target = 'EyeLeft'
+                                elif shapekey.endswith('_R'):
+                                    target.bone_target = "LowerEye_R"
+                                    target2.bone_target = 'EyeRight'
 
-                        target2.transform_space = 'LOCAL_SPACE'
-                        target2.transform_type = 'LOC_Z'
+                            elif container == 'AU42':
+                                if shapekey.endswith('_L'):
+                                    target.bone_target = 'EyeLeft'
+                                elif shapekey.endswith('_R'):
+                                    target.bone_target = 'EyeRight'
+                                
+                            if container == 'f01' or container == 'f03' or container == 'AU42':
+                                driver.modifiers[0].coefficients[1] = -5
+                            
+                            elif container == 'f02' or container == 'f04':
+                                driver.modifiers[0].coefficients[1] = 5
 
-                    if shapekey.count('f01'):
-                        if shapekey.endswith('_L'):
-                            target.bone_target = "UpperEye_L"
-                        elif shapekey.endswith('_R'):
-                            target.bone_target = "UpperEye_R"
-                    
-                    elif shapekey.count('f02'):
-                        if shapekey.endswith('_L'):
-                            target.bone_target = "UpperEye_L"
-                            target2.bone_target = 'EyeLeft'
-                        elif shapekey.endswith('_R'):
-                            target.bone_target = "UpperEye_R"
-                            target2.bone_target = 'EyeRight'
+                        if cat == 'cheek':
+                            #AU6Z = Squint
+                            #AU13 = Filling cheek with air
 
-                    elif shapekey.count('f03') or shapekey.count('f04'):
-                        if shapekey.endswith('_L'):
-                            target.bone_target = "LowerEye_L"
-                            target2.bone_target = 'EyeLeft'
-                        elif shapekey.endswith('_R'):
-                            target.bone_target = "LowerEye_R"
-                            target2.bone_target = 'EyeRight'
+                            target.transform_space = 'LOCAL_SPACE'
 
-                    elif shapekey.count('AU42'):
-                        if shapekey.endswith('_L'):
-                            target.bone_target = 'EyeLeft'
-                        elif shapekey.endswith('_R'):
-                            target.bone_target = 'EyeRight'
-                        
-                    if shapekey.count('f01') or shapekey.count('f03') or shapekey.count('AU42'):
-                        driver.modifiers[0].coefficients[1] = -5
-                    
-                    elif shapekey.count('f02') or shapekey.count('f04'):
-                        driver.modifiers[0].coefficients[1] = 5
-
-                #Cheeks
-                elif shapekey.count('AU6ZL+AU6ZR') or shapekey.count('AU13L+AU13R'):
-
-                    #AU6ZL+AU6ZR = Squint
-                    #AU13L+AU13R = Filling cheek with air
-
-                    target.transform_space = 'LOCAL_SPACE'
-
-                    if shapekey.endswith('_L'):
-                        target.bone_target = "Cheek_L"
-                    elif shapekey.endswith('_R'):
-                        target.bone_target = "Cheek_R"
-
-                    if shapekey.count('AU6ZL+AU6ZR'):
-                        target.transform_type = 'LOC_Z'
-
-                    elif shapekey.count('AU13L+AU13R'):
-                        target.transform_type = 'LOC_Y'
-                        driver.modifiers[0].coefficients[1] = -1
-
-                #Nostrils
-                elif shapekey.count('AU9L+AU9R') or shapekey.count('AU38'):
-                    
-                    #AU9L+AU9R = Nostril raise
-                    #AU38 = Breath
-
-                    target.transform_space = 'LOCAL_SPACE'
-
-                    if shapekey.endswith('_L'):
-                        target.bone_target = "Nostril_L"
-                    elif shapekey.endswith('_R'):
-                        target.bone_target = "Nostril_R"
-
-                    if shapekey.count('AU9L+AU9R'):
-                        target.transform_type = 'LOC_Z'
-                        driver.modifiers[0].coefficients[1] = 2
-
-                    elif shapekey.count('AU38'):
-                        target.transform_type = 'LOC_X'
-
-                        if shapekey.endswith('_L'):
-                            driver.modifiers[0].coefficients[1] = 2
-
-                        elif shapekey.count('_R'):
-                            driver.modifiers[0].coefficients[1] = -2
-
-                #Mouth Corners
-                elif shapekey.count('AU12L+AU12R') or shapekey.count('AU15L+AU15R') or shapekey.count('AU24') or shapekey.count('AU12AU25L+AU12AU25R') or shapekey.count('AU18ZL+AU18ZR'):
-
-                    #AU12L+AU12R = Smile
-                    #AU15L+AU15R = Frown
-                    #AU24 = Tightener
-                    #AU12AU25L+AU12AU25R = Big smile
-                    #AU18ZL+AU18ZR = Puckering
-
-                    target.transform_space = 'LOCAL_SPACE'
-
-                    if shapekey.endswith('_L'):
-                        target.bone_target = "MouthCorner_L"
-                    elif shapekey.endswith('_R'):
-                        target.bone_target = "MouthCorner_R"
-
-                    if shapekey.count('AU12L+AU12R') or shapekey.count('AU15L+AU15R'):
-                        target.transform_type = 'LOC_Z'
-
-                        if shapekey.count('AU12L+AU12R'):
-                            driver.modifiers[0].coefficients[1] = 2
-
-                        elif shapekey.count('AU15L+AU15R'):
-                            driver.modifiers[0].coefficients[1] = -2
-
-                    elif shapekey.count('AU24') or shapekey.count('AU18ZL+AU18ZR'):
-                        target.transform_type = 'LOC_X'
-
-                        if shapekey.count('AU24'):
                             if shapekey.endswith('_L'):
-                                driver.modifiers[0].coefficients[1] = 2
+                                target.bone_target = "Cheek_L"
                             elif shapekey.endswith('_R'):
-                                driver.modifiers[0].coefficients[1] = -2
-                        
-                        elif shapekey.count('AU18ZL+AU18ZR'):
+                                target.bone_target = "Cheek_R"
+
+                            if container == 'AU6Z':
+                                target.transform_type = 'LOC_Z'
+
+                            elif container == 'AU13':
+                                target.transform_type = 'LOC_Y'
+                                driver.modifiers[0].coefficients[1] = -1
+
+                        elif cat == 'nose':
+                            #AU9 = Nostril raise
+                            #AU38 = Breath
+
+                            target.transform_space = 'LOCAL_SPACE'
+
                             if shapekey.endswith('_L'):
-                                driver.modifiers[0].coefficients[1] = -2
+                                target.bone_target = "Nostril_L"
                             elif shapekey.endswith('_R'):
+                                target.bone_target = "Nostril_R"
+
+                            if container == 'AU9':
+                                target.transform_type = 'LOC_Z'
                                 driver.modifiers[0].coefficients[1] = 2
 
-                    elif shapekey.count('AU12AU25L+AU12AU25R'):
-                        target.transform_type = 'LOC_Y'
+                            elif container == 'AU38':
+                                target.transform_type = 'LOC_X'
 
-                        driver.modifiers[0].coefficients[1] = -1
+                                if shapekey.endswith('_L'):
+                                    driver.modifiers[0].coefficients[1] = 2
 
-                #Upper lips
-                elif shapekey.count('AU10L+AU10R'):
+                                elif shapekey.endswith('_R'):
+                                    driver.modifiers[0].coefficients[1] = -2
 
-                    #AU10L+AU10R = Upper lip raise
+                        if cat == 'mouth':
+                            #Mouth corners
+                            #AU12 = Smile
+                            #AU15 = Frown
+                            #AU24 = Tightener
+                            #AU18Z = Puckering
 
-                    target.transform_type = 'LOC_Z'
-                    target.transform_space = 'LOCAL_SPACE'
+                            #Upper lips
+                            #AU10 = Upper lip raise
 
-                    if shapekey.endswith('_L'):
-                        target.bone_target = "UpperLip_L"
-                    elif shapekey.endswith('_R'):
-                        target.bone_target = "UpperLip_R"
+                            #Lower lips
+                            #AU17D = Lower lip raise
+                            #AU16 = Lower lip drop
+                            #AU32 = Bite
 
-                    driver.modifiers[0].coefficients[1] = 2
+                            target.transform_space = 'LOCAL_SPACE'
 
-                #Lower lips
-                elif shapekey.count('AU17DL+AU17DR') or shapekey.count('AU16L+AU16R') or shapekey.count('AU32'):
+                            #Mouth corners
+                            if container == 'AU12' or container == 'AU15' or container == 'AU24' or container == 'AU18Z':
+                                if shapekey.endswith('_L'):
+                                    target.bone_target = "MouthCorner_L"
+                                elif shapekey.endswith('_R'):
+                                    target.bone_target = "MouthCorner_R"
 
-                    #AU17DL+AU17DR = Lower lip raise
-                    #AU16L+AU16R = Lower lip drop
-                    #AU32 = Bite
+                                if container == 'AU12' or container == 'AU15':
+                                    target.transform_type = 'LOC_Z'
 
-                    target.transform_space = 'LOCAL_SPACE'
+                                    if container == 'AU12':
+                                        driver.modifiers[0].coefficients[1] = 2
 
-                    if shapekey.endswith('_L'):
-                        target.bone_target = "LowerLip_L"
-                    elif shapekey.endswith('_R'):
-                        target.bone_target = "LowerLip_R"
+                                    elif container == 'AU15':
+                                        driver.modifiers[0].coefficients[1] = -2
 
-                    if shapekey.count('AU16L+AU16R') or shapekey.count('AU17DL+AU17DR'):
-                        target.transform_type = 'LOC_Z'
+                                elif container == 'AU24' or container == 'AU18Z':
+                                    target.transform_type = 'LOC_X'
 
-                        if shapekey.count('AU16L+AU16R'):
-                            driver.modifiers[0].coefficients[1] = -3
-                            object[shapekey].slider_max = 1.5
-                        elif shapekey.count('AU17DL+AU17DR'):
-                            driver.modifiers[0].coefficients[1] = 2
+                                    if container == 'AU24':
+                                        if shapekey.endswith('_L'):
+                                            driver.modifiers[0].coefficients[1] = 2
+                                        elif shapekey.endswith('_R'):
+                                            driver.modifiers[0].coefficients[1] = -2
+                                    
+                                    elif container == 'AU18Z':
+                                        if shapekey.endswith('_L'):
+                                            driver.modifiers[0].coefficients[1] = -2
+                                        elif shapekey.endswith('_R'):
+                                            driver.modifiers[0].coefficients[1] = 2
 
-                    elif shapekey.count('AU32'):
-                        target.transform_type = 'LOC_Y'
-                        driver.modifiers[0].coefficients[1] = -2
+                            #Upper lips
+                            elif container == 'AU10':
+                                target.transform_type = 'LOC_Z'
+                                target.transform_space = 'LOCAL_SPACE'
 
-                #Chin
-                elif shapekey.count('AU17L+AU17R') or shapekey.count('AU26L+AU26R') or shapekey.count('AU27L+AU27R') or shapekey.count('AU27ZL+AU27ZR') or shapekey.count('AD30L') or shapekey.count('AD30R'):
+                                if shapekey.endswith('_L'):
+                                    target.bone_target = "UpperLip_L"
+                                elif shapekey.endswith('_R'):
+                                    target.bone_target = "UpperLip_R"
 
-                    #AU17L+AU17R = Chin raise (sort of)
-                    #AU26L+AU26R = Chin drop
-                    #AU27L+AU27R = Chin drop 2
-                    #AU27ZL+AU27ZR = Full mouth open
-                    #AD30L/R = Chin sideways
+                                driver.modifiers[0].coefficients[1] = 2
 
-                    target.bone_target = "Chin" 
-                    target.transform_space = 'LOCAL_SPACE'
-                    
-                    #Upwards/Downwards movement
-                    if shapekey.count('AU17L+AU17R') or shapekey.count('AU26L+AU26R') or shapekey.count('AU27L+AU27R') or shapekey.count('AU27ZL+AU27ZR'):
-                        target.transform_type = 'LOC_Z'
+                            #Lower lips
+                            elif container == 'AU17D' or container == 'AU16' or container == 'AU32':
+                                target.transform_space = 'LOCAL_SPACE'
 
-                        #Documentation (Since i may be the first human on earth to find and/or utilize this)
-                        #driver.keyframe_points.add(count) = Add keyframe
-                        #driver.keyframe_points[keyframe] = Keyframe
-                        #driver.keyframe_points[0].co_ui[0] = Horizontal position
-                        #driver.keyframe_points[0].co_ui[1] = Vertical position
-                        #driver.keyframe_points[0].handle_(left/right) = Keyframe handle (Location and type)
-                        #driver.keyframe_points[0].handle_(left/right)_type = Interpolation type
+                                if shapekey.endswith('_L'):
+                                    target.bone_target = "LowerLip_L"
+                                elif shapekey.endswith('_R'):
+                                    target.bone_target = "LowerLip_R"
 
-                        #Chin lowers
-                        if shapekey.count('AU26L+AU26R'):
-                            driver.keyframe_points.add(3)
+                                if container == 'AU17D' or container == 'AU16':
+                                    target.transform_type = 'LOC_Z'
 
-                            #Keyframe positions and values
-                            driver.keyframe_points[0].co_ui[0] = 0
-                            driver.keyframe_points[0].co_ui[1] = 0
-                            driver.keyframe_points[1].co_ui[0] = -0.6
-                            driver.keyframe_points[1].co_ui[1] = 1
-                            driver.keyframe_points[2].co_ui[0] = -1.2
-                            driver.keyframe_points[2].co_ui[1] = 0
+                                    if container == 'AU16':
+                                        driver.modifiers[0].coefficients[1] = -3
+                                        keyblocks[shapekey].slider_max = 1.5
+                                    elif container == 'AU17D':
+                                        driver.modifiers[0].coefficients[1] = 2
 
-                            #Handles
-                            driver.keyframe_points[1].handle_left_type = 'FREE'
-                            driver.keyframe_points[1].handle_right_type = 'FREE'
-                            driver.keyframe_points[1].handle_left[0] = -0.75
-                            driver.keyframe_points[1].handle_left[1] = 1
-                            driver.keyframe_points[1].handle_right[0] = -0.45
-                            driver.keyframe_points[1].handle_right[1] = 0.5
+                                elif container == 'AU32':
+                                    target.transform_type = 'LOC_Y'
+                                    driver.modifiers[0].coefficients[1] = -2
 
-                            driver.keyframe_points[2].handle_left_type = 'ALIGNED'
-                            driver.keyframe_points[2].handle_right_type = 'ALIGNED'
-                            driver.keyframe_points[2].handle_left[0] = -1.3
-                            driver.keyframe_points[2].handle_left[1] = 0
-                            driver.keyframe_points[2].handle_right[0] = -0.945
-                            driver.keyframe_points[2].handle_right[1] = 0
+                            #MiddleLip
+                            elif container == 'AD96L' or container == 'AD96R' or container == 'AU22Z':
+                                #AD96L/R = Mouth sideways
+                                #AU22Z = Outside puckering
 
-                            #Forces refresh
-                            driver.auto_smoothing = 'CONT_ACCEL'
+                                target.bone_target = "MiddleLip" 
+                                target.transform_space = 'LOCAL_SPACE'
 
-                            try:
-                                driver.modifiers.remove(driver.modifiers[0])
-                            except:
-                                pass
+                                if container == 'AD96L' or container == 'AD96R':
+                                    target.transform_type = 'LOC_X'
 
-                        elif shapekey.count('AU27L+AU27R'):
-                            driver.keyframe_points.add(4)
+                                    if shapekey.endswith('R'):
+                                        driver.modifiers[0].coefficients[1] = -1
 
-                            driver.keyframe_points[0].co_ui[0] = 0
-                            driver.keyframe_points[0].co_ui[1] = 0
-                            driver.keyframe_points[1].co_ui[0] = -0.6
-                            driver.keyframe_points[1].co_ui[1] = 0
-                            driver.keyframe_points[2].co_ui[0] = -1
-                            driver.keyframe_points[2].co_ui[1] = 0.95
-                            driver.keyframe_points[3].co_ui[0] = -1.5
-                            driver.keyframe_points[3].co_ui[1] = 0
+                                elif container == 'AU22Z':
+                                    target.transform_type = 'LOC_Y'
 
-                            driver.keyframe_points[1].handle_left_type = 'AUTO'
-                            driver.keyframe_points[1].handle_right_type = 'AUTO'
+                                    driver.modifiers[0].coefficients[1] = -2
 
-                            driver.keyframe_points[2].handle_left_type = 'ALIGNED'
-                            driver.keyframe_points[2].handle_right_type = 'ALIGNED'
-                            driver.keyframe_points[2].handle_left[0] = -1.1
-                            driver.keyframe_points[2].handle_left[1] = 0.95
-                            driver.keyframe_points[2].handle_right[0] = -0.9
-                            driver.keyframe_points[2].handle_right[1] = 0.95
+                        elif cat == 'chin':
+                            #AU17 = Chin raise (sort of)
+                            #AU26 = Chin drop
+                            #AU27 = Chin drop 2
+                            #AU27Z = Full mouth open
+                            #AD30L/R = Chin sideways
 
-                            driver.keyframe_points[3].handle_left_type = 'ALIGNED'
-                            driver.keyframe_points[3].handle_right_type = 'ALIGNED'
-                            driver.keyframe_points[3].handle_left[0] = -2
-                            driver.keyframe_points[3].handle_left[1] = 0
-                            driver.keyframe_points[3].handle_right[0] = -1.3
-                            driver.keyframe_points[3].handle_right[1] = 0
+                            target.bone_target = "Chin" 
+                            target.transform_space = 'LOCAL_SPACE'
+                            
+                            #Upwards/Downwards movement
+                            if container == 'AU17' or container == 'AU26' or container == 'AU27' or container == 'AU27Z':
+                                target.transform_type = 'LOC_Z'
 
-                            #Forces refresh
-                            driver.auto_smoothing = 'CONT_ACCEL'
+                                #Documentation (Since i may be the first human on earth to find and/or utilize this)
+                                #driver.keyframe_points.add(count) = Add keyframe
+                                #driver.keyframe_points[keyframe] = Keyframe
+                                #driver.keyframe_points[0].co_ui[0] = Horizontal position
+                                #driver.keyframe_points[0].co_ui[1] = Vertical position
+                                #driver.keyframe_points[0].handle_(left/right) = Keyframe handle (Location and type)
+                                #driver.keyframe_points[0].handle_(left/right)_type = Interpolation type
 
-                            try:
-                                driver.modifiers.remove(driver.modifiers[0])
-                            except:
-                                pass
+                                #Chin lowers
+                                if container == 'AU26':
+                                    driver.keyframe_points.add(3)
 
-                        #Mouth fully opens
-                        elif shapekey.count('AU27ZL+AU27ZR'):
-                            driver.keyframe_points.add(2)
+                                    #Keyframe positions and values
+                                    driver.keyframe_points[0].co_ui[0] = 0
+                                    driver.keyframe_points[0].co_ui[1] = 0
+                                    driver.keyframe_points[1].co_ui[0] = -0.6
+                                    driver.keyframe_points[1].co_ui[1] = 1
+                                    driver.keyframe_points[2].co_ui[0] = -1.2
+                                    driver.keyframe_points[2].co_ui[1] = 0
 
-                            driver.keyframe_points[0].co_ui[0] = -0.95
-                            driver.keyframe_points[0].co_ui[1] = 0
-                            driver.keyframe_points[1].co_ui[0] = -1.5
-                            driver.keyframe_points[1].co_ui[1] = 1
+                                    #Handles
+                                    driver.keyframe_points[1].handle_left_type = 'FREE'
+                                    driver.keyframe_points[1].handle_right_type = 'FREE'
+                                    driver.keyframe_points[1].handle_left[0] = -0.75
+                                    driver.keyframe_points[1].handle_left[1] = 1
+                                    driver.keyframe_points[1].handle_right[0] = -0.45
+                                    driver.keyframe_points[1].handle_right[1] = 0.5
 
-                            driver.keyframe_points[0].handle_left_type = 'ALIGNED'
-                            driver.keyframe_points[0].handle_right_type = 'ALIGNED'
-                            driver.keyframe_points[0].handle_left[0] = -1.135
-                            driver.keyframe_points[0].handle_left[1] = 0.275
-                            driver.keyframe_points[0].handle_right[0] = -0.825
-                            driver.keyframe_points[0].handle_right[1] = -0.185
+                                    driver.keyframe_points[2].handle_left_type = 'ALIGNED'
+                                    driver.keyframe_points[2].handle_right_type = 'ALIGNED'
+                                    driver.keyframe_points[2].handle_left[0] = -1.3
+                                    driver.keyframe_points[2].handle_left[1] = 0
+                                    driver.keyframe_points[2].handle_right[0] = -0.945
+                                    driver.keyframe_points[2].handle_right[1] = 0
 
-                            driver.keyframe_points[1].handle_left_type = 'ALIGNED'
-                            driver.keyframe_points[1].handle_right_type = 'ALIGNED'
-                            driver.keyframe_points[1].handle_left[0] = -1.6
-                            driver.keyframe_points[1].handle_left[1] = 1
-                            driver.keyframe_points[1].handle_right[0] = -1.3
-                            driver.keyframe_points[1].handle_right[1] = 1
+                                    #Forces refresh
+                                    driver.auto_smoothing = 'CONT_ACCEL'
 
-                            #Forces refresh
-                            driver.auto_smoothing = 'CONT_ACCEL'
+                                    try:
+                                        driver.modifiers.remove(driver.modifiers[0])
+                                    except:
+                                        pass
 
-                            try:
-                                driver.modifiers.remove(driver.modifiers[0])
-                            except:
-                                pass
-                    
-                    #Sideways movement
-                    elif shapekey.count('AD30L') or shapekey.count('AD30R'):
-                        target.transform_type = 'LOC_X'
+                                elif container == 'AU27':
+                                    driver.keyframe_points.add(4)
 
-                        if shapekey.count('AD30R'):
-                            driver.modifiers[0].coefficients[1] = -1
+                                    driver.keyframe_points[0].co_ui[0] = 0
+                                    driver.keyframe_points[0].co_ui[1] = 0
+                                    driver.keyframe_points[1].co_ui[0] = -0.6
+                                    driver.keyframe_points[1].co_ui[1] = 0
+                                    driver.keyframe_points[2].co_ui[0] = -1
+                                    driver.keyframe_points[2].co_ui[1] = 0.95
+                                    driver.keyframe_points[3].co_ui[0] = -1.5
+                                    driver.keyframe_points[3].co_ui[1] = 0
 
-                #MiddleLip
-                elif shapekey.count('AD96L') or shapekey.count('AD96R') or shapekey.count('AU22ZL+AU22ZR'):
+                                    driver.keyframe_points[1].handle_left_type = 'AUTO'
+                                    driver.keyframe_points[1].handle_right_type = 'AUTO'
 
-                    #AD96L/R = Mouth sideways
-                    #AU22ZL+AU22ZR = Outside puckering
+                                    driver.keyframe_points[2].handle_left_type = 'ALIGNED'
+                                    driver.keyframe_points[2].handle_right_type = 'ALIGNED'
+                                    driver.keyframe_points[2].handle_left[0] = -1.1
+                                    driver.keyframe_points[2].handle_left[1] = 0.95
+                                    driver.keyframe_points[2].handle_right[0] = -0.9
+                                    driver.keyframe_points[2].handle_right[1] = 0.95
 
-                    target.bone_target = "MiddleLip" 
-                    target.transform_space = 'LOCAL_SPACE'
+                                    driver.keyframe_points[3].handle_left_type = 'ALIGNED'
+                                    driver.keyframe_points[3].handle_right_type = 'ALIGNED'
+                                    driver.keyframe_points[3].handle_left[0] = -2
+                                    driver.keyframe_points[3].handle_left[1] = 0
+                                    driver.keyframe_points[3].handle_right[0] = -1.3
+                                    driver.keyframe_points[3].handle_right[1] = 0
 
-                    if shapekey.count('AD96'):
-                        target.transform_type = 'LOC_X'
+                                    #Forces refresh
+                                    driver.auto_smoothing = 'CONT_ACCEL'
 
-                        if shapekey.endswith('R'):
-                            driver.modifiers[0].coefficients[1] = -1
+                                    try:
+                                        driver.modifiers.remove(driver.modifiers[0])
+                                    except:
+                                        pass
 
-                    elif shapekey.count('AU22ZL+AU22ZR'):
-                        target.transform_type = 'LOC_Y'
+                                elif container == 'AU27Z':
+                                    driver.keyframe_points.add(2)
 
-                        driver.modifiers[0].coefficients[1] = -2
+                                    driver.keyframe_points[0].co_ui[0] = -0.95
+                                    driver.keyframe_points[0].co_ui[1] = 0
+                                    driver.keyframe_points[1].co_ui[0] = -1.5
+                                    driver.keyframe_points[1].co_ui[1] = 1
+
+                                    driver.keyframe_points[0].handle_left_type = 'ALIGNED'
+                                    driver.keyframe_points[0].handle_right_type = 'ALIGNED'
+                                    driver.keyframe_points[0].handle_left[0] = -1.135
+                                    driver.keyframe_points[0].handle_left[1] = 0.275
+                                    driver.keyframe_points[0].handle_right[0] = -0.825
+                                    driver.keyframe_points[0].handle_right[1] = -0.185
+
+                                    driver.keyframe_points[1].handle_left_type = 'ALIGNED'
+                                    driver.keyframe_points[1].handle_right_type = 'ALIGNED'
+                                    driver.keyframe_points[1].handle_left[0] = -1.6
+                                    driver.keyframe_points[1].handle_left[1] = 1
+                                    driver.keyframe_points[1].handle_right[0] = -1.3
+                                    driver.keyframe_points[1].handle_right[1] = 1
+
+                                    #Forces refresh
+                                    driver.auto_smoothing = 'CONT_ACCEL'
+
+                                    try:
+                                        driver.modifiers.remove(driver.modifiers[0])
+                                    except:
+                                        pass
+                            
+                            #Sideways movement
+                            elif container == 'AD30L' or container == 'AD30R':
+                                target.transform_type = 'LOC_X'
+
+                                if container == 'AD30R':
+                                    driver.modifiers[0].coefficients[1] = -1
 
             del shapekey
 
@@ -1706,7 +1710,7 @@ def anim_armature(action):
         #Empty that stores all the generated widgets for easier storage/manipulation
         parent = bpy.data.objects.new('parent_widgets', None)
 
-        for widget in ['Chin', 'MouthCorner', 'Cheek', 'LowerLip', 'MiddleLip', 'UpperLip', 'Nostril_L', 'Nostril_R', 'UpDown', 'Circle']:
+        for widget in ['4Directions', 'Cheek', 'LowerLip', 'MiddleLip', 'UpperLip', 'Nostril_L', 'Nostril_R', 'UpDown', 'Circle']:
             try:
                 bpy.data.objects[widget]
             except:
@@ -1728,13 +1732,9 @@ def anim_armature(action):
 
                 faces = []
 
-                if widget == 'Chin':
+                if widget == '4Directions':
                     vertices = [(0.0000, 0.0000, 1.0000), (-0.3827, 0.0000, 0.9239), (-0.7071, 0.0000, 0.7071), (-0.9239, 0.0000, 0.3827), (-1.0000, 0.0000, 0.0000), (-0.9239, -0.0000, -0.3827), (-0.7071, -0.0000, -0.7071), (-0.3827, -0.0000, -0.9239), (0.0000, -0.0000, -1.0000), (0.3827, -0.0000, -0.9239), (0.7071, -0.0000, -0.7071), (0.9239, -0.0000, -0.3827), (1.0000, 0.0000, 0.0000), (0.9239, 0.0000, 0.3827), (0.7071, 0.0000, 0.7071), (0.3827, 0.0000, 0.9239), (-0.3718, 0.0000, 1.8058), (-0.6592, 0.0000, 1.3381), (0.3718, 0.0000, 1.8058), (0.6592, 0.0000, 1.3381), (0.4179, 0.0000, 1.0882), (0.7722, 0.0000, 0.8515), (-0.7722, 0.0000, 0.8515), (-0.4179, 0.0000, 1.0882), (0.0000, 0.0000, 1.1805), (0.0000, 0.0000, 2.2000), (-2.2000, 0.0000, 0.0000), (-1.1805, 0.0000, 0.0000), (-1.0882, 0.0000, -0.4179), (-0.8515, 0.0000, -0.7722), (-0.8515, 0.0000, 0.7722), (-1.0882, 0.0000, 0.4179), (-1.3381, 0.0000, 0.6592), (-1.8058, 0.0000, 0.3718), (-1.3381, 0.0000, -0.6592), (-1.8058, 0.0000, -0.3718), (2.2000, 0.0000, -0.0000), (1.1805, 0.0000, -0.0000), (1.0882, 0.0000, 0.4179), (0.8515, 0.0000, 0.7722), (0.8515, 0.0000, -0.7722), (1.0882, 0.0000, -0.4179), (1.3381, 0.0000, -0.6592), (1.8058, 0.0000, -0.3718), (1.3381, 0.0000, 0.6592), (1.8058, 0.0000, 0.3718), (0.3718, 0.0000, -1.8058), (0.6592, 0.0000, -1.3381), (-0.3718, 0.0000, -1.8058), (-0.6592, 0.0000, -1.3381), (-0.4179, 0.0000, -1.0882), (-0.7722, 0.0000, -0.8515), (0.7722, 0.0000, -0.8515), (0.4179, 0.0000, -1.0882), (-0.0000, 0.0000, -1.1805), (-0.0000, 0.0000, -2.2000)]
                     edges = [(1, 0), (2, 1), (3, 2), (4, 3), (5, 4), (6, 5), (7, 6), (8, 7), (9, 8), (10, 9), (11, 10), (12, 11), (13, 12), (14, 13), (15, 14), (0, 15), (16, 25), (17, 22), (18, 25), (19, 21), (17, 16), (19, 18), (24, 20), (20, 21), (22, 23), (23, 24), (28, 27), (29, 28), (31, 30), (27, 31), (32, 33), (34, 35), (32, 30), (33, 26), (34, 29), (35, 26), (38, 37), (39, 38), (41, 40), (37, 41), (42, 43), (44, 45), (42, 40), (43, 36), (44, 39), (45, 36), (46, 55), (47, 52), (48, 55), (49, 51), (47, 46), (49, 48), (54, 50), (50, 51), (52, 53), (53, 54)]
-
-                elif widget == 'MouthCorner':
-                    vertices = [(0.0000, 0.0000, -1.0000), (0.3827, 0.0000, -0.9239), (0.7071, 0.0000, -0.7071), (0.9239, 0.0000, -0.3827), (1.0000, 0.0000, 0.0000), (0.9239, -0.0000, 0.3827), (0.7071, -0.0000, 0.7071), (0.3827, -0.0000, 0.9239), (-0.0000, -0.0000, 1.0000), (-0.3827, -0.0000, 0.9239), (-0.7071, -0.0000, 0.7071), (-0.9239, -0.0000, 0.3827), (-1.0000, 0.0000, -0.0000), (-0.9239, 0.0000, -0.3827), (-0.7071, 0.0000, -0.7071), (-0.3827, 0.0000, -0.9239), (0.3718, 0.0000, -1.8058), (0.6592, 0.0000, -1.3381), (-0.3718, 0.0000, -1.8058), (-0.6592, 0.0000, -1.3381), (-0.4179, 0.0000, -1.0882), (-0.7722, 0.0000, -0.8515), (0.7722, 0.0000, -0.8515), (0.4179, 0.0000, -1.0882), (-0.0000, 0.0000, -1.1805), (-0.0000, 0.0000, -2.2000), (2.2000, 0.0000, 0.0000), (1.1805, 0.0000, -0.0000), (1.0882, 0.0000, 0.4179), (0.8515, 0.0000, 0.7722), (0.8515, 0.0000, -0.7722), (1.0882, 0.0000, -0.4179), (1.3381, 0.0000, -0.6592), (1.8058, 0.0000, -0.3718), (1.3381, 0.0000, 0.6592), (1.8058, 0.0000, 0.3718), (-2.2000, 0.0000, -0.0000), (-1.1805, 0.0000, 0.0000), (-1.0882, 0.0000, -0.4179), (-0.8515, 0.0000, -0.7722), (-0.8515, 0.0000, 0.7722), (-1.0882, 0.0000, 0.4179), (-1.3381, 0.0000, 0.6592), (-1.8058, 0.0000, 0.3718), (-1.3381, 0.0000, -0.6592), (-1.8058, 0.0000, -0.3718), (-0.3718, 0.0000, 1.8058), (-0.6592, 0.0000, 1.3381), (0.3718, 0.0000, 1.8058), (0.6592, 0.0000, 1.3381), (0.4179, 0.0000, 1.0882), (0.7722, 0.0000, 0.8515), (-0.7722, 0.0000, 0.8515), (-0.4179, 0.0000, 1.0882), (0.0000, 0.0000, 1.1805), (-0.0000, 0.0000, 2.2000), (0.0000, 0.0000, -0.7000), (0.2679, 0.0000, -0.6467), (0.4950, 0.0000, -0.4950), (0.6467, 0.0000, -0.2679), (0.7000, 0.0000, 0.0000), (0.6467, -0.0000, 0.2679), (0.4950, -0.0000, 0.4950), (0.2679, -0.0000, 0.6467), (-0.0000, -0.0000, 0.7000), (-0.2679, -0.0000, 0.6467), (-0.4950, -0.0000, 0.4950), (-0.6467, -0.0000, 0.2679), (-0.7000, 0.0000, -0.0000), (-0.6467, 0.0000, -0.2679), (-0.4950, 0.0000, -0.4950), (-0.2679, 0.0000, -0.6467)]
-                    edges = [(1, 0), (2, 1), (3, 2), (4, 3), (5, 4), (6, 5), (7, 6), (8, 7), (9, 8), (10, 9), (11, 10), (12, 11), (13, 12), (14, 13), (15, 14), (0, 15), (16, 25), (17, 22), (18, 25), (19, 21), (17, 16), (19, 18), (24, 20), (20, 21), (22, 23), (23, 24), (28, 27), (29, 28), (31, 30), (27, 31), (32, 33), (34, 35), (32, 30), (33, 26), (34, 29), (35, 26), (38, 37), (39, 38), (41, 40), (37, 41), (42, 43), (44, 45), (42, 40), (43, 36), (44, 39), (45, 36), (46, 55), (47, 52), (48, 55), (49, 51), (47, 46), (49, 48), (54, 50), (50, 51), (52, 53), (53, 54), (57, 56), (58, 57), (59, 58), (60, 59), (61, 60), (62, 61), (63, 62), (64, 63), (65, 64), (66, 65), (67, 66), (68, 67), (69, 68), (70, 69), (71, 70), (56, 71)]
 
                 elif widget == 'Cheek':
                     vertices = [(0.0000, 0.0000, -1.0000), (0.3827, 0.0000, -0.9239), (0.7071, 0.0000, -0.7071), (0.9239, 0.0000, -0.3827), (1.0000, 0.0000, 0.0000), (0.9239, -0.0000, 0.3827), (0.7071, -0.0000, 0.7071), (0.3827, -0.0000, 0.9239), (-0.0000, -0.0000, 1.0000), (-0.3827, -0.0000, 0.9239), (-0.7071, -0.0000, 0.7071), (-0.9239, -0.0000, 0.3827), (-1.0000, 0.0000, -0.0000), (-0.9239, 0.0000, -0.3827), (-0.7071, 0.0000, -0.7071), (-0.3827, 0.0000, -0.9239), (-0.2679, 0.0000, -0.6467), (-0.4950, 0.0000, -0.4950), (-0.6467, 0.0000, -0.2679), (-0.7000, 0.0000, -0.0000), (-0.6467, -0.0000, 0.2679), (-0.4950, -0.0000, 0.4950), (-0.2679, -0.0000, 0.6467), (-0.0000, -0.0000, 0.7000), (0.2679, -0.0000, 0.6467), (0.4950, -0.0000, 0.4950), (0.6467, -0.0000, 0.2679), (0.7000, 0.0000, 0.0000), (0.6467, 0.0000, -0.2679), (0.4950, 0.0000, -0.4950), (0.2679, 0.0000, -0.6467), (0.0000, 0.0000, -0.7000), (-0.3718, 0.0000, 1.8058), (-0.6592, 0.0000, 1.3381), (0.3718, 0.0000, 1.8058), (0.6592, 0.0000, 1.3381), (0.4179, 0.0000, 1.0882), (0.7722, 0.0000, 0.8515), (-0.7722, 0.0000, 0.8515), (-0.4179, 0.0000, 1.0882), (0.0000, 0.0000, 1.1805), (-0.0000, 0.0000, 2.2000)]

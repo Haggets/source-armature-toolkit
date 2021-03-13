@@ -1413,3 +1413,89 @@ def define_bone(bone, location=[], sign='+', parent=False, type=0):
             ebone.parent = ebone2
         elif bone[0].startswith('R_') or bone[0].endswith('_R'):
             ebone.parent = ebone3
+
+def generate_shapekey_dict(dictionary, raw_list):
+    for shapekey in raw_list:
+        #Basis
+        if shapekey.casefold().count('basis') or shapekey.casefold().count('base'):
+            dictionary['basis']['basis'] = shapekey
+
+        #Eyebrows
+        if shapekey.upper().count('AU1AU2L') or shapekey.upper().count('AU1AU2R'):
+            dictionary['eyebrows']['AU1AU2'] = shapekey
+        elif shapekey.upper().count('AU1AU4L') or shapekey.upper().count('AU1AU4R'):
+            dictionary['eyebrows']['AU1AU4'] = shapekey
+        elif shapekey.upper().count('AU2AU4L') or shapekey.upper().count('AU2AU4R'):
+            dictionary['eyebrows']['AU2AU4'] = shapekey
+        elif shapekey.upper().count('AU1L') or shapekey.upper().count('AU1R'):
+            dictionary['eyebrows']['AU1'] = shapekey
+        elif shapekey.upper().count('AU2L') or shapekey.upper().count('AU2R'):
+            dictionary['eyebrows']['AU2'] = shapekey
+        elif shapekey.upper().count('AU4L') or shapekey.upper().count('AU4R'):
+            dictionary['eyebrows']['AU4'] = shapekey
+
+        #Eyes
+        elif shapekey.lower().count('f01') or shapekey.lower().count('frame1'):
+            dictionary['eyes']['f01'] = shapekey
+        elif shapekey.lower().count('f02') or shapekey.lower().count('frame2'):
+            dictionary['eyes']['f02'] = shapekey
+        elif shapekey.lower().count('f03') or shapekey.lower().count('frame3'):
+            dictionary['eyes']['f03'] = shapekey
+        elif shapekey.lower().count('f04'):
+            dictionary['eyes']['f04'] = shapekey
+        elif shapekey.upper().count('AU42'):
+            dictionary['eyes']['AU42'] = shapekey
+        
+        #Cheek
+        elif shapekey.upper().count('AU6ZL') or shapekey.upper().count('AU6ZR'):
+            dictionary['cheek']['AU6Z'] = shapekey
+        elif shapekey.upper().count('AU13L') or shapekey.upper().count('AU13R'):
+            dictionary['cheek']['AU13'] = shapekey
+
+        #Nose
+        elif shapekey.upper().count('AU9L') or shapekey.upper().count('AU9R'):
+            dictionary['nose']['AU9'] = shapekey
+        elif shapekey.upper().count('AU38'):
+            dictionary['nose']['AU38'] = shapekey
+
+        #Mouth
+        elif shapekey.upper().count('AU12L') or shapekey.upper().count('AU12R'):
+            dictionary['mouth']['AU12'] = shapekey
+        elif shapekey.upper().count('AU15L') or shapekey.upper().count('AU15R'):
+            dictionary['mouth']['AU15'] = shapekey
+        elif shapekey.upper().count('AU10L') or shapekey.upper().count('AU10R'):
+            dictionary['mouth']['AU10'] = shapekey
+        elif shapekey.upper().count('AU17DL') or shapekey.upper().count('AU17DR'):
+            dictionary['mouth']['AU17D'] = shapekey
+        elif shapekey.upper().count('AU16L') or shapekey.upper().count('AU16R'):
+            dictionary['mouth']['AU16'] = shapekey
+        elif shapekey.upper().count('AU32'):
+            dictionary['mouth']['AU32'] = shapekey
+        elif shapekey.upper().count('AU24'):
+            dictionary['mouth']['AU24'] = shapekey
+        elif shapekey.upper().count('AU18ZL') or shapekey.upper().count('AU18ZR'):
+            dictionary['mouth']['AU18Z'] = shapekey
+        elif shapekey.upper().count('AU22ZL') or shapekey.upper().count('AU22ZR'):
+            dictionary['mouth']['AU22Z'] = shapekey
+        elif shapekey.upper().count('AD96L'):
+            dictionary['mouth']['AD96L'] = shapekey
+        elif shapekey.upper().count('AD96R'):
+            dictionary['mouth']['AD96R'] = shapekey
+
+        #Chin
+        elif shapekey.upper().count('AU31'):
+            dictionary['chin']['AU31'] = shapekey
+        elif shapekey.upper().count('AU26L') or shapekey.upper().count('AU26R'):
+            dictionary['chin']['AU26'] = shapekey
+        elif shapekey.upper().count('AU27L') or shapekey.upper().count('AU27R'):
+            dictionary['chin']['AU27'] = shapekey
+        elif shapekey.upper().count('AU27ZL') or shapekey.upper().count('AU27ZR'):
+            dictionary['chin']['AU27Z'] = shapekey
+        elif shapekey.upper().count('AD30L'):
+            dictionary['chin']['AD30L'] = shapekey
+        elif shapekey.upper().count('AD30R'):
+            dictionary['chin']['AD30R'] = shapekey
+        elif shapekey.upper().count('AU17L') or shapekey.upper().count('AU17R'):
+            dictionary['chin']['AU17'] = shapekey
+
+    return dictionary
