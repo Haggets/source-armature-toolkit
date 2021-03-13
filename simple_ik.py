@@ -27,7 +27,7 @@ def inverse_kinematics(action): #Adds IK to the armature
             if not bonelist[bone]:
                 ik = armature.pose.bones[prefix + bone].constraints.new('IK')
                 ik.chain_count = 3
-                ik.pole_target = utils.arm.name_full
+                ik.pole_target = utils.arm.armature
 
                 if bone.count('Hand'):
                     if bone.startswith('L_') or bone.endswith('_L'):
@@ -155,7 +155,7 @@ def inverse_kinematics(action): #Adds IK to the armature
     #Updates bone list in case it was modified
     utils.arm.get_bones(False)
 
-    armature = bpy.data.objects[utils.arm.name]
+    armature = utils.arm.armature
     prefix = utils.arm.prefix
 
     current_mode = bpy.context.object.mode

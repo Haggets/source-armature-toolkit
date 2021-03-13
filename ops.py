@@ -21,6 +21,7 @@ class VAT_OT_armaturerename_blender(bpy.types.Operator): #Converts armature sche
     
     def execute(self, context):
         armature_rename(1)
+        utils.arm._scheme = utils.arm.scheme
         utils.arm.scheme = 1
         
         return{'FINISHED'}
@@ -39,6 +40,7 @@ class VAT_OT_armaturerename_source(bpy.types.Operator): #Converts armature schem
     
     def execute(self, context):
         armature_rename(0)
+        utils.arm._scheme = utils.arm.scheme
         utils.arm.scheme = 0
 
         return{'FINISHED'}
@@ -98,7 +100,7 @@ class VAT_OT_weightarmature_create(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature:
-            return (not utils.arm.weight_armature and utils.arm.scheme != -1)
+            return (not utils.arm.weight_armature_created and utils.arm.scheme != -1)
 
     def execute(self, context):
         weight_armature(0)
@@ -115,7 +117,7 @@ class VAT_OT_weightarmature_delete(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature:
-            return (utils.arm.weight_armature and utils.arm.scheme != -1)
+            return (utils.arm.weight_armature_created and utils.arm.scheme != -1)
 
     def execute(self, context):
         weight_armature(1)
@@ -166,7 +168,7 @@ class VAT_OT_rigifyretarget_create(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature:
-            return (not utils.arm.animation_armature and utils.arm.scheme != -1)
+            return (not utils.arm.animation_armature_created and utils.arm.scheme != -1)
 
     def execute(self, context):
         anim_armature(0)
@@ -183,7 +185,7 @@ class VAT_OT_rigifyretarget_delete(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature:
-            return (utils.arm.animation_armature and utils.arm.scheme != -1)
+            return (utils.arm.animation_armature_created and utils.arm.scheme != -1)
 
     def execute(self, context):
         anim_armature(1)
@@ -217,7 +219,7 @@ class VAT_OT_rigifyretarget_update(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature:
-            return (utils.arm.animation_armature and not utils.arm.animation_armature_setup and utils.arm.scheme != -1)
+            return (utils.arm.animation_armature_created and not utils.arm.animation_armature_setup and utils.arm.scheme != -1)
 
     def execute(self, context):
         anim_armature(3)

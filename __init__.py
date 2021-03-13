@@ -37,7 +37,10 @@ def register():
         bpy.utils.register_class(cls)
         
     bpy.types.Scene.vatproperties = bpy.props.PointerProperty(type=props.VAT_properties)
-    
+        
+    #bpy.app.handlers.undo_post.append(utils.restore_variables)
+    bpy.app.handlers.load_post.append(utils.create_armature)
+
 def unregister():
 
     addon_updater_ops.unregister()
