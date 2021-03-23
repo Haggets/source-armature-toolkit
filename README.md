@@ -1,6 +1,6 @@
 [![discord](https://img.shields.io/discord/693987167210438656.svg?style=flat&label=Discord&logo=discord&color=7289DA&json?)](https://discord.gg/kH99XSU)
 
-# Valve Developer Toolkit
+# Valve Armature Toolkit
 Blender plugin focused on bringing a variety of functions to fasten the workflow of working with Valve armatures. (This does not include SFM armatures)
 
 ## List of functions
