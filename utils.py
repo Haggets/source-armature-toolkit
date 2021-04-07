@@ -16,19 +16,6 @@ def create_armature(self, context): #Creates new armature class
         global arm
         arm = Armature(vatproperties.target_armature)
 
-'''
-def restore_variables(vat_restore):
-    arm.armature = bpy.data.objects[arm._armature]
-    
-    if arm.weight_armature_created:
-        arm.weight_armature = bpy.data.objects[arm._weight_armature]
-    if arm.animation_armature_created:
-        arm.animation_armature = bpy.data.objects[arm._animation_armature]
-
-    if arm._scheme != arm.scheme:
-        arm.scheme = arm._scheme
-'''
-
 class Armature: #Armature base
 
     def __init__(self, armature):
@@ -55,8 +42,6 @@ class Armature: #Armature base
         #Constraints
         self.symmetry_left = False
         self.symmetry_right = False
-        self.inverse_kinematics = False
-        self.poles = {'hand': [], 'foot': [], 'forearm': [], 'calf': []}
 
         #Weight armature
         self.weight_armature_created = False
@@ -177,23 +162,8 @@ class Armature: #Armature base
 
                     #No/Different prefix
                     else:
-                        #Makes sure generated IK bones are not part of list
-                        if bone.title().count('_Pole') or bone.title().count('_Target'):
-                            if bone.count('Hand'):
-                                self.poles['hand'].append(bone)
-                                self.poles['hand'].sort()
-                            elif bone.count('Foot'):
-                                self.poles['hand'].append(bone)
-                                self.poles['hand'].sort()
-                            elif bone.count('forearm'):
-                                self.poles['forearm'].append(bone)
-                                self.poles['forearm'].sort()
-                            elif bone.count('calf'):
-                                self.poles['calf'].append(bone)
-                                self.poles['calf'].sort()
-                        else:
-                            custom_bones_raw.append(bone)
-                            custom_bones_raw.sort()
+                        custom_bones_raw.append(bone)
+                        custom_bones_raw.sort()
 
                 #Unknown armature
                 if not symmetrical_bones_raw and not central_bones_raw and not self.other_bones:
@@ -530,19 +500,7 @@ class Armature: #Armature base
                     except:
                         self.symmetry_right = False
             
-        def get_inversekinematics():
-            armature = self.armature
-            prefix = self.prefix
-            
-            for bone in zip(self.symmetrical_bones['arms']['hand'], self.symmetrical_bones['legs']['foot']):
-                try:
-                    armature.pose.bones[prefix + bone].constraints['IK']
-                    self.inverse_kinematics = True
-                except:
-                    self.inverse_kinematics = False
-
         get_symmetry()
-        get_inversekinematics()
 
     def set_groups(self): #Organizes bones by bone group and bone layers
         armature = self.armature
@@ -1251,12 +1209,6 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                         prefix = Prefixes.other
                         bone = armature.data.edit_bones[prefix + bone]
                         armature.data.edit_bones.remove(bone)
-
-        #Removes pole bones if simple IK was used prior and not removed
-        if arm.inverse_kinematics:
-            for bone in arm.poles:
-                bone = armature.data.edit_bones[bone]
-                armature.data.edit_bones.remove(bone)
 
         #Final touches to the armature
         armature.data.display_type = 'OCTAHEDRAL'

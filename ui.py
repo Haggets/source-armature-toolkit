@@ -110,28 +110,9 @@ class VAT_PT_weightarmature(bpy.types.Panel): #Weight Armature panel
         box.label(text="Allows more spread out", icon='INFO')
         box.label(text="vertex weights, requiring")
         box.label(text="less tweaking overall")
-        
-class VAT_PT_inversekinematics(bpy.types.Panel): #Inverse Kinematics panel
-    bl_label = "Inverse Kinematics (Simple IK)"
-    bl_parent_id = 'VAT_PT_mainpanel'
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_context = 'data'
-    bl_options = {'DEFAULT_CLOSED'}
-    
-    def draw (self, context):
-        layout = self.layout
 
-        row = layout.row()
-        row.operator('vat.inversekinematics_create', text='Generate')
-        row.operator('vat.inversekinematics_delete', text='Delete')
-        box = layout.box()
-        box.label(text="Meant for simple animation", icon='INFO')
-        box.label(text="Adds IK to hand and feet", icon='INFO')
-        box.label(text="as well as pole bones")
-        
 class VAT_PT_rigifyretarget(bpy.types.Panel): #Rigify Retargetting panel
-    bl_label = "Rigify Retarget (Advanced IK)"
+    bl_label = "Rigify Retarget"
     bl_parent_id = 'VAT_PT_mainpanel'
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
