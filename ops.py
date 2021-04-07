@@ -2,7 +2,6 @@ import bpy
 from .armature_rename import armature_rename
 from .constraint_symmetry import constraint_symmetry
 from .weight_armature import weight_armature
-from .simple_ik import inverse_kinematics
 from .advanced_ik import anim_armature
 from . import utils
 from . import props
@@ -122,40 +121,6 @@ class VAT_OT_weightarmature_delete(bpy.types.Operator):
     def execute(self, context):
         weight_armature(1)
 
-        return{'FINISHED'}
-
-class VAT_OT_inversekinematics_create(bpy.types.Operator):
-    """Creates simple Inverse Kinematics (IK)"""
-    bl_idname = "vat.inversekinematics_create"
-    bl_label = "Simple IK"
-    bl_options = {'REGISTER', 'UNDO'}
-    
-    @classmethod
-    def poll(cls, context):
-        vatproperties = bpy.context.scene.vatproperties
-        if vatproperties.target_armature:
-            return (not utils.arm.inverse_kinematics and utils.arm.scheme != -1)
-
-    def execute(self, context):
-        inverse_kinematics(0)
-        
-        return{'FINISHED'}
-
-class VAT_OT_inversekinematics_delete(bpy.types.Operator):
-    """Deletes simple Inverse Kinematics (IK)"""
-    bl_idname = "vat.inversekinematics_delete"
-    bl_label = "Simple IK Removal"
-    bl_options = {'REGISTER', 'UNDO'}
-    
-    @classmethod
-    def poll(cls, context):
-        vatproperties = bpy.context.scene.vatproperties
-        if vatproperties.target_armature:
-            return (utils.arm.inverse_kinematics and utils.arm.scheme != -1)
-
-    def execute(self, context):
-        inverse_kinematics(1)
-        
         return{'FINISHED'}
     
 class VAT_OT_rigifyretarget_create(bpy.types.Operator):
