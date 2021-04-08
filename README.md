@@ -25,4 +25,6 @@ This function procedurally creates a weight armature that connects all the bones
 ### Rigify Retarget
 Function that creates a procedural armature with Rigify and retarge the Source armature onto it, allowing for the usage of an animation ready armature, giving animators a WAY easier time animating characters, and allowing for a lot more flexibility overall. This also includes the ability to use facial flexes with the armature, and said animations can be baked and imported into Source without much hassle. (Not including facial flexes of course)
 
+The entirety of the Rigify armature is functional, meaning that even the tweak bones work and should be exportable.
+
 Remember to bake the animation onto the Source armature before exporting, otherwise the animation will not show up in the game, that's due to it only following another armature's actions, it is not doing anything on its own.
