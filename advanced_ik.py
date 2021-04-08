@@ -24,7 +24,7 @@ def anim_armature(action):
             #Selects animation armature
             update(1, armature)
 
-            #Creates driver so the original armature mimics the animation armature's scale
+            '''#Creates driver so the original armature mimics the animation armature's scale
             driver = utils.arm.armature.driver_add('scale')
 
             for index, driver in enumerate(driver):
@@ -42,7 +42,7 @@ def anim_armature(action):
                 elif index == 1:
                     target.transform_type = 'SCALE_Y'
                 elif index == 2:
-                    target.transform_type = 'SCALE_Z'
+                    target.transform_type = 'SCALE_Z'''
                 
             #Hides all but the first layer
             for i in [1,2,3,5,4,6,7]:
@@ -731,273 +731,6 @@ def anim_armature(action):
 
             print("Animation armature deleted")
                 
-    def empty_rotation(container, bone, type): #Sets empty rotation
-        prefix = utils.arm.prefix
-
-        scale = utils.arm.animation_armature.scale
-
-        base = bpy.data.objects['base_{} ({})'.format(bone, utils.arm.armature.name)[0:60]]
-        target = bpy.data.objects['target_{} ({})'.format(bone, utils.arm.armature.name)[0:60]]
-        
-        #Default empty rotation, fit for most bones
-
-        if type == 0: #Symmetrical bones default
-            target.rotation_euler[0] = math.radians(90)
-            target.rotation_euler[1] = math.radians(180)
-            target.rotation_euler[2] = math.radians(-90)
-        elif type == 1: #Center bones default
-            target.rotation_euler[0] = 0
-            target.rotation_euler[1] = 0
-            target.rotation_euler[2] = 0
-        
-        #Upper body
-        if vatproperties.retarget_top_preset == 'OP1':
-            if container == 'clavicle':
-                if bone.startswith('L_') or bone.endswith('_L'):
-                    target.rotation_euler[0] = math.radians(-106)
-                elif bone.startswith('R_') or bone.endswith('_R'):
-                    target.rotation_euler[0] = math.radians(104)
-
-        elif vatproperties.retarget_top_preset == 'OP2':
-            if container == 'clavicle':
-                if bone.startswith('L_') or bone.endswith('_L'):
-                    target.rotation_euler[0] = math.radians(-95)
-                elif bone.startswith('R_') or bone.endswith('_R'):
-                    target.rotation_euler[0] = math.radians(90)
-
-        #More specific empty rotations for bones that don't fit the default rotation
-        if container == 'hand':
-            if bone.startswith('L_') or bone.endswith('_L'):
-                target.rotation_euler[0] = math.radians(169.25)
-                target.rotation_euler[1] = math.radians(184.75)
-                target.rotation_euler[2] = math.radians(-85)
-            elif bone.startswith('R_') or bone.endswith('_R'):
-                target.rotation_euler[0] = math.radians(10.5)
-                target.rotation_euler[1] = math.radians(184.75)
-                target.rotation_euler[2] = math.radians(-95)
-
-        elif container.count('finger'):
-            #Makes them smaller for the sake of readability
-            base.empty_display_size = 0.5
-            target.empty_display_size = 0.5
-
-            #Finger0
-            if container == 'finger0':
-                if bone.startswith('L_') or bone.endswith('_L'):
-                    target.rotation_euler[0] = math.radians(136)
-                    target.rotation_euler[1] = math.radians(180)
-                    target.rotation_euler[2] = math.radians(-90)
-                elif bone.startswith('R_') or bone.endswith('_R'):
-                    target.rotation_euler[0] = math.radians(224)
-                    target.rotation_euler[1] = 0
-                    target.rotation_euler[2] = math.radians(90)
-            
-            if container == 'finger01':
-                if bone.startswith('L_') or bone.endswith('_L'):
-                    target.rotation_euler[0] = math.radians(135)
-                    target.rotation_euler[1] = math.radians(180)
-                    target.rotation_euler[2] = math.radians(-90)
-                elif bone.startswith('R_') or bone.endswith('_R'):
-                    target.rotation_euler[0] = math.radians(225)
-                    target.rotation_euler[1] = 0
-                    target.rotation_euler[2] = math.radians(90)
-
-            elif container == 'finger02':
-                if bone.startswith('L_') or bone.endswith('_L'):
-                    target.rotation_euler[0] = math.radians(-44.4)
-                    target.rotation_euler[1] = math.radians(6.275)
-                    target.rotation_euler[2] = math.radians(99.65)
-                elif bone.startswith('R_') or bone.endswith('_R'):
-                    target.rotation_euler[0] = math.radians(44.3)
-                    target.rotation_euler[1] = math.radians(-186.25)
-                    target.rotation_euler[2] = math.radians(-99.65)
-
-            #Finger1
-            elif container == 'finger1':
-                target.rotation_euler[1] = math.radians(0)
-                target.rotation_euler[2] = math.radians(90)
-
-                if bone.startswith('L_') or bone.endswith('_L'):
-                    target.rotation_euler[0] = math.radians(-95.85)
-                elif bone.startswith('R_') or bone.endswith('_R'):
-                    target.rotation_euler[0] = math.radians(-84.1)
-
-            elif container == 'finger11':
-                target.rotation_euler[1] = math.radians(0)
-                target.rotation_euler[2] = math.radians(90)
-
-                if bone.startswith('L_') or bone.endswith('_L'):
-                    target.rotation_euler[0] = math.radians(-91.5)
-                elif bone.startswith('R_') or bone.endswith('_R'):
-                    target.rotation_euler[0] = math.radians(-88.45)
-
-            elif container == 'finger12':
-                if bone.startswith('L_') or bone.endswith('_L'):
-                    target.rotation_euler[0] = math.radians(-91.5)
-                    target.rotation_euler[1] = math.radians(-2)
-                    target.rotation_euler[2] = math.radians(87.85)
-                elif bone.startswith('R_') or bone.endswith('_R'):
-                    target.rotation_euler[0] = math.radians(-88.45)
-                    target.rotation_euler[1] = math.radians(-1.95)
-                    target.rotation_euler[2] = math.radians(92.15)
-
-            #Finger2
-            elif container == 'finger2':
-                if bone.startswith('L_') or bone.endswith('_L'):
-                    target.rotation_euler[0] = math.radians(-85)
-                    target.rotation_euler[1] = 0
-                    target.rotation_euler[2] = math.radians(90)
-                elif bone.startswith('R_') or bone.endswith('_R'):
-                    target.rotation_euler[0] = math.radians(-95)
-                    target.rotation_euler[1] = 0
-                    target.rotation_euler[2] = math.radians(90)
-
-            elif container == 'finger21':
-                if bone.startswith('L_') or bone.endswith('_L'):
-                    target.rotation_euler[0] = math.radians(91.6)
-                    target.rotation_euler[1] = math.radians(180)
-                    target.rotation_euler[2] = math.radians(-90)
-                elif bone.startswith('R_') or bone.endswith('_R'):
-                    target.rotation_euler[0] = math.radians(88.5)
-                    target.rotation_euler[1] = math.radians(180)
-                    target.rotation_euler[2] = math.radians(-90)
-
-            elif container == 'finger22':
-                if bone.startswith('L_') or bone.endswith('_L'):
-                    target.rotation_euler[0] = math.radians(-88.2)
-                    target.rotation_euler[1] = math.radians(-9)
-                    target.rotation_euler[2] = math.radians(89.05)
-                elif bone.startswith('R_') or bone.endswith('_R'):
-                    target.rotation_euler[0] = math.radians(-91.75)
-                    target.rotation_euler[1] = math.radians(-8.95)
-                    target.rotation_euler[2] = math.radians(90.93)
-
-            #Finger3
-            elif container == 'finger3':
-                if bone.startswith('L_') or bone.endswith('_L'):
-                    target.rotation_euler[0] = math.radians(-80)
-                    target.rotation_euler[1] = 0
-                    target.rotation_euler[2] = math.radians(90)
-                elif bone.startswith('R_') or bone.endswith('_R'):
-                    target.rotation_euler[0] = math.radians(-100)
-                    target.rotation_euler[1] = 0
-                    target.rotation_euler[2] = math.radians(90)
-
-            elif container == 'finger31':
-                if bone.startswith('L_') or bone.endswith('_L'):
-                    target.rotation_euler[0] = math.radians(95.5)
-                    target.rotation_euler[1] = math.radians(180)
-                    target.rotation_euler[2] = math.radians(-90)
-                elif bone.startswith('R_') or bone.endswith('_R'):
-                    target.rotation_euler[0] = math.radians(84.5)
-                    target.rotation_euler[1] = math.radians(180)
-                    target.rotation_euler[2] = math.radians(90)
-
-            elif container == 'finger32':
-                if bone.startswith('L_') or bone.endswith('_L'):
-                    target.rotation_euler[0] = math.radians(-84)
-                    target.rotation_euler[1] = math.radians(-13.85)
-                    target.rotation_euler[2] = math.radians(88)
-                elif bone.startswith('R_') or bone.endswith('_R'):
-                    target.rotation_euler[0] = math.radians(-96)
-                    target.rotation_euler[1] = math.radians(-13.75)
-                    target.rotation_euler[2] = math.radians(91.95)
-
-            #Finger4
-            elif container == 'finger4':
-                if bone.startswith('L_') or bone.endswith('_L'):
-                    target.rotation_euler[0] = math.radians(-91.75)
-                    target.rotation_euler[1] = 0
-                    target.rotation_euler[2] = math.radians(90)
-                elif bone.startswith('R_') or bone.endswith('_R'):
-                    target.rotation_euler[0] = math.radians(-88.2)
-                    target.rotation_euler[1] = 0
-                    target.rotation_euler[2] = math.radians(90)
-
-            elif container == 'finger41':
-                if bone.startswith('L_') or bone.endswith('_L'):
-                    target.rotation_euler[0] = math.radians(90)
-                    target.rotation_euler[1] = math.radians(180)
-                    target.rotation_euler[2] = math.radians(-90)
-                elif bone.startswith('R_') or bone.endswith('_R'):
-                    target.rotation_euler[0] = math.radians(90.6)
-                    target.rotation_euler[1] = math.radians(180)
-                    target.rotation_euler[2] = math.radians(-90)
-
-            elif container == 'finger42':
-                if bone.startswith('L_') or bone.endswith('_L'):
-                    target.rotation_euler[0] = math.radians(-97.05)
-                    target.rotation_euler[1] = math.radians(-16.925)
-                    target.rotation_euler[2] = math.radians(100.75)
-                elif bone.startswith('R_') or bone.endswith('_R'):
-                    target.rotation_euler[0] = math.radians(-83)
-                    target.rotation_euler[1] = math.radians(-16.95)
-                    target.rotation_euler[2] = math.radians(79.26)
-
-        #Spine
-        if vatproperties.retarget_center_preset == 'OP1':
-            if container.count('spine') or container == 'neck':
-                target.rotation_euler[2] = math.radians(90)
-
-            elif container == 'head':
-                target.rotation_euler[2] = math.radians(89.5)
-
-            elif container == 'pelvis':
-                target.rotation_euler[0] = 0
-
-        elif vatproperties.retarget_center_preset == 'OP2':
-            if container.count('spine') or container == 'neck':
-                target.rotation_euler[2] = math.radians(90)
-
-            elif container == 'head':
-                target.rotation_euler[2] = math.radians(80)
-
-            elif container == 'pelvis':
-                target.rotation_euler[0] = math.radians(22)
-
-        #Lower body
-        if vatproperties.retarget_bottom_preset == 'OP1':
-            if container == 'thigh':
-                target.rotation_euler[1] = math.radians(-3)
-                target.rotation_euler[2] = math.radians(90)
-
-                if bone.startswith('L_') or bone.endswith('_L'):
-                    target.rotation_euler[0] = math.radians(85)
-                elif bone.startswith('R_') or bone.endswith('_R'):
-                    target.rotation_euler[0] = math.radians(95)
-            
-            elif container == 'calf':
-                target.rotation_euler[1] = math.radians(3.5)
-                target.rotation_euler[2] = math.radians(90)
-
-                if bone.startswith('L_') or bone.endswith('_L'):
-                    target.rotation_euler[0] = math.radians(85)
-                elif bone.startswith('R_') or bone.endswith('_R'):
-                    target.rotation_euler[0] = math.radians(95)
-
-            elif container == 'foot':
-                target.rotation_euler[1] = 0
-                target.rotation_euler[2] = math.radians(90)
-
-            elif container == 'toe':
-                target.rotation_euler[1] = 0
-                target.rotation_euler[2] = math.radians(90)
-                
-                if bone.startswith('L_') or bone.endswith('_L'):
-                    target.rotation_euler[0] = math.radians(-88)
-                elif bone.startswith('R_') or bone.endswith('_R'):
-                    target.rotation_euler[0] = math.radians(-96)
-
-        elif vatproperties.retarget_bottom_preset == 'OP2':
-            if container == 'thigh' or container == 'calf':
-                target.rotation_euler[0] = 0
-                target.rotation_euler[1] = 0
-                target.rotation_euler[2] = math.radians(90)
-            elif container == 'foot':
-                target.rotation_euler[0] = math.radians(90)
-                target.rotation_euler[1] = 0
-                target.rotation_euler[2] = math.radians(90)
-
     def link(): #Organizes armature after empty creation
 
         def retarget(container, bone, helper=False, helper_target=None): #Creates empties and links them to Rigify armature/Source armature
@@ -1022,12 +755,12 @@ def anim_armature(action):
                 #Location constraint
                 loc = base.constraints.new('COPY_LOCATION')
                 loc.target = armature
-                loc.subtarget = 'ORG-' + prefix + bone
+                loc.subtarget = 'ORG-' + prefix + bone + '.isolated'
 
                 #Rotation constraint
                 rot = base.constraints.new('COPY_ROTATION')
                 rot.target = armature
-                rot.subtarget = 'ORG-' + prefix + bone
+                rot.subtarget = 'ORG-' + prefix + bone + '.isolated'
 
                 #Creates target empty and links
                 target = bpy.data.objects.new('target_{} ({})'.format(bone, utils.arm.armature.name)[0:60], None)
@@ -1046,39 +779,6 @@ def anim_armature(action):
                 rot = armature.pose.bones[prefix + bone].constraints.new('COPY_ROTATION')
                 rot.name = "Retarget Rotation"
                 rot.target = target
-            elif helper:
-                armature = utils.arm.armature
-                if bone.startswith('L_') or bone.endswith('_L'):
-                    target = bpy.data.objects['target_{} ({})'.format(helper_target[0], armature.name)[0:60]]
-                elif bone.startswith('R_') or bone.endswith('_R'):
-                    target = bpy.data.objects['target_{} ({})'.format(helper_target[1], armature.name)[0:60]]
-                loc = armature.pose.bones[prefix + bone].constraints.new('COPY_LOCATION')
-                loc.name = "Retarget Location"
-                loc.target = target
-
-            #Counterweight for the small bump applied to the calf
-            if container == 'calf':
-                #Creates driver so the calf follows the animation armature's scale
-                driver = target.driver_add('location')
-
-                for index, driver in enumerate(driver):
-                    armature = bpy.data.objects['rig']
-                    #Parameters and target
-                    variable = driver.driver.variables.new() #Creates new variable onto the shapekey
-                    variable.name = "scale"
-                    if index == 1:
-                        driver.driver.expression = '0.1*' + variable.name
-                    elif index == 2:
-                        driver.driver.expression = '1*' + variable.name #Changes expression to created variable's name
-                    variable.type = 'TRANSFORMS' #Changes type of variable to transform
-
-                    target = variable.targets[0]
-                    target.id = armature #Links variable to animation armature
-                    target.transform_space = 'LOCAL_SPACE'
-                    if index == 1:
-                        target.transform_type = 'SCALE_Y'
-                    elif index == 2:
-                        target.transform_type = 'SCALE_X'
 
         #Creates parent for all bases for easier storage/manipulation
         parent = bpy.data.objects.new('parent_' + utils.arm.armature.name, None)
@@ -1088,26 +788,14 @@ def anim_armature(action):
         #Gets armature name and applies presets based on names
         current = str(vatproperties.target_armature.name)
 
-        #Automatic presets
-        if current.casefold().count('alyx'):
-            vatproperties.retarget_top_preset = 'OP1'
-            vatproperties.retarget_center_preset = 'OP2'
-            vatproperties.retarget_bottom_preset = 'OP1'
-        else:
-            vatproperties.retarget_top_preset = 'OP1'
-            vatproperties.retarget_center_preset = 'OP1'
-            vatproperties.retarget_bottom_preset = 'OP1'
-        
         for cat in utils.arm.symmetrical_bones:
             for container, bone in utils.arm.symmetrical_bones[cat].items():
                 for bone in bone:
                     retarget(container, bone)
-                    empty_rotation(container, bone, 0)
 
         for container, bone in utils.arm.central_bones.items():
             for bone in bone:
                 retarget(container, bone)
-                empty_rotation(container, bone, 1)
 
         for bone in utils.arm.helper_bones['legs']['knee'] + utils.arm.helper_bones['arms']['elbow']:
             bone, prefix = helper_convert(bone)
@@ -1131,16 +819,11 @@ def anim_armature(action):
         armature.data.name = utils.arm.armature_real.name + '.anim'
         armature.scale = scale
 
-        #Overrides driver so it now follows animation armature
-        driver = utils.arm.armature.driver_add('scale')
+        utils.update(1, armature)
 
-        for index, driver in enumerate(driver):
-            #Parameters and target
-            variable = driver.driver.variables[0] #Creates new variable onto the shapekey
-            driver.driver.expression = variable.name #Changes expression to created variable's name
-
-            target = variable.targets[0]
-            target.id = armature #Links variable to animation armature
+        #Parents isolated bones
+        for bone in utils.arm.isolatedbones:
+            armature.data.edit_bones['ORG-' + bone].parent = armature.data.edit_bones['DEF-' + bone.replace('.isolated', '')]
 
         #Deletes generated armature
         generate_armature('anim', 2)
@@ -1785,13 +1468,3 @@ def anim_armature(action):
     elif action == 2: #Creates empties and links it to Source armature, also creates widgets and setups facial flexes
         link()
         face_flex_setup()
-
-    elif action == 3: #Empty rotation modification
-        for cat in utils.arm.symmetrical_bones.keys():
-            for container, bone in utils.arm.symmetrical_bones[cat].items():
-                for bone in bone:
-                    empty_rotation(container, bone, 0)
-
-        for container, bone in utils.arm.central_bones.items():
-            for bone in bone:
-                empty_rotation(container ,bone, 1)

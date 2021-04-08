@@ -16,13 +16,26 @@ def create_armature(self, context): #Creates new armature class
         global arm
         arm = Armature(vatproperties.target_armature)
 
+@persistent
+def armatures_reset(*args):
+    vatproperties = bpy.context.scene.vatproperties
+    if vatproperties.target_armature:
+        arm.armature = bpy.data.objects[arm._armature]
+        arm.armature_real = bpy.data.armatures[arm._armature_real]
+    
+        if arm.weight_armature_created:
+            arm.weight_armature = bpy.data.objects[arm._weight_armature]
+        if arm.animation_armature_created:
+            arm.animation_armature = bpy.data.objects[arm._animation_armature]
+
 class Armature: #Armature base
 
     def __init__(self, armature):
         #Basic armature information
         self.armature = armature
-        self._armature = armature.name
+        self._armature = str(armature.name)
         self.armature_real = armature.data
+        self._armature_real = str(armature.data.name)
 
         #Armature type, scheme and prefix
         self.scheme = -1 #-1 = No armature, 0 = Source, 1 = Blender, 2 = SFM, 3 = Custom 1, 4 = Custom 2
@@ -54,6 +67,8 @@ class Armature: #Armature base
         self.animation_armature = None
         self.animation_armature_real = None
         self.facial_bones = []
+
+        self.isolatedbones = []
 
         #Object information
         self.shapekeys = None
@@ -421,9 +436,11 @@ class Armature: #Armature base
             if not self.sfm:
                 if bone.startswith('L_') or bone.startswith('R_'):
                     self.scheme = 0
+                    vatproperties.check_armature_rename = False
 
                 elif bone.endswith('_L') or bone.endswith('_R'):
                     self.scheme = 1
+                    vatproperties.check_armature_rename = True
                 
         #Final scheme report
         if not self.sfm:
@@ -509,7 +526,7 @@ class Armature: #Armature base
         #Checks if any groups exist already
         group = armature.pose.bone_groups.keys()
 
-        if group == []:
+        if not group:
             #Creates groups and sets their color
             for group, color in zip(['Center', 'Left Arm', 'Right Arm', 'Left Leg', 'Right Leg', 'Helpers', 'Attachments', 'Others', 'Custom'], ['THEME03', 'THEME01', 'THEME04', 'THEME01', 'THEME04', 'THEME09', 'THEME14', 'THEME10', 'THEME06']):
                 armature.pose.bone_groups.new(name=group)
@@ -599,7 +616,7 @@ class Armature: #Armature base
         armature = self.armature
         prefix = self.prefix
 
-        new = False
+        new = True
 
         for bone in self.helper_bones['arms']['elbow'] + self.helper_bones['arms']['ulna'] + self.helper_bones['arms']['wrist'] + self.helper_bones['legs']['quadricep'] + self.helper_bones['legs']['knee']:
             if bone.startswith('s.'):
@@ -613,15 +630,17 @@ class Armature: #Armature base
                 prefix = Prefixes.helper
             
             #Adds transforms to only these helper bones unless already existing
-            try:
-                transform = armature.pose.bones[prefix + bone].constraints["Procedural Bone"]
-            except:
-                new = True
+            for constraint in armature.pose.bones[prefix + bone].constraints:
+                if constraint == "Procedural Bone":
+                    new = False
+                    break
+            
+            if new:
                 transform = armature.pose.bones[prefix + bone].constraints.new('TRANSFORM')
 
                 #Initial parameters
                 transform.name = "Procedural Bone"
-                transform.target = self.armature.name
+                transform.target = self.armature
                 transform.map_from = 'ROTATION'
                 transform.map_to = 'ROTATION'
                 transform.target_space = 'LOCAL'
@@ -755,12 +774,25 @@ def generate_armature(type, action): #Creates or deletes the weight armature
         #Refreshes bone list
         arm.get_bones(False)
     
+        arm.isolatedbones = []
+
         #Setup for armatures, tweaking bone positions and the like
         for cat in arm.symmetrical_bones.keys():
             if cat == 'fingers':
                 prefix = arm.prefix
                 for container, bone in arm.symmetrical_bones[cat].items():
                     for bone in bone:
+                        #Creates copy of bone that retains the original rotation for the retarget empties
+                        isolatedbone = armature.data.edit_bones.new(prefix + bone + ".isolated")
+                        isolatedbone.head = armature.pose.bones[prefix + bone].head
+                        isolatedbone.tail = armature.pose.bones[prefix + bone].tail
+                        isolatedbone.roll = armature.data.edit_bones[prefix + bone].roll
+                        isolatedbone.use_deform = False
+                        isolatedbone.layers[28] = True
+                        isolatedbone.layers[0] = False
+
+                        arm.isolatedbones.append(isolatedbone.name)
+
                         parent = armature.pose.bones[prefix + bone].parent.name
 
                         #Makes it so the hand bone is facing straight
@@ -781,6 +813,17 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                 prefix = arm.prefix
                 for container, bone in list(arm.symmetrical_bones[cat].items()):
                     for bone in bone:
+                        #Creates copy of bone that retains the original rotation for the retarget empties
+                        isolatedbone = armature.data.edit_bones.new(prefix + bone + ".isolated")
+                        isolatedbone.head = armature.pose.bones[prefix + bone].head
+                        isolatedbone.tail = armature.pose.bones[prefix + bone].tail
+                        isolatedbone.roll = armature.data.edit_bones[prefix + bone].roll
+                        isolatedbone.use_deform = False
+                        isolatedbone.layers[28] = True
+                        isolatedbone.layers[0] = False
+
+                        arm.isolatedbones.append(isolatedbone.name)
+
                         parent = armature.pose.bones[prefix + bone].parent.name
 
                         loc = armature.pose.bones[prefix + bone].head
@@ -829,6 +872,16 @@ def generate_armature(type, action): #Creates or deletes the weight armature
         
         for container, bone in arm.central_bones.items():
             for bone in bone:
+                #Creates copy of bone that retains the original rotation for the retarget empties
+                isolatedbone = armature.data.edit_bones.new(prefix + bone + ".isolated")
+                isolatedbone.head = armature.pose.bones[prefix + bone].head
+                isolatedbone.tail = armature.pose.bones[prefix + bone].tail
+                isolatedbone.roll = armature.data.edit_bones[prefix + bone].roll
+                isolatedbone.parent = armature.data.edit_bones[prefix + bone]
+                isolatedbone.use_deform = False
+                isolatedbone.layers[28] = True
+                isolatedbone.layers[0] = False
+                
                 #No parent
                 if container == 'pelvis':
                     continue
@@ -1270,7 +1323,6 @@ def generate_armature(type, action): #Creates or deletes the weight armature
 
             #Checks if retarget empties are present, if so, remove them
             if action == 1:
-                arm.armature.driver_remove('scale')
                 try:
                     collection = bpy.data.collections["Retarget Empties ({})".format(arm.armature.name)]
                 except:
