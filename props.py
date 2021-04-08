@@ -1,6 +1,5 @@
 import bpy
 from . import utils
-from . import constraint_symmetry
 
 class VAT_properties(bpy.types.PropertyGroup): #Defines global properties the plugin will use
 
@@ -16,13 +15,25 @@ class VAT_properties(bpy.types.PropertyGroup): #Defines global properties the pl
     def object_poll(self, object):
         return object.type == 'MESH'
         
-    target_armature : bpy.props.PointerProperty(type=bpy.types.Object, name='Armature', description="Armature that will be used to perform operations on", poll=armature_poll, update=utils.create_armature)
+    target_armature : bpy.props.PointerProperty(type=bpy.types.Object,
+        name='Armature',
+        description="Armature that will be used to perform operations on",
+        poll=armature_poll, 
+        update=utils.create_armature)
     
-    target_object : bpy.props.PointerProperty(type=bpy.types.Object, name='Object', description="Object linked to the armature that will be used for shapekeys", poll=object_poll)
+    target_object : bpy.props.PointerProperty(type=bpy.types.Object,
+        name='Object',
+        description="Object linked to the armature that will be used for shapekeys",
+        poll=object_poll)
 
-    custom_scheme_enabled : bpy.props.BoolProperty(name="Enable custom prefix", description="If to allow usage of custom prefixes that will replace the default Source prefixes", default=False) 
+    custom_scheme_enabled : bpy.props.BoolProperty(name="Enable custom prefix",
+        description="If to allow usage of custom prefixes that will replace the default Source prefixes",
+        default=False) 
 
-    custom_scheme_prefix : bpy.props.StringProperty(name='Prefix', description="Custom prefix that will be used instead", default='')
+    custom_scheme_prefix : bpy.props.StringProperty(
+        name='Prefix',
+        description="Custom prefix that will be used instead",
+        default='')
 
     affected_side : bpy.props.EnumProperty(
         name="Affected side", 
@@ -33,29 +44,8 @@ class VAT_properties(bpy.types.PropertyGroup): #Defines global properties the pl
         ]
     )
 
-    retarget_top_preset : bpy.props.EnumProperty(
-        name="Rigify arm presets",
-        description="Empty rotation presets for arms",
-        items=[
-            ('OP1', "Default Preset", "Works with most characters"),
-            ('OP2', "Second Preset", "In case the default doesn't work")
-        ]
-    )
+    #Operator checks for undos and redos
 
-    retarget_center_preset : bpy.props.EnumProperty(
-        name="Rigify center presets",
-        description="Empty rotation presets for the spine/head",
-        items=[
-            ('OP1', "Default Preset", "Works with most characters"),
-            ('OP2', "Second Preset", "Works with HL2 Alyx")
-        ]
-    )
-
-    retarget_bottom_preset : bpy.props.EnumProperty(
-        name="Rigify leg presets",
-        description="Empty rotation presets for legs",
-        items=[
-            ('OP1', "Default Preset", "Works with most characters"),
-            ('OP2', "Second Preset", "In case the default doesn't work")
-        ]
+    check_scheme : bpy.props.BoolProperty(
+        default=False
     )

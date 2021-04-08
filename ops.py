@@ -16,12 +16,14 @@ class VAT_OT_armaturerename_blender(bpy.types.Operator): #Converts armature sche
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature:
-            return (utils.arm.scheme == 0 and not utils.arm.sfm and utils.arm.scheme != -1)
+            return (not utils.arm.sfm and utils.arm.scheme != -1 and not vatproperties.check_scheme)
     
     def execute(self, context):
+        vatproperties = bpy.context.scene.vatproperties
         armature_rename(1)
         utils.arm._scheme = utils.arm.scheme
         utils.arm.scheme = 1
+        vatproperties.check_scheme = True
         
         return{'FINISHED'}
     
@@ -35,12 +37,14 @@ class VAT_OT_armaturerename_source(bpy.types.Operator): #Converts armature schem
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature:
-            return (utils.arm.scheme == 1 and not utils.arm.sfm and utils.arm.scheme != -1)
+            return (not utils.arm.sfm and utils.arm.scheme != -1 and vatproperties.check_scheme)
     
     def execute(self, context):
+        vatproperties = bpy.context.scene.vatproperties
         armature_rename(0)
         utils.arm._scheme = utils.arm.scheme
         utils.arm.scheme = 0
+        vatproperties.check_scheme = False
 
         return{'FINISHED'}
     
@@ -164,29 +168,12 @@ class VAT_OT_rigifyretarget_link(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
-    def poll(self, context):
+    def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature:
             return (context.object.name == "rig")
 
     def execute(self, context):
         anim_armature(2)
-
-        return{'FINISHED'}
-
-class VAT_OT_rigifyretarget_update(bpy.types.Operator):
-    """Connects original armature with generated Rigify armature"""
-    bl_idname = "vat.rigifyretarget_update"
-    bl_label = "Animation Ready Armature Empty Update"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(cls, context):
-        vatproperties = bpy.context.scene.vatproperties
-        if vatproperties.target_armature:
-            return (utils.arm.animation_armature_created and not utils.arm.animation_armature_setup and utils.arm.scheme != -1)
-
-    def execute(self, context):
-        anim_armature(3)
 
         return{'FINISHED'}

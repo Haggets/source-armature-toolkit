@@ -1,5 +1,4 @@
 import bpy
-from bpy.types import (Panel, Menu)
 from . import __init__
 from . import ops
 from . import utils
@@ -53,9 +52,9 @@ class VAT_PT_armaturerename(bpy.types.Panel): #Armature rename panel
         row.operator('vat.armaturerename_source', text='Restore')
         col = layout.column()
         if vatproperties.target_armature:
-            if utils.arm.scheme == 0:
+            if not vatproperties.check_scheme:
                 col.label(text="Current: Source Scheme")
-            elif utils.arm.scheme == 1:
+            elif vatproperties.check_scheme:
                 col.label(text="Current: Blender Scheme")
         box = layout.box()
         box.label(text="Meant for weight painting", icon='INFO')
@@ -146,27 +145,6 @@ class VAT_PT_rigifyretarget(bpy.types.Panel): #Rigify Retargetting panel
                     if bpy.context.object.name == 'rig':
                         col.operator('vat.rigifyretarget_link', text="Link to generated armature", icon='OUTLINER_DATA_ARMATURE')
                     
-                elif not utils.arm.animation_armature_setup:
-                    #Presets
-                    row = layout.row()
-                    row.label(text="Upper limbs presets:")
-                    row = layout.row()
-                    row.prop(vatproperties, 'retarget_top_preset', expand=True)
-
-                    row = layout.row()
-                    row.label(text="Spine presets:")
-                    row = layout.row()
-                    row.prop(vatproperties, 'retarget_center_preset', expand=True)
-
-                    row = layout.row()
-                    row.label(text="Lower limbs presets:")
-                    row = layout.row()
-                    row.prop(vatproperties, 'retarget_bottom_preset', expand=True)
-
-                    #Refresh
-                    row = layout.row()
-                    row.operator('vat.rigifyretarget_update', text='Refresh', icon='FILE_REFRESH')
-
         box = layout.box()
         box.label(text="Meant for complex animation", icon='INFO')
         box.label(text="Creates animation ready armature", icon='INFO')
