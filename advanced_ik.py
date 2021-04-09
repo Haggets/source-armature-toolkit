@@ -60,13 +60,17 @@ def anim_armature(action):
                     shapekeys_raw = None
                     print("No shape keys detected")
 
+                utils.arm.unused_shapekeys = ['AU6L+AU6R', 'AU25L+AU25R', 'AU22L+AU22R', 'AU20L+AU20R', 'AU18L+AU18R', 'AU26ZL+AU26ZR', 'AU12AU25L+AU12AU25R', 'upper_right', 'upper_right.001', 'lower_right', 'lower_right.001', 'upper_left', 'upper_left.001', 'lower_left', 'lower_left.001']
+
                 utils.arm.shapekeys = {'basis': {'basis': ''}, 'eyebrows': {'AU1': '', 'AU2': '', 'AU4': '', 'AU1AU2': '', 'AU1AU4': '', 'AU2AU4': ''}, 'eyes': {'f01': '', 'f02': '', 'f03': '', 'f04': '', 'AU42': ''}, 'cheek': {'AU6Z': '', 'AU13': ''}, 'nose': {'AU9': '', 'AU38': ''}, 'mouth': {'AU12': '', 'AU15': '', 'AU10': '', 'AU17D': '', 'AU16': '', 'AU32': '', 'AU24': '', 'AU18Z': '', 'AU22Z': '', 'AD96L': '', 'AD96R': ''}, 'chin': {'AU31': '', 'AU26': '', 'AU27': '', 'AU27Z': '', 'AD30L': '', 'AD30R': '', 'AU17': ''}}
 
                 if shapekeys_raw:
+                    object_data = vatproperties.target_object.data.copy()
+                    object_data.name = vatproperties.target_object.data.name + '.anim'
+                    vatproperties.target_object.data = object_data
+
                     utils.arm.shapekeys = generate_shapekey_dict(utils.arm.shapekeys, shapekeys_raw)
 
-                if utils.arm.shapekeys:
-                    print(utils.arm.shapekeys)
                     head = prefix + utils.arm.central_bones['head'][0]
                     
                     #Generates widgets for easier representation of every driver bone
@@ -699,36 +703,13 @@ def anim_armature(action):
             print("Animation armature created!")
 
         elif action == 1:
-            utils.arm.armature.driver_remove('scale')
             #Deletes Left/Right vertex groups if present
             if vatproperties.target_object:
-                try:
-                    left_group = vatproperties.target_object.vertex_groups['Left']
-                    vatproperties.target_object.vertex_groups.remove(left_group)
-                    del left_group
-                except:
-                    pass
-                
-                try:
-                    right_group = vatproperties.target_object.vertex_groups['Right']
-                    vatproperties.target_object.vertex_groups.remove(right_group)
-                    del right_group
-                except:
-                    pass
-
-                #Removes generated shapekeys if present and removes drivers from central shapekeys
-                if utils.arm.rigify_shapekeys:
-                    for cat in utils.arm.rigify_shapekeys.keys():
-                        for container, shapekey in utils.arm.rigify_shapekeys[cat].items():
-                            for shapekey in shapekey:
-                                if container == 'AU17' or container == 'AU26' or container == 'AU27' or container == 'AU27Z' or container == 'AD30L' or container == 'AD30R' or container == 'AU22Z' or container == 'AD96L' or container == 'AD96R':
-                                     vatproperties.target_object.data.shape_keys.key_blocks[shapekey].driver_remove('value')
-                                else:
-                                    shapekey = vatproperties.target_object.data.shape_keys.key_blocks[shapekey]
-                                    vatproperties.target_object.shape_key_remove(shapekey)
-
-                    shapekey = vatproperties.target_object.data.shape_keys.key_blocks['----------']
-                    vatproperties.target_object.shape_key_remove(shapekey)
+                print(vatproperties.target_object.data.name)
+                data = vatproperties.target_object.data.name.replace('.anim', '')
+                print(data)
+                data = bpy.data.meshes[data]
+                vatproperties.target_object.data = data
 
             print("Animation armature deleted")
                 
@@ -918,6 +899,22 @@ def anim_armature(action):
                             right_shapekey.vertex_group = right_group.name
 
                             keyblocks[shapekey].value = 0
+
+            #Removes single shapekeys as well as unused shapekeys
+                for container, shapekey in utils.arm.shapekeys[cat].items():
+                    if shapekey:
+                        if container == 'basis' or container == 'AU17' or container == 'AU26' or container == 'AU27' or container == 'AU27Z' or container == 'AD30L' or container == 'AD30R' or container == 'AU22Z' or container == 'AD96L' or container == 'AD96R':
+                            continue
+                        else:
+                            shapekey = vatproperties.target_object.data.shape_keys.key_blocks[shapekey]
+                            vatproperties.target_object.shape_key_remove(shapekey)
+
+            for shapekey in utils.arm.unused_shapekeys:
+                try:
+                    shapekey = vatproperties.target_object.data.shape_keys.key_blocks[shapekey]
+                    vatproperties.target_object.shape_key_remove(shapekey)
+                except:
+                    pass
 
             del left_shapekey
             del right_shapekey
