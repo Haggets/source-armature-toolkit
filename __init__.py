@@ -24,7 +24,7 @@ bl_info = {
     "tracker_url": "https://github.com/Haggets/valve-armature-toolkit/issues",
     "category": "Armature"}
             
-classes = [props.VAT_properties, preferences.VAT_updaterpreferences, ui.VAT_PT_mainpanel, ui.VAT_PT_armaturerename, ui.VAT_PT_constraintsymmetry, ui.VAT_PT_weightarmature, ui.VAT_PT_rigifyretarget, ops.VAT_OT_armaturerename_blender, ops.VAT_OT_armaturerename_source, ops.VAT_OT_constraintsymmetry_create, ops.VAT_OT_constraintsymmetry_delete, ops.VAT_OT_weightarmature_create, ops.VAT_OT_weightarmature_delete, ops.VAT_OT_rigifyretarget_create, ops.VAT_OT_rigifyretarget_delete, ops.VAT_OT_rigifyretarget_link]
+classes = [props.VAT_properties, props.VAT_info, preferences.VAT_updaterpreferences, ui.VAT_PT_mainpanel, ui.VAT_PT_armaturerename, ui.VAT_PT_constraintsymmetry, ui.VAT_PT_weightarmature, ui.VAT_PT_rigifyretarget, ops.VAT_OT_armaturerename_blender, ops.VAT_OT_armaturerename_source, ops.VAT_OT_constraintsymmetry_create, ops.VAT_OT_constraintsymmetry_delete, ops.VAT_OT_weightarmature_create, ops.VAT_OT_weightarmature_delete, ops.VAT_OT_rigifyretarget_create, ops.VAT_OT_rigifyretarget_delete, ops.VAT_OT_rigifyretarget_link]
 
 def register():
 
@@ -36,6 +36,7 @@ def register():
         bpy.utils.register_class(cls)
         
     bpy.types.Scene.vatproperties = bpy.props.PointerProperty(type=props.VAT_properties)
+    bpy.types.Scene.vatinfo = bpy.props.PointerProperty(type=props.VAT_info)
 
     bpy.app.handlers.load_post.append(utils.create_armature)
     bpy.app.handlers.undo_post.append(utils.armatures_reset)

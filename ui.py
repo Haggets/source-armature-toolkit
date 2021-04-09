@@ -16,13 +16,14 @@ class VAT_PT_mainpanel(bpy.types.Panel): #Main panel that subpanels will use
 
     def draw(self, context):
         vatproperties = bpy.context.scene.vatproperties
+        vatinfo = bpy.context.scene.vatinfo
         layout = self.layout
         
         layout.prop(vatproperties, 'target_armature') #Armature that will be affected by the utilities
         if vatproperties.target_armature:
             if vatproperties.custom_scheme_enabled and vatproperties.custom_scheme_prefix:
                 layout.label(text="Type: Custom Prefix Armature")
-            elif utils.arm.scheme == -1:
+            elif vatinfo.scheme == -1:
                 layout.label(text="Type: Unknown Armature")
             elif not utils.arm.sfm:
                 layout.label(text="Type: Default Source Armature")
@@ -45,6 +46,7 @@ class VAT_PT_armaturerename(bpy.types.Panel): #Armature rename panel
     
     def draw(self, context):
         vatproperties = bpy.context.scene.vatproperties
+        vatinfo = bpy.context.scene.vatinfo
         layout = self.layout
 
         row = layout.row()
@@ -52,9 +54,9 @@ class VAT_PT_armaturerename(bpy.types.Panel): #Armature rename panel
         row.operator('vat.armaturerename_source', text='Restore')
         col = layout.column()
         if vatproperties.target_armature:
-            if not vatproperties.check_scheme:
+            if vatinfo.scheme == 0:
                 col.label(text="Current: Source Scheme")
-            elif vatproperties.check_scheme:
+            elif vatinfo.scheme == 1:
                 col.label(text="Current: Blender Scheme")
         box = layout.box()
         box.label(text="Meant for weight painting", icon='INFO')
@@ -71,6 +73,7 @@ class VAT_PT_constraintsymmetry(bpy.types.Panel): #Constraint Symmetry panel
     
     def draw(self, context):
         vatproperties = bpy.context.scene.vatproperties
+        vatinfo = bpy.context.scene.vatinfo
         layout = self.layout
         
         row = layout.row()
@@ -80,8 +83,12 @@ class VAT_PT_constraintsymmetry(bpy.types.Panel): #Constraint Symmetry panel
         row.prop(vatproperties, 'affected_side', expand=True)
         col = layout.row()
         if vatproperties.target_armature:
-            if vatproperties.affected_side == 'OP1' and utils.arm.symmetry_right or vatproperties.affected_side == 'OP2' and utils.arm.symmetry_left:
+            if vatproperties.affected_side == 'OP1' and vatinfo.symmetry == 2 or vatproperties.affected_side == 'OP2' and vatinfo.symmetry == 1:
                 col.label(text="Already applied on the opposite side")
+        
+        row = layout.row()
+
+        row.prop(vatproperties, 'symmetry_offset')
 
         box = layout.box()
         box.label(text="Meant for armature reproportioning", icon='INFO')
