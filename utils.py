@@ -2,6 +2,8 @@ import bpy
 import math
 from bpy.app.handlers import persistent
 
+from .constraint_symmetry import constraint_update
+
 class Prefixes: #Container for other prefixes
     helper = 'hlp_'
     helper2 = 'ValveBiped.hlp_'
@@ -16,6 +18,10 @@ def create_armature(self, context): #Creates new armature class
         global arm
         arm = Armature(vatproperties.target_armature)
 
+def update_constraint(self, context):
+    vatproperties = bpy.context.scene.vatproperties
+    constraint_update(vatproperties.symmetry_offset)
+
 @persistent
 def armatures_reset(*args):
     vatproperties = bpy.context.scene.vatproperties
@@ -23,14 +29,16 @@ def armatures_reset(*args):
         arm.armature = bpy.data.objects[arm._armature]
         arm.armature_real = bpy.data.armatures[arm._armature_real]
     
-        if arm.weight_armature_created:
-            arm.weight_armature = bpy.data.objects[arm._weight_armature]
-        if arm.animation_armature_created:
-            arm.animation_armature = bpy.data.objects[arm._animation_armature]
+        #if arm.weight_armature_created:
+        #    arm.weight_armature = bpy.data.objects[arm._weight_armature]
+        #if arm.animation_armature_created:
+        #    arm.animation_armature = bpy.data.objects[arm._animation_armature]
 
 class Armature: #Armature base
 
     def __init__(self, armature):
+        vatinfo = bpy.context.scene.vatinfo
+
         #Basic armature information
         self.armature = armature
         self._armature = str(armature.name)
@@ -38,7 +46,6 @@ class Armature: #Armature base
         self._armature_real = str(armature.data.name)
 
         #Armature type, scheme and prefix
-        self.scheme = -1 #-1 = No armature, 0 = Source, 1 = Blender, 2 = SFM, 3 = Custom 1, 4 = Custom 2
         self.sfm = False
         self.prefix = ''
 
@@ -51,10 +58,6 @@ class Armature: #Armature base
         self.custom_bones = {'others': []}
 
         #Additional information for operations
-
-        #Constraints
-        self.symmetry_left = False
-        self.symmetry_right = False
 
         #Weight armature
         self.weight_armature_created = False
@@ -75,7 +78,7 @@ class Armature: #Armature base
 
         #Functions executed to gather previous information
         self.get_bones(True)
-        if self.scheme != -1:
+        if vatinfo.scheme != -1:
             self.get_scheme()
             self.get_armatures()
             self.get_constraints()
@@ -86,6 +89,7 @@ class Armature: #Armature base
             print("Empty armature, cannot proceed")
             
     def get_bones(self, report): #Builds bone lists
+        vatinfo = bpy.context.scene.vatinfo
         armature = self.armature
 
         if self.armature:
@@ -116,9 +120,9 @@ class Armature: #Armature base
 
                         if bone.startswith(self.prefix + bone.count('L_') == 0 or bone.count('R_') == 0 or bone.count('_L') == 0 or bone.count('_R') == 0):
                             if bone.count('L_') == 0 or bone.count('R_') == 0:
-                                self.scheme = 3
+                                vatinfo.scheme = 3
                             elif bone.count('_L') == 0 or bone.count('L_') == 0:
-                                self.scheme = 3
+                                vatinfo.scheme = 3
                             symmetrical_bones_raw.append(bone.replace(self.prefix, ''))
 
                         elif bone.startswith(self.prefix):
@@ -147,12 +151,12 @@ class Armature: #Armature base
 
                         #Default prefix
                         elif bone.startswith(self.prefix + 'L_') or bone.startswith(self.prefix + 'R_'): #Symmetrical
-                            self.scheme = 0
+                            vatinfo.scheme = 0
                             symmetrical_bones_raw.append(bone.replace(self.prefix, ''))
 
                         #Blender prefix
                         elif bone.endswith('_L') or bone.endswith('_R'):
-                            self.scheme = 1
+                            vatinfo.scheme = 1
                             symmetrical_bones_raw.append(bone.replace(self.prefix, ''))
 
                         #Central bones prefix
@@ -165,7 +169,7 @@ class Armature: #Armature base
                     #SFM prefix
                     elif bone.startswith('bip_'): # Central
                         vatproperties.sfm_armature = True
-                        self.scheme = 2
+                        vatinfo.scheme = 2
                         self.sfm = True
                         self.prefix = 'bip_'
 
@@ -182,7 +186,7 @@ class Armature: #Armature base
 
                 #Unknown armature
                 if not symmetrical_bones_raw and not central_bones_raw and not self.other_bones:
-                    self.scheme = -1
+                    vatinfo.scheme = -1
 
                 #Organizes dictionary from raw lists
 
@@ -425,29 +429,28 @@ class Armature: #Armature base
                     print("Custom bones:", self.custom_bones)
                 
             else:
-                self.scheme = -1
+                vatinfo.scheme = -1
 
     def get_scheme(self): #Gets current scheme
         armature = self.armature
+        vatinfo = bpy.context.scene.vatinfo
 
         for bone in self.symmetrical_bones:
 
             #If not an SFM armature, check if the armature has the Source or Blender armature
             if not self.sfm:
                 if bone.startswith('L_') or bone.startswith('R_'):
-                    self.scheme = 0
-                    vatproperties.check_armature_rename = False
+                    vatinfo.scheme = 0
 
                 elif bone.endswith('_L') or bone.endswith('_R'):
-                    self.scheme = 1
-                    vatproperties.check_armature_rename = True
+                    vatinfo.scheme = 1
                 
         #Final scheme report
         if not self.sfm:
-            if self.scheme == 0:
+            if vatinfo.scheme == 0:
                 print("Current Scheme: Source")
 
-            elif self.scheme == 1:
+            elif vatinfo.scheme == 1:
                 print("Current Scheme: Blender")
 
         elif self.sfm:
@@ -497,25 +500,26 @@ class Armature: #Armature base
     def get_constraints(self): #Gets previously added constraints that have not been removed
 
         def get_symmetry(): 
+            vatinfo = bpy.context.scene.vatinfo
             armature = self.armature
             prefix = self.prefix
 
             for bone in self.symmetrical_bones:
                 if bone.startswith('L_') or bone.endswith('_L'):
-                    try:
-                        armature.pose.bones[prefix + bone].constraints['Constraint Symmetry Location']
-                        armature.pose.bones[prefix + bone].constraints['Constraint Symmetry Rotation']
-                        self.symmetry_left = True
-                    except:
-                        self.symmetry_left = False
+                    for constraint in armature.pose.bones[prefix + bone].constraints:
+                        if constraint.name == 'Constraint Symmetry Location' or constraint.name == 'Constraint Symmetry Rotation':
+                            vatinfo.symmetry = 1
+                            break
+                        else:
+                            vatinfo.symmetry = 0
 
                 elif bone.startswith('R_') or bone.endswith('_R'):
-                    try:
-                        armature.pose.bones[prefix + bone].constraints['Constraint Symmetry Location']
-                        armature.pose.bones[prefix + bone].constraints['Constraint Symmetry Rotation']
-                        self.symmetry_right = True
-                    except:
-                        self.symmetry_right = False
+                    for constraint in armature.pose.bones[prefix + bone].constraints:
+                        if constraint.name == 'Constraint Symmetry Location' or constraint.name == 'Constraint Symmetry Rotation':
+                            vatinfo.symmetry = 2
+                            break
+                        else:
+                            vatinfo.symmetry = 0
             
         get_symmetry()
 

@@ -1,6 +1,5 @@
 import bpy
 from . import utils
-from .utils import Prefixes
 
 def armature_rename(scheme): #Bone prefix/suffix repositioning
 

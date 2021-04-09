@@ -19,21 +19,25 @@ class VAT_properties(bpy.types.PropertyGroup): #Defines global properties the pl
         name='Armature',
         description="Armature that will be used to perform operations on",
         poll=armature_poll, 
-        update=utils.create_armature)
+        update=utils.create_armature
+        )
     
     target_object : bpy.props.PointerProperty(type=bpy.types.Object,
         name='Object',
         description="Object linked to the armature that will be used for shapekeys",
-        poll=object_poll)
+        poll=object_poll
+        )
 
     custom_scheme_enabled : bpy.props.BoolProperty(name="Enable custom prefix",
         description="If to allow usage of custom prefixes that will replace the default Source prefixes",
-        default=False) 
+        default=False
+        ) 
 
     custom_scheme_prefix : bpy.props.StringProperty(
         name='Prefix',
         description="Custom prefix that will be used instead",
-        default='')
+        default=''
+        )
 
     affected_side : bpy.props.EnumProperty(
         name="Affected side", 
@@ -44,8 +48,23 @@ class VAT_properties(bpy.types.PropertyGroup): #Defines global properties the pl
         ]
     )
 
+    symmetry_offset : bpy.props.BoolProperty(
+        name="Symmetry offset",
+        description="If disabled, the location of bones will be the opposite of the location of its pair, else its initial locationn ill be unchanged",
+        default=False,
+        update=utils.update_constraint
+    )
+
+class VAT_info(bpy.types.PropertyGroup):
+
     #Operator checks for undos and redos
 
-    check_scheme : bpy.props.BoolProperty(
-        default=False
+    scheme : bpy.props.IntProperty(
+        default=0
+        #-1 = No armature, 0 = Source, 1 = Blender, 2 = SFM, 3 = Custom 1, 4 = Custom 2
+    )
+
+    symmetry : bpy.props.IntProperty(
+        default=0
+        #0 = Neither side, 1 = Left, 2 = Right
     )
