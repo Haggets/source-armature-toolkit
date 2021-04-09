@@ -68,3 +68,15 @@ class VAT_info(bpy.types.PropertyGroup):
         default=0
         #0 = Neither side, 1 = Left, 2 = Right
     )
+
+    weight_armature : bpy.props.BoolProperty(
+        default=False
+    )
+
+    animation_armature : bpy.props.BoolProperty(
+        default=False
+    )
+
+    animation_armature_setup : bpy.props.BoolProperty(
+        default=False
+    )

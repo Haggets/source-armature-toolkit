@@ -127,19 +127,20 @@ class VAT_PT_rigifyretarget(bpy.types.Panel): #Rigify Retargetting panel
     
     def draw (self, context):
         vatproperties = bpy.context.scene.vatproperties
+        vatinfo = bpy.context.scene.vatinfo
         layout = self.layout
 
         row = layout.row()
         row.operator('vat.rigifyretarget_create', text='Generate')
         row.operator('vat.rigifyretarget_delete', text='Delete')
 
-        if not utils.arm.animation_armature_created:
+        if not vatinfo.animation_armature:
             layout.prop(vatproperties, 'target_object')
             layout.label(text="Used to check for facial expressions")
 
         if vatproperties.target_armature:
-            if utils.arm.animation_armature_created:
-                if utils.arm.animation_armature_setup:
+            if vatinfo.animation_armature:
+                if vatinfo.animation_armature_setup:
                     col = layout.column()
                     try:
                         if bpy.context.object.name != 'rig':
