@@ -3,6 +3,8 @@ from . import utils
 
 def armature_rename(scheme): #Bone prefix/suffix repositioning
 
+    vatinfo = bpy.context.scene.vatinfo
+
     def rename(bone):
         bpy.ops.object.mode_set(mode='OBJECT') #Forces object mode to avoid context errors
 
@@ -46,7 +48,7 @@ def armature_rename(scheme): #Bone prefix/suffix repositioning
     prefix = utils.arm.prefix
 
     #Weight armature
-    if utils.arm.weight_armature_created:
+    if vatinfo.weight_armature:
         armature = utils.arm.weight_armature_real
         for cat in utils.arm.symmetrical_bones.keys():
             for bone in utils.arm.symmetrical_bones[cat].values():
@@ -63,7 +65,7 @@ def armature_rename(scheme): #Bone prefix/suffix repositioning
     prefix = utils.arm.prefix
 
     #Animation armature
-    if utils.arm.animation_armature_created:
+    if vatinfo.animation_armature:
         armature = utils.arm.animation_armature_real
         for cat in utils.arm.symmetrical_bones.keys():
             for bone in utils.arm.symmetrical_bones[cat].values():

@@ -25,14 +25,32 @@ def update_constraint(self, context):
 @persistent
 def armatures_reset(*args):
     vatproperties = bpy.context.scene.vatproperties
+    vatinfo = bpy.context.scene.vatinfo
+
+    #Revalidates important pointer variables after and undo or redo
     if vatproperties.target_armature:
-        arm.armature = bpy.data.objects[arm._armature]
-        arm.armature_real = bpy.data.armatures[arm._armature_real]
+        if arm._armature or arm._armature_real:
+            arm.armature = bpy.data.objects[arm._armature]
+            arm.armature_real = bpy.data.armatures[arm._armature_real]
+        else:
+            arm.armature = None
+            arm.armature_real = None
     
-        #if arm.weight_armature_created:
-        #    arm.weight_armature = bpy.data.objects[arm._weight_armature]
-        #if arm.animation_armature_created:
-        #    arm.animation_armature = bpy.data.objects[arm._animation_armature]
+        if vatinfo.weight_armature:
+            if arm._weight_armature or arm._weight_armature_real:
+                arm.weight_armature = bpy.data.objects[arm._weight_armature]
+                arm.weight_armature_real = bpy.data.objects[arm._weight_armature_real]
+            else:
+                arm.weight_armature = None
+                arm.weight_armature_real = None
+
+        if vatinfo.animation_armature:
+            if arm._animation_armature or arm._animation_armature_real:
+                arm.animation_armature = bpy.data.objects[arm._animation_armature]
+                arm.animation_armature_real = bpy.data.objects[arm._animation_armature_real]
+            else:
+                arm.animation_armature = None
+                arm.animation_armature_real = None
 
 class Armature: #Armature base
 
@@ -41,8 +59,9 @@ class Armature: #Armature base
 
         #Basic armature information
         self.armature = armature
-        self._armature = str(armature.name)
         self.armature_real = armature.data
+
+        self._armature = str(armature.name)
         self._armature_real = str(armature.data.name)
 
         #Armature type, scheme and prefix
@@ -60,17 +79,20 @@ class Armature: #Armature base
         #Additional information for operations
 
         #Weight armature
-        self.weight_armature_created = False
         self.weight_armature = None
         self.weight_armature_real = None
+        
+        self._weight_armature = None
+        self._weight_armature_real = None
 
         #Animation armature
-        self.animation_armature_created = False
-        self.animation_armature_setup = True
         self.animation_armature = None
         self.animation_armature_real = None
-        self.facial_bones = []
 
+        self._animation_armature = None
+        self._animation_armature_real = None
+
+        self.facial_bones = []
         self.isolatedbones = []
 
         #Object information
@@ -457,42 +479,48 @@ class Armature: #Armature base
             print("Current Scheme: Source (SFM)")
 
     def get_armatures(self): #Gets generated armatures for selected armature
+        vatinfo = bpy.context.scene.vatinfo
 
         def get_weight_armature():
             try:
                 self.weight_armature = bpy.data.objects[self.armature.name + '.weight']
                 self.weight_armature_real = bpy.data.armatures[self.armature_real.name + '.weight']
-                self.weight_armature_created = True
+                vatinfo.weight_armature = True
+                self._weight_armature = str(self.weight_armature.name)
+                self._weight_armature_real = str(self.weight_armature_real.name)
                 print("Weight armature detected")
             except:
-                self.weight_armature_created = False
+                vatinfo.weight_armature = False
         
         def get_anim_armature():
             #Checks if it's a setup armature or a proper armature
             try:
                 try:
                     self.animation_armature = bpy.data.objects[self.armature.name + '.anim']
-                    self.animation_armature_setup = False
+                    vatinfo.animation_armature_setup = False
                 except:
-                    self.animation_armature_name = bpy.data.objects[self.armature.name + '.anim_setup']
-                    self.animation_armature_setup = True
+                    self.animation_armature = bpy.data.objects[self.armature.name + '.anim_setup']
+                    vatinfo.animation_armature_setup = True
 
                 try:
                     self.animation_armature_real = bpy.data.armatures[self.armature_real.name + '.anim']
-                    self.animation_armature_setup = False
+                    vatinfo.animation_armature_setup = False
                 except:
                     self.animation_armature_real = bpy.data.armatures[self.armature_real.name + '.anim_setup']
-                    self.animation_armature_setup = True
+                    vatinfo.animation_armature_setup = True
 
-                self.animation_armature_created = True
+                vatinfo.animation_armature = True
 
-                if self.animation_armature_setup:
+                self._animation_armature = str(self.animation_armature.name)
+                self._animation_armature_real = str(self.animation_armature_real.name)
+
+                if vatinfo.animation_armature_setup:
                     print("Setup animation armature detected")
-                elif not self.animation_armature_setup:
+                elif not vatinfo.animation_armature_setup:
                     print("Animation armature detected")
 
             except:
-                self.animation_armature_created = False
+                vatinfo.animation_armature = False
 
         get_weight_armature()
         get_anim_armature()
@@ -714,6 +742,8 @@ def update(type, object=None):
         bpy.ops.object.mode_set(mode='EDIT')
 
 def generate_armature(type, action): #Creates or deletes the weight armature
+    vatinfo = bpy.context.scene.vatinfo
+    
     real_armature = bpy.data.armatures[arm.armature_real.name]
     
     #Creation
@@ -725,8 +755,11 @@ def generate_armature(type, action): #Creates or deletes the weight armature
             arm.weight_armature_real.name = arm.armature_real.name + '.weight'
 
             #Creation and link to current scene
-            arm.weight_armature_created = True
             arm.weight_armature = bpy.data.objects.new(arm.armature.name + '.weight', arm.weight_armature_real)
+            vatinfo.weight_armature = True
+
+            arm._weight_armature = str(arm.weight_armature.name)
+            arm._weight_armature_real = str(arm.weight_armature_real.name)
 
             try:
                 collection = bpy.data.collections['Weight Amature']
@@ -744,7 +777,11 @@ def generate_armature(type, action): #Creates or deletes the weight armature
 
             #Creation and link to current scene
             arm.animation_armature = bpy.data.objects.new(arm.armature.name + '.anim_setup', arm.animation_armature_real)
-            arm.animation_armature_created = True
+            vatinfo.animation_armature = True
+
+            arm._animation_armature = str(arm.animation_armature.name)
+            arm._animation_armature_real = str(arm.animation_armature_real.name)
+
             try:
                 collection = bpy.data.collections["Animation Armature"]
             except:
@@ -1301,13 +1338,16 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                 if collection.objects.keys() == []:
                     bpy.data.collections.remove(collection)
 
-            arm.weight_armature_created = False
+            vatinfo.weight_armature = False
             arm.weight_armature = None
             arm.weight_armature_real = None
+
+            arm._weight_armature = None
+            arm._weight_armature_real = None
             
         elif type == 'anim':
             try:
-                bpy.data.objects.remove(arm.animation_armature_name_full)
+                bpy.data.objects.remove(arm.animation_armature)
             except:
                 print("Animation armature already deleted, cleaning rest")
             try:
@@ -1371,9 +1411,12 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                     except:
                         pass
 
-            arm.animation_armature_created = False
+            vatinfo.animation_armature = False
             arm.animation_armature = None
             arm.animation_armature_real = None
+
+            arm._animation_armature = None
+            arm._animation_armature_real = None
             
         #Reselects original armature for the sake of convenience
         armature = arm.armature

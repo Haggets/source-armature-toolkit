@@ -11,6 +11,7 @@ from .utils import helper_convert
 def anim_armature(action):
 
     vatproperties = bpy.context.scene.vatproperties
+    vatinfo = bpy.context.scene.vatinfo
 
     def generate_rigify(action): #Creates Rigify armature and fills in all the Rigify parameters
 
@@ -688,7 +689,7 @@ def anim_armature(action):
 
             armature.layers[0] = False
 
-            utils.arm.animation_armature_setup = True
+            vatinfo.animation_armature_setup = True
 
             for i in [0,1,3,5,7,10,13,16]:
                     armature.layers[i] = True
@@ -785,9 +786,6 @@ def anim_armature(action):
 
         prefix = utils.arm.prefix
 
-        #Gets armature name and applies presets based on names
-        current = str(vatproperties.target_armature.name)
-
         for cat in utils.arm.symmetrical_bones:
             for container, bone in utils.arm.symmetrical_bones[cat].items():
                 for bone in bone:
@@ -797,12 +795,25 @@ def anim_armature(action):
             for bone in bone:
                 retarget(container, bone)
 
+        #Creates additional location constraints for helper bones to copy their driver bone's location
         for bone in utils.arm.helper_bones['legs']['knee'] + utils.arm.helper_bones['arms']['elbow']:
             bone, prefix = helper_convert(bone)
+
+            armature = utils.arm.armature
+            loc = armature.pose.bones[prefix + bone].constraints.new('COPY_LOCATION')
+            loc.name = "Retarget Location"
+
             if bone.casefold().count('knee'):
-                retarget(container, bone, True, utils.arm.symmetrical_bones['legs']['calf'])
+                if bone.startswith('L_') or bone.endswith('_L'):
+                    loc.target = bpy.data.objects['target_{} ({})'.format(utils.arm.symmetrical_bones['legs']['calf'][0], utils.arm.armature.name)[0:60]]
+                elif bone.startswith('R_') or bone.endswith('_R'):
+                    loc.target = bpy.data.objects['target_{} ({})'.format(utils.arm.symmetrical_bones['legs']['calf'][1], utils.arm.armature.name)[0:60]]
+
             elif bone.casefold().count('elbow'):
-                retarget(container, bone, True, utils.arm.symmetrical_bones['arms']['forearm'])
+                if bone.startswith('L_') or bone.endswith('_L'):
+                    loc.target = bpy.data.objects['target_{} ({})'.format(utils.arm.symmetrical_bones['arms']['forearm'][0], utils.arm.armature.name)[0:60]]
+                elif bone.startswith('R_') or bone.endswith('_R'):
+                    loc.target = bpy.data.objects['target_{} ({})'.format(utils.arm.symmetrical_bones['arms']['forearm'][1], utils.arm.armature.name)[0:60]]
 
         prefix = utils.arm.prefix
 
@@ -837,10 +848,13 @@ def anim_armature(action):
         if collection:
             collection.objects.link(armature)
 
-        utils.arm.animation_armature_created = True
-        utils.arm.animation_armature_setup = False
+        vatinfo.animation_armature = True
+        vatinfo.animation_armature_setup = False
         utils.arm.animation_armature = armature
         utils.arm.animation_armature_real = armature.data
+
+        utils.arm._animation_armature = str(armature.name)
+        utils.arm._animation_armature_real = str(armature.data.name)
 
     def face_flex_setup(): #Sets up drivers for face flexes that will be controlled by face bones
         prefix = utils.arm.prefix

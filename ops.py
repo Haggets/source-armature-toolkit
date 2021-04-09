@@ -107,10 +107,12 @@ class VAT_OT_weightarmature_create(bpy.types.Operator):
         vatproperties = bpy.context.scene.vatproperties
         vatinfo = bpy.context.scene.vatinfo
         if vatproperties.target_armature:
-            return (not utils.arm.weight_armature_created and vatinfo.scheme != -1)
+            return (not vatinfo.weight_armature and vatinfo.scheme != -1)
 
     def execute(self, context):
+        vatinfo = bpy.context.scene.vatinfo
         weight_armature(0)
+        vatinfo.weight_armature = True
 
         return{'FINISHED'}
 
@@ -125,10 +127,12 @@ class VAT_OT_weightarmature_delete(bpy.types.Operator):
         vatproperties = bpy.context.scene.vatproperties
         vatinfo = bpy.context.scene.vatinfo
         if vatproperties.target_armature:
-            return (utils.arm.weight_armature_created and vatinfo.scheme != -1)
+            return (vatinfo.weight_armature and vatinfo.scheme != -1)
 
     def execute(self, context):
+        vatinfo = bpy.context.scene.vatinfo
         weight_armature(1)
+        vatinfo.weight_armature = False
 
         return{'FINISHED'}
     
@@ -143,10 +147,12 @@ class VAT_OT_rigifyretarget_create(bpy.types.Operator):
         vatproperties = bpy.context.scene.vatproperties
         vatinfo = bpy.context.scene.vatinfo
         if vatproperties.target_armature:
-            return (not utils.arm.animation_armature_created and vatinfo.scheme != -1)
+            return (not vatinfo.animation_armature and vatinfo.scheme != -1)
 
     def execute(self, context):
+        vatinfo = bpy.context.scene.vatinfo
         anim_armature(0)
+        vatinfo.animation_armature = True
 
         return{'FINISHED'}
 
@@ -161,10 +167,12 @@ class VAT_OT_rigifyretarget_delete(bpy.types.Operator):
         vatproperties = bpy.context.scene.vatproperties
         vatinfo = bpy.context.scene.vatinfo
         if vatproperties.target_armature:
-            return (utils.arm.animation_armature_created and vatinfo.scheme != -1)
+            return (vatinfo.animation_armature and vatinfo.scheme != -1)
 
     def execute(self, context):
+        vatinfo = bpy.context.scene.vatinfo
         anim_armature(1)
+        vatinfo.animation_armature = False
 
         return{'FINISHED'}
 
