@@ -33,9 +33,9 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
         #Gets bone's opposite, change prefix and bone name if helper bone
         if group == utils.arm.helper_bones:
             if side == 'OP1':
-                bone2, prefix = utils.helper_convert(group[cat][container][1])
+                prefix, bone2 = utils.helper_convert(group[cat][container][1])
             elif side == 'OP2':
-                bone2, prefix = utils.helper_convert(group[cat][container][0])
+                prefix, bone2 = utils.helper_convert(group[cat][container][0])
         else:
             if side == 'OP1':
                 bone2 = group[cat][container][1]
@@ -61,7 +61,7 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
                     bloc.name = "Constraint Symmetry Location"
                     bloc.target = armature
                     bloc.subtarget = prefix + bone2
-                    constraint_update(vatproperties.symmetry_offset, prefix, bone)
+                    constraint_update(prefix, bone)
             else:
                 bloc = 'Marked'
 
@@ -127,12 +127,8 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
     #Symmetrical
     for cat in utils.arm.symmetrical_bones.keys():
         for container, bone in utils.arm.symmetrical_bones[cat].items():
-            #Makes sure list is not empty
-            if bone:
-                #Checks if it has a pair, else skip it
-                if len(bone) == 1:
-                    continue
-                else:
+            if utils.arm.symmetrical_bones[cat][container]:
+                if utils.arm.symmetrical_bones[cat][container][0] and utils.arm.symmetrical_bones[cat][container][1]: 
                     #Gets individual bone
                     if side == 'OP1':
                         bone = bone[0]
@@ -145,16 +141,14 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
     if utils.arm.helper_bones:
         for cat in utils.arm.helper_bones.keys():
             for container, bone in utils.arm.helper_bones[cat].items():
-                if bone:
-                    if len(bone) == 1:
-                        continue
-                    else:
+                if utils.arm.helper_bones[cat][container]:
+                    if utils.arm.helper_bones[cat][container][0] and utils.arm.helper_bones[cat][container][1]: 
                         if side == 'OP1':
                             bone = bone[0]
                         elif side == 'OP2':
                             bone = bone[1]
 
-                        bone, prefix = utils.helper_convert(bone)
+                        prefix, bone = utils.helper_convert(bone)
                         loc, rot = constraint(bone, cat, container, utils.arm.helper_bones)
 
     #Final report that checks if some constraints are somehow missing or already applied
@@ -182,7 +176,8 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
         elif action == 1:
             print("Rotation constraints not found for:", final_report_rot)
 
-def constraint_update(offset, prefix=None, bone=None):
+def constraint_update(prefix=None, bone=None):
+    vatproperties = bpy.context.scene.vatproperties
     armature = utils.arm.armature
 
     if not prefix:
@@ -191,7 +186,7 @@ def constraint_update(offset, prefix=None, bone=None):
     def update(bone):
         for constraint in armature.pose.bones[prefix + bone].constraints:
             if constraint.name == 'Constraint Symmetry Location':
-                if offset:
+                if vatproperties.symmetry_offset:
                     constraint.target_space = 'LOCAL'
                     constraint.owner_space = 'LOCAL'
                     constraint.invert_x = False
@@ -209,12 +204,28 @@ def constraint_update(offset, prefix=None, bone=None):
         for cat in utils.arm.symmetrical_bones.keys():
             for container, bone in utils.arm.symmetrical_bones[cat].items():
                 for bone in bone:
-                    update(bone)
+                    if bone:
+                        update(bone)
 
         #Helpers
         if utils.arm.helper_bones:
             for cat in utils.arm.helper_bones.keys():
                 for container, bone in utils.arm.helper_bones[cat].items():
                     for bone in bone:
-                        bone, prefix = utils.helper_convert(bone)
-                        update(bone)
+                        if bone:
+                            prefix, bone = utils.helper_convert(bone)
+                            update(bone)
+
+    #Upperarm rotation fix
+    if vatproperties.symmetry_upperarm_rotation_fix:
+        for bone in utils.arm.symmetrical_bones['arms']['upperarm']:
+            for constraint in armature.pose.bones[prefix + bone].constraints:
+                if constraint.name == 'Constraint Symmetry Rotation':
+                    constraint.invert_y = False
+                    constraint.invert_z = True
+    else:
+        for bone in utils.arm.symmetrical_bones['arms']['upperarm']:
+            for constraint in armature.pose.bones[prefix + bone].constraints:
+                if constraint.name == 'Constraint Symmetry Rotation':
+                    constraint.invert_y = True
+                    constraint.invert_z = False
