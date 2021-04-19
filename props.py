@@ -49,8 +49,15 @@ class VAT_properties(bpy.types.PropertyGroup): #Defines global properties the pl
     )
 
     symmetry_offset : bpy.props.BoolProperty(
-        name="Symmetry offset",
+        name="Symmetry Offset",
         description="If disabled, the location of bones will be the opposite of the location of its pair, else its initial locationn ill be unchanged",
+        default=False,
+        update=utils.update_constraint
+    )
+
+    symmetry_upperarm_rotation_fix : bpy.props.BoolProperty(
+        name="Opposite Arm Rotation Fix",
+        description="If the opposite arm rotates in the wrong direction, enable this",
         default=False,
         update=utils.update_constraint
     )

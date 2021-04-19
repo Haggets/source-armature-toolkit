@@ -96,6 +96,27 @@ class VAT_OT_constraintsymmetry_delete(bpy.types.Operator):
         
         return{'FINISHED'}
     
+class VAT_OT_constraintsymmetry_apply(bpy.types.Operator):
+    """Modifies default pose to be the current one"""
+    bl_idname = "vat.constraintsymmetry_apply"
+    bl_label = "Symmetry Constraints Removal"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        vatproperties = bpy.context.scene.vatproperties
+        if vatproperties.target_armature:
+            return(bpy.context.object.mode == 'POSE')
+
+    def execute(self, context):
+        vatproperties = bpy.context.scene.vatproperties
+        vatinfo = bpy.context.scene.vatinfo
+        bpy.ops.pose.armature_apply(selected=False)
+        constraint_symmetry(1, vatproperties.affected_side)
+        vatinfo.symmetry = 0
+
+        return{'FINISHED'}
+
 class VAT_OT_weightarmature_create(bpy.types.Operator):
     """Duplicates armature with connected bones"""
     bl_idname = "vat.weightarmature_create"

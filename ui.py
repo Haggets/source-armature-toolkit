@@ -81,21 +81,25 @@ class VAT_PT_constraintsymmetry(bpy.types.Panel): #Constraint Symmetry panel
         row.operator('vat.constraintsymmetry_delete', text='Delete')
         row = layout.row()
         row.prop(vatproperties, 'affected_side', expand=True)
-        col = layout.row()
+        row = layout.row()
+        row.operator('vat.constraintsymmetry_apply', text='Apply', icon='OUTLINER_DATA_ARMATURE')
+        row = layout.row()
         if vatproperties.target_armature:
             if vatproperties.affected_side == 'OP1' and vatinfo.symmetry == 2 or vatproperties.affected_side == 'OP2' and vatinfo.symmetry == 1:
-                col.label(text="Already applied on the opposite side")
+                row.label(text="Already applied on the opposite side")
         
         row = layout.row()
 
         row.prop(vatproperties, 'symmetry_offset')
 
+        row = layout.row()
+
+        row.prop(vatproperties, 'symmetry_upperarm_rotation_fix')
+
         box = layout.box()
         box.label(text="Meant for armature reproportioning", icon='INFO')
         box.label(text="Allows for symmetry while keeping", icon='INFO')
         box.label(text="corrected roll values")
-        box.label(text="Remember to apply pose as rest pose", icon='ERROR')
-        box.label(text="before removing the constraints")
         
 class VAT_PT_weightarmature(bpy.types.Panel): #Weight Armature panel
     bl_label = "Weight Armature"
@@ -144,8 +148,11 @@ class VAT_PT_rigifyretarget(bpy.types.Panel): #Rigify Retargetting panel
                     col = layout.column()
                     try:
                         if bpy.context.object.name != 'rig':
-                            col.label(text="Reposition facial drivers correctly", icon='INFO')
-                            col.label(text="and edit bone parameters to your need")
+                            if vatproperties.target_object:
+                                col.label(text="Reposition facial drivers correctly", icon='INFO')
+                                col.label(text="and edit bone parameters to your need")
+                            else:
+                                col.label(text="Edit bone parameters to your need", icon='INFO')
                             col.operator('pose.rigify_generate', text="Generate rig", icon='OUTLINER_DATA_ARMATURE')
                     except:
                         col.label(text="Rigify is not installed", icon='CANCEL')

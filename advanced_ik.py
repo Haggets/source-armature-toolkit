@@ -7,6 +7,8 @@ from .utils import generate_armature
 from .utils import define_bone
 from .utils import generate_shapekey_dict
 from .utils import helper_convert
+from .armature_rename import armature_rename
+from .armature_rename import bone_rename
 
 def anim_armature(action):
 
@@ -47,7 +49,7 @@ def anim_armature(action):
                 
             #Hides all but the first layer
             for i in [1,2,3,5,4,6,7]:
-                    armature.data.layers[i] = False
+                armature.data.layers[i] = False
 
             #Rigify portion
             prefix = utils.arm.prefix
@@ -263,79 +265,100 @@ def anim_armature(action):
                         elif bone == 'EyeRight':
                             define_bone([bone, head], [1.2, 1.2, 10, 9.5, 3.2, 0], '-')
 
-            #Creates 2 pelvis bones for whatever Rigify does with em
-            rigify_pelvis = ['Pelvis_L', 'Pelvis_R']
+            if utils.arm.central_bones['pelvis']:
+                #Creates 2 pelvis bones for whatever Rigify does with em
+                rigify_pelvis = ['Pelvis_L', 'Pelvis_R']
 
-            ppelvis = armature.pose.bones[prefix + utils.arm.central_bones['pelvis'][0]]
-            epelvis = armature.data.edit_bones[prefix + utils.arm.central_bones['pelvis'][0]]
-            
-            for bone in rigify_pelvis:
-                ebone = armature.data.edit_bones.new(bone)
+                ppelvis = armature.pose.bones[prefix + utils.arm.central_bones['pelvis'][0]]
+                epelvis = armature.data.edit_bones[prefix + utils.arm.central_bones['pelvis'][0]]
+                
+                for index, bone in enumerate(rigify_pelvis):
+                    ebone = armature.data.edit_bones.new(bone)
 
-                ebone.head = epelvis.head
-                ebone.parent = epelvis
-                ebone.layers[3] = True
-                ebone.layers[0] = False
+                    ebone.head = epelvis.head
+                    ebone.parent = epelvis
+                    ebone.layers[3] = True
+                    ebone.layers[0] = False
+                    ebone.layers[8] = False
 
-                #New pelvis bone positioning
-                if bone.endswith('_L'):
-                    ebone.tail.xyz = ppelvis.head.x-3, ppelvis.head.y-2, ppelvis.head.z+4
-                elif bone.endswith('_R'):
-                    ebone.tail.xyz = ppelvis.head.x+3, ppelvis.head.y-2, ppelvis.head.z+4
+                    #New pelvis bone positioning
+                    if ppelvis.head.y > 0:
+                        if index == 0:
+                            ebone.tail.xyz = ppelvis.head.z/10, -ppelvis.head.y/0.12, ppelvis.head.z/0.88
+                        elif index == 1:
+                            ebone.tail.xyz = -ppelvis.head.z/10, -ppelvis.head.y/0.12, ppelvis.head.z/0.88
+                    elif ppelvis.head.y < 0:
+                        if index == 0:
+                            ebone.tail.xyz = ppelvis.head.z/10, ppelvis.head.y/0.25, ppelvis.head.z/0.88
+                        elif index == 1:
+                            ebone.tail.xyz = -ppelvis.head.z/10, ppelvis.head.y/0.25, ppelvis.head.z/0.88
                 
             #Creates multiple palm bones for fingers
             rigify_palm = {'finger1': [], 'finger2': [], 'finger3': [], 'finger4': []}
 
             for container, bone in utils.arm.symmetrical_bones['fingers'].items():
-                for bone in bone:
-                    if container == 'finger1' or container == 'finger2' or container == 'finger3' or container == 'finger3' or container == 'finger4':
-                        palm = 'Palm_' + bone
-                        ebone = armature.data.edit_bones[prefix + bone]
-                        epalm = armature.data.edit_bones.new(palm)
-                        rigify_palm[container].append(palm)
-                        ebone.layers[5] = True
-                        ebone.layers[0] = False
-                        epalm.layers[5] = True
-                        epalm.layers[0] = False
+                if container == 'finger1' or container == 'finger2' or container == 'finger3' or container == 'finger3' or container == 'finger4':
+                    for index, bone in enumerate(bone):
+                        if bone:
+                            if vatinfo.scheme == 0:
+                                bone2 = bone_rename(1, bone, index)
+                                palm = 'Palm_' + bone2
+                            else:
+                                palm = 'Palm_' + bone
+                            ebone = armature.data.edit_bones[prefix + bone]
+                            epalm = armature.data.edit_bones.new(palm)
+                            rigify_palm[container].append(palm)
+                            ebone.layers[5] = True
+                            ebone.layers[0] = False
+                            epalm.layers[5] = True
+                            epalm.layers[0] = False
+                            epalm.layers[8] = False
 
-                        if bone.startswith('L_') or bone.endswith('_L'):
-                            sign = '+'
-                            parent = 0
-                        elif bone.startswith('R_') or bone.endswith('_R'):
-                            sign = '-'
-                            parent = 1
+                            if index == 0:
+                                sign = '+'
+                            elif index == 1:
+                                sign = '-'
 
-                        ebone.parent = epalm
-                        epalm.parent = armature.data.edit_bones[prefix + utils.arm.symmetrical_bones['arms']['hand'][parent]]
+                            ebone.parent = epalm
+                            epalm.parent = armature.data.edit_bones[prefix + utils.arm.symmetrical_bones['arms']['hand'][index]]
 
-                        define_bone([palm, prefix + bone, prefix + utils.arm.symmetrical_bones['arms']['hand'][0]], [], sign, False, 2)
-                    else:
-                        ebone = armature.data.edit_bones[prefix + bone]
-                        ebone.layers[5] = True
-                        ebone.layers[1] = False
-                        ebone.layers[2] = False
+                            define_bone([palm, prefix + bone, prefix + utils.arm.symmetrical_bones['arms']['hand'][index]], [], sign, False, 2)
+                else:
+                    for bone in bone:
+                        if bone:
+                            ebone = armature.data.edit_bones[prefix + bone]
+                            ebone.layers[5] = True
+                            ebone.layers[1] = False
+                            ebone.layers[2] = False
 
             #Creates heels for easier leg tweaking
             rigify_heel = ['Heel_L', 'Heel_R']
+            
+            if utils.arm.symmetrical_bones['legs']['foot'][0]:
+                pfoot = armature.pose.bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][0]]
+                efoot = armature.data.edit_bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][0]]
 
-            pfoot = armature.pose.bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][0]]
-            efoot = armature.data.edit_bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][0]]
+                ebone = armature.data.edit_bones.new(rigify_heel[0])
+                ebone.layers[13] = True
+                ebone.tail.xyz = pfoot.head.x/0.6, pfoot.head.y/0.4, 0
+                ebone.head.xyz = pfoot.head.x/3, pfoot.head.y/0.4, 0
+                ebone.parent = armature.data.edit_bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][0]]
 
-            for bone in rigify_heel:
-                ebone = armature.data.edit_bones.new(bone)
-
-                if bone.endswith('_L'):
-                    ebone.layers[13] = True
-                    ebone.tail.xyz = math.copysign(pfoot.head.x, 1)+1.5, pfoot.head.y+1, 0
-                    ebone.head.xyz = math.copysign(pfoot.head.x, 1)-1.5, pfoot.head.y+1, 0
-                    ebone.parent = armature.data.edit_bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][0]]
-                elif bone.endswith('_R'):
-                    ebone.layers[16] = True
-                    ebone.tail.xyz = math.copysign(pfoot.head.x, -1)-1.5, pfoot.head.y+1, 0
-                    ebone.head.xyz = math.copysign(pfoot.head.x, -1)+1.5, pfoot.head.y+1, 0
-                    ebone.parent = armature.data.edit_bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][1]]
-                
                 ebone.layers[0] = False
+                ebone.layers[8] = False
+
+            if utils.arm.symmetrical_bones['legs']['foot'][1]:
+                pfoot = armature.pose.bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][1]]
+                efoot = armature.data.edit_bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][1]]
+
+                ebone = armature.data.edit_bones.new(rigify_heel[0])
+                ebone.layers[16] = True
+                ebone.tail.xyz = pfoot.head.x/0.6, pfoot.head.y/0.4, 0
+                ebone.head.xyz = pfoot.head.x/3, pfoot.head.y/0.4, 0
+                ebone.parent = armature.data.edit_bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][1]]
+
+                ebone.layers[0] = False
+                ebone.layers[8] = False
 
             update(0)
 
@@ -550,18 +573,18 @@ def anim_armature(action):
                 if cat == 'fingers':
                     for container, bone in utils.arm.symmetrical_bones[cat].items():
                         for bone in bone:
-                            pbone = armature.pose.bones[prefix + bone]
-                            param = pbone.rigify_parameters
-                            ebone = armature.data.edit_bones[prefix + bone]
+                            if bone:
+                                pbone = armature.pose.bones[prefix + bone]
+                                param = pbone.rigify_parameters
+                                ebone = armature.data.edit_bones[prefix + bone]
 
-                            if container == 'finger0' or container == 'finger1' or container == 'finger2' or container == 'finger3' or container == 'finger4':
-                                pbone.rigify_type = 'limbs.super_finger'
-                                ebone.layers[5] = True
+                                if container == 'finger0' or container == 'finger1' or container == 'finger2' or container == 'finger3' or container == 'finger4':
+                                    pbone.rigify_type = 'limbs.super_finger'
+                                    ebone.layers[5] = True
 
-                                ebone.layers[0] = False
-
-                                for i in [0,1,2,3,4,6,7]:
-                                    ebone.layers[i] = False
+                                    ebone.layers[0] = False
+                                    ebone.layers[1] = False
+                                    ebone.layers[2] = False
                                 
                 elif cat == 'arms':
                     for container, bone in utils.arm.symmetrical_bones[cat].items():
@@ -600,56 +623,68 @@ def anim_armature(action):
                 elif cat == 'legs':
                     for container, bone in utils.arm.symmetrical_bones[cat].items():
                         for bone in bone:
-                            pbone = armature.pose.bones[prefix + bone]
-                            param = pbone.rigify_parameters
-                            ebone = armature.data.edit_bones[prefix + bone]
-
-                            if bone.startswith('L_') or bone.endswith('_L'):
-                                ebone.layers[13] = True
-                            elif bone.startswith('R_') or bone.endswith('_R'):
-                                ebone.layers[16] = True
-
-                            if container == 'thigh':
-                                pbone.rigify_type = 'limbs.super_limb'
-                                param.limb_type = 'leg'
-                                param.tweak_layers[1] = False
-                                param.fk_layers[1] = False
+                            if bone:
+                                pbone = armature.pose.bones[prefix + bone]
+                                param = pbone.rigify_parameters
+                                ebone = armature.data.edit_bones[prefix + bone]
 
                                 if bone.startswith('L_') or bone.endswith('_L'):
-                                    param.fk_layers[14] = True
-                                    param.tweak_layers[15] = True
+                                    ebone.layers[13] = True
                                 elif bone.startswith('R_') or bone.endswith('_R'):
-                                    param.fk_layers[17] = True
-                                    param.tweak_layers[18] = True
-                                param.segments = 1
+                                    ebone.layers[16] = True
 
-                            ebone.layers[0] = False
-                            ebone.layers[3] = False
-                            ebone.layers[4] = False
+                                if container == 'thigh':
+                                    pbone.rigify_type = 'limbs.super_limb'
+                                    param.limb_type = 'leg'
+                                    param.tweak_layers[1] = False
+                                    param.fk_layers[1] = False
+
+                                    if bone.startswith('L_') or bone.endswith('_L'):
+                                        param.fk_layers[14] = True
+                                        param.tweak_layers[15] = True
+                                    elif bone.startswith('R_') or bone.endswith('_R'):
+                                        param.fk_layers[17] = True
+                                        param.tweak_layers[18] = True
+                                    param.segments = 1
+
+                                ebone.layers[0] = False
+                                ebone.layers[3] = False
+                                ebone.layers[4] = False
 
             #Central
             for container, bone in utils.arm.central_bones.items():
                 for bone in bone:
-                    pbone = armature.pose.bones[prefix + bone]
-                    param = pbone.rigify_parameters
-                    ebone = armature.data.edit_bones[prefix + bone]
+                    if bone:
+                        pbone = armature.pose.bones[prefix + bone]
+                        param = pbone.rigify_parameters
+                        ebone = armature.data.edit_bones[prefix + bone]
 
-                    ebone.layers[3] = True
+                        ebone.layers[3] = True
 
-                    if container == 'pelvis':
-                        pbone.rigify_type = 'spines.basic_spine'
-                        param.pivot_pos = 2
-                        param.tweak_layers[1] = False
-                        param.tweak_layers[4] = True
-                        param.fk_layers[1] = False
-                        param.fk_layers[4] = True
-                    elif container == 'neck':
-                        pbone.rigify_type = 'spines.super_head'
-                        param.connect_chain = True
-                        param.tweak_layers[1] = False
-                        param.tweak_layers[4] = True
-                
-                    ebone.layers[0] = False
+                        if container == 'pelvis':
+                            pbone.rigify_type = 'spines.basic_spine'
+                            param.pivot_pos = 2
+                            param.tweak_layers[1] = False
+                            param.tweak_layers[4] = True
+                            param.fk_layers[1] = False
+                            param.fk_layers[4] = True
+                        elif container == 'neck':
+                            pbone.rigify_type = 'spines.super_head'
+                            param.connect_chain = True
+                            param.tweak_layers[1] = False
+                            param.tweak_layers[4] = True
+                    
+                        ebone.layers[0] = False
+
+            #Custom bones
+            for container, bone in utils.arm.custom_bones.items():
+                for bone in bone:
+                    if bone:
+                        ebone = armature.data.edit_bones[bone]
+                        ebone.layers[19] = True
+                        
+                        ebone.layers[0] = False
+                        ebone.layers[8] = False
 
             armature = utils.arm.animation_armature_real
 
@@ -680,25 +715,33 @@ def anim_armature(action):
                 armature.rigify_layers.add()
 
             #Rigify layers
-            names = ['Face', 'Face (Primary)','Face (Secondary)','Torso', 'Torso (Tweak)', 'Fingers', 'Fingers (Detail)', 'Arm.L (IK)', 'Arm.L (FK)', 'Arm.L (Tweak)', 'Arm.R (IK)', 'Arm.R (FK)', 'Arm.R (Tweak)', 'Leg.L (IK)', 'Leg.L (FK)', 'Leg.L (Tweak)', 'Leg.R (IK)', 'Leg.R (FK)', 'Leg.R (Tweak)']
+            names = ['Face', 'Face (Primary)','Face (Secondary)','Torso', 'Torso (Tweak)', 'Fingers', 'Fingers (Detail)', 'Arm.L (IK)', 'Arm.L (FK)', 'Arm.L (Tweak)', 'Arm.R (IK)', 'Arm.R (FK)', 'Arm.R (Tweak)', 'Leg.L (IK)', 'Leg.L (FK)', 'Leg.L (Tweak)', 'Leg.R (IK)', 'Leg.R (FK)', 'Leg.R (Tweak)', 'Custom Bones']
 
-            row_groups = [1,2,2,3,4,5,6,7,8,9,7,8,9,10,11,12,10,11,12]
+            row_groups = [1,2,2,3,4,5,6,7,8,9,7,8,9,10,11,12,10,11,12,13]
 
-            layer_groups = [1,5,2,3,4,6,5,2,5,4,2,5,4,2,5,4,2,5,4]
+            layer_groups = [5,2,3,3,4,6,5,2,5,4,2,5,4,2,5,4,2,5,4,6]
 
-            for i, name, row, group in zip(range(19), names, row_groups, layer_groups):
+            for i, name, row, group in zip(range(20), names, row_groups, layer_groups):
                 armature.rigify_layers[i].name = name
                 armature.rigify_layers[i].row = row
-                armature.rigify_layers[i].group = group
+                armature.rigify_layers[i]['group_prop'] = group
+
+            armature.rigify_layers[28].name = 'Root'
+            armature.rigify_layers[28].row = 14
+            armature.rigify_layers[28]['group_prop'] = 1
 
             armature.layers[0] = False
 
             vatinfo.animation_armature_setup = True
 
-            for i in [0,1,3,5,7,10,13,16]:
+            for i in [0,1,3,5,7,10,13,16,19]:
                     armature.layers[i] = True
 
             bpy.ops.object.mode_set(mode='OBJECT')
+
+            #Renames armature to allow it being compatible with pose symmetry
+            if vatinfo.scheme == 0:
+                armature_rename(1, utils.arm.animation_armature)
 
             print("Animation armature created!")
 
@@ -770,31 +813,30 @@ def anim_armature(action):
         for cat in utils.arm.symmetrical_bones:
             for container, bone in utils.arm.symmetrical_bones[cat].items():
                 for bone in bone:
-                    retarget(container, bone)
+                    if bone:
+                        retarget(container, bone)
 
         for container, bone in utils.arm.central_bones.items():
             for bone in bone:
-                retarget(container, bone)
+                if bone:
+                    retarget(container, bone)
 
         #Creates additional location constraints for helper bones to copy their driver bone's location
-        for bone in utils.arm.helper_bones['legs']['knee'] + utils.arm.helper_bones['arms']['elbow']:
-            bone, prefix = helper_convert(bone)
+        for cat in utils.arm.helper_bones.keys():
+            if cat == 'legs' or cat == 'arms':
+                for container, bone in utils.arm.helper_bones[cat].items():
+                    if container == 'knee' or container == 'elbow':
+                        for index, bone in enumerate(bone):
+                            if bone:
+                                prefix, bone = helper_convert(bone)
+                                armature = utils.arm.armature
+                                loc = armature.pose.bones[prefix + bone].constraints.new('COPY_LOCATION')
+                                loc.name = "Retarget Location"
 
-            armature = utils.arm.armature
-            loc = armature.pose.bones[prefix + bone].constraints.new('COPY_LOCATION')
-            loc.name = "Retarget Location"
-
-            if bone.casefold().count('knee'):
-                if bone.startswith('L_') or bone.endswith('_L'):
-                    loc.target = bpy.data.objects['target_{} ({})'.format(utils.arm.symmetrical_bones['legs']['calf'][0], utils.arm.armature.name)[0:60]]
-                elif bone.startswith('R_') or bone.endswith('_R'):
-                    loc.target = bpy.data.objects['target_{} ({})'.format(utils.arm.symmetrical_bones['legs']['calf'][1], utils.arm.armature.name)[0:60]]
-
-            elif bone.casefold().count('elbow'):
-                if bone.startswith('L_') or bone.endswith('_L'):
-                    loc.target = bpy.data.objects['target_{} ({})'.format(utils.arm.symmetrical_bones['arms']['forearm'][0], utils.arm.armature.name)[0:60]]
-                elif bone.startswith('R_') or bone.endswith('_R'):
-                    loc.target = bpy.data.objects['target_{} ({})'.format(utils.arm.symmetrical_bones['arms']['forearm'][1], utils.arm.armature.name)[0:60]]
+                                if container == 'knee':
+                                    loc.target = bpy.data.objects['target_{} ({})'.format(utils.arm.symmetrical_bones['legs']['calf'][index], utils.arm.armature.name)[0:60]]
+                                elif container == 'elbow':
+                                    loc.target = bpy.data.objects['target_{} ({})'.format(utils.arm.symmetrical_bones['arms']['forearm'][index], utils.arm.armature.name)[0:60]]
 
         prefix = utils.arm.prefix
 
@@ -814,8 +856,11 @@ def anim_armature(action):
         utils.update(1, armature)
 
         #Parents isolated bones
-        for bone in utils.arm.isolatedbones:
-            armature.data.edit_bones['ORG-' + bone].parent = armature.data.edit_bones['DEF-' + bone.replace('.isolated', '')]
+        for cat in utils.arm.symmetrical_bones.keys():
+            for container, bone in utils.arm.symmetrical_bones[cat].items():
+                for bone in bone:
+                    if bone:
+                        armature.data.edit_bones['ORG-' + prefix + bone + '.isolated'].parent = armature.data.edit_bones['DEF-' + prefix + bone]
 
         #Deletes generated armature
         generate_armature('anim', 2)
@@ -1477,5 +1522,11 @@ def anim_armature(action):
         generate_rigify(action)
 
     elif action == 2: #Creates empties and links it to Source armature, also creates widgets and setups facial flexes
-        link()
-        face_flex_setup()
+        if vatinfo.scheme == 0:
+            armature_rename(1, utils.arm.armature)
+            link()
+            face_flex_setup()
+            armature_rename(0, utils.arm.armature)
+        else:
+            link()
+            face_flex_setup()
