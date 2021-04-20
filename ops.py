@@ -99,14 +99,14 @@ class VAT_OT_constraintsymmetry_delete(bpy.types.Operator):
 class VAT_OT_constraintsymmetry_apply(bpy.types.Operator):
     """Modifies default pose to be the current one"""
     bl_idname = "vat.constraintsymmetry_apply"
-    bl_label = "Symmetry Constraints Removal"
+    bl_label = "Symmetry Constraints Apply and removal"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         if vatproperties.target_armature:
-            return(bpy.context.object.mode == 'POSE')
+            return(context.object.mode == 'POSE')
 
     def execute(self, context):
         vatproperties = bpy.context.scene.vatproperties

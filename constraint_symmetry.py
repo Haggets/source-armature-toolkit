@@ -216,6 +216,8 @@ def constraint_update(prefix=None, bone=None):
                             prefix, bone = utils.helper_convert(bone)
                             update(bone)
 
+    prefix = utils.arm.prefix
+
     #Upperarm rotation fix
     if vatproperties.symmetry_upperarm_rotation_fix:
         for bone in utils.arm.symmetrical_bones['arms']['upperarm']:
