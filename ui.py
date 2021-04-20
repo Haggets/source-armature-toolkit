@@ -25,10 +25,12 @@ class VAT_PT_mainpanel(bpy.types.Panel): #Main panel that subpanels will use
                 layout.label(text="Type: Custom Prefix Armature")
             elif vatinfo.scheme == -1:
                 layout.label(text="Type: Unknown Armature")
-            elif not utils.arm.sfm:
-                layout.label(text="Type: Default Source Armature")
+            elif utils.arm.viewmodel:
+                layout.label(text="Type: Viewmodel Armature")
             elif utils.arm.sfm:
                 layout.label(text="Type: Source Filmmaker Armature (Unsupported)")
+            elif not utils.arm.sfm:
+                layout.label(text="Type: Default Source Armature")
         else:
             layout.label(text="No Armature...")
 
@@ -159,7 +161,11 @@ class VAT_PT_rigifyretarget(bpy.types.Panel): #Rigify Retargetting panel
 
                     if bpy.context.object.name == 'rig':
                         col.operator('vat.rigifyretarget_link', text="Link to generated armature", icon='OUTLINER_DATA_ARMATURE')
-                    
+
+                if not vatinfo.animation_armature_setup:
+                    col = layout.column()
+                    col.operator('nla.bake', text="Bake action...", icon='RENDER_ANIMATION')
+
         box = layout.box()
         box.label(text="Meant for complex animation", icon='INFO')
         box.label(text="Creates animation ready armature", icon='INFO')

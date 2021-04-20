@@ -334,31 +334,32 @@ def anim_armature(action):
             #Creates heels for easier leg tweaking
             rigify_heel = ['Heel_L', 'Heel_R']
             
-            if utils.arm.symmetrical_bones['legs']['foot'][0]:
-                pfoot = armature.pose.bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][0]]
-                efoot = armature.data.edit_bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][0]]
+            if utils.arm.symmetrical_bones['legs']['foot']:
+                if utils.arm.symmetrical_bones['legs']['foot'][0]:
+                    pfoot = armature.pose.bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][0]]
+                    efoot = armature.data.edit_bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][0]]
 
-                ebone = armature.data.edit_bones.new(rigify_heel[0])
-                ebone.layers[13] = True
-                ebone.tail.xyz = pfoot.head.x/0.6, pfoot.head.y/0.4, 0
-                ebone.head.xyz = pfoot.head.x/3, pfoot.head.y/0.4, 0
-                ebone.parent = armature.data.edit_bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][0]]
+                    ebone = armature.data.edit_bones.new(rigify_heel[0])
+                    ebone.layers[13] = True
+                    ebone.tail.xyz = pfoot.head.x/0.6, pfoot.head.y/0.4, 0
+                    ebone.head.xyz = pfoot.head.x/3, pfoot.head.y/0.4, 0
+                    ebone.parent = armature.data.edit_bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][0]]
 
-                ebone.layers[0] = False
-                ebone.layers[8] = False
+                    ebone.layers[0] = False
+                    ebone.layers[8] = False
 
-            if utils.arm.symmetrical_bones['legs']['foot'][1]:
-                pfoot = armature.pose.bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][1]]
-                efoot = armature.data.edit_bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][1]]
+                if utils.arm.symmetrical_bones['legs']['foot'][1]:
+                    pfoot = armature.pose.bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][1]]
+                    efoot = armature.data.edit_bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][1]]
 
-                ebone = armature.data.edit_bones.new(rigify_heel[0])
-                ebone.layers[16] = True
-                ebone.tail.xyz = pfoot.head.x/0.6, pfoot.head.y/0.4, 0
-                ebone.head.xyz = pfoot.head.x/3, pfoot.head.y/0.4, 0
-                ebone.parent = armature.data.edit_bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][1]]
+                    ebone = armature.data.edit_bones.new(rigify_heel[0])
+                    ebone.layers[16] = True
+                    ebone.tail.xyz = pfoot.head.x/0.6, pfoot.head.y/0.4, 0
+                    ebone.head.xyz = pfoot.head.x/3, pfoot.head.y/0.4, 0
+                    ebone.parent = armature.data.edit_bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][1]]
 
-                ebone.layers[0] = False
-                ebone.layers[8] = False
+                    ebone.layers[0] = False
+                    ebone.layers[8] = False
 
             update(0)
 
@@ -548,10 +549,11 @@ def anim_armature(action):
                         ebone.layers[0] = False
 
             #Rigify pelvis
-            for bone in rigify_pelvis:
-                pbone = armature.pose.bones[bone]
-                pbone.rigify_type = 'basic.super_copy'
-                pbone.rigify_parameters.make_control = False
+            if utils.arm.central_bones['pelvis']:
+                for bone in rigify_pelvis:
+                    pbone = armature.pose.bones[bone]
+                    pbone.rigify_type = 'basic.super_copy'
+                    pbone.rigify_parameters.make_control = False
                 
             #Rigify palm
             for bone in rigify_palm['finger1']:
@@ -580,6 +582,10 @@ def anim_armature(action):
 
                                 if container == 'finger0' or container == 'finger1' or container == 'finger2' or container == 'finger3' or container == 'finger4':
                                     pbone.rigify_type = 'limbs.super_finger'
+                                    param.make_extra_ik_control = True
+                                    param.tweak_layers[6] = True
+                                    param.tweak_layers[2] = False
+
                                     ebone.layers[5] = True
 
                                     ebone.layers[0] = False
@@ -680,6 +686,9 @@ def anim_armature(action):
             for container, bone in utils.arm.custom_bones.items():
                 for bone in bone:
                     if bone:
+                        if bone.startswith('s.'):
+                            bone = utils.arm.prefix + bone.replace('s.', '')
+
                         ebone = armature.data.edit_bones[bone]
                         ebone.layers[19] = True
                         
@@ -1530,3 +1539,7 @@ def anim_armature(action):
         else:
             link()
             face_flex_setup()
+
+        utils.arm.armature.hide_set(True)
+        bpy.context.view_layer.objects.active = utils.arm.animation_armature
+        bpy.ops.object.mode_set(mode='OBJECT')
