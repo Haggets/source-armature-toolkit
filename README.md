@@ -7,7 +7,7 @@ Blender plugin focused on bringing a variety of functions to fasten the workflow
 
 After selecting an armature, the following will happen...
 
-Bone Organization
+### Bone Organization
 Every bone in the armature will be divided by group, moving each group to their corresponding bone layer as well as giving them a specific color to make each group stand out, all of which can be hidden individually by simply deselecting their bone layer.
 
 * Layer 0 = Central bones
@@ -21,7 +21,7 @@ Every bone in the armature will be divided by group, moving each group to their 
 * Layer 8 = Other bones
 * Layer 9 = Custom bones
 
-Procedural Bone Linking
+### Procedural Bone Linking
 Every helper bone with a function (Such as the wrist, ulna, elbow, knee...) will be linked to their driver bone just like it would in Source, allowing to visualize their deformation as well as allowing more flexible animation of the character.
 
 ## Operations
