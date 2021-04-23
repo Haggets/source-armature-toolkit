@@ -10,16 +10,16 @@ After selecting an armature, the following will happen...
 Bone Organization
 Every bone in the armature will be divided by group, moving each group to their corresponding bone layer as well as giving them a specific color to make each group stand out, all of which can be hidden individually by simply deselecting their bone layer.
 
-Layer 0 = Central bones
-Layer 1 = Left hand
-Layer 2 = Right hand
-Layer 3 = Left leg
-Layer 4 = Right Leg
-Layer 5 = Helper bones
-Layer 6 = Attachment bones
-Layer 7 = Weapon bones
-Layer 8 = Other bones
-Layer 9 = Custom bones
+Layer 0 = Central bones |
+Layer 1 = Left hand |
+Layer 2 = Right hand |
+Layer 3 = Left leg |
+Layer 4 = Right Leg |
+Layer 5 = Helper bones |
+Layer 6 = Attachment bones |
+Layer 7 = Weapon bones |
+Layer 8 = Other bones |
+Layer 9 = Custom bones |
 
 Procedural Bone Linking
 Every helper bone with a function (Such as the wrist, ulna, elbow, knee...) will be linked to their driver bone just like it would in Source, allowing to visualize their deformation as well as allowing more flexible animation of the character.
@@ -46,7 +46,7 @@ The plugin is installed like any other, you go to the Blender preferences, Addon
 
 ![Addons page](/img/Install1.png)
 
-![Plugin in Downloads folder](/img/Install1.png)
+![Plugin in Downloads folder](/img/Install2.png)
 
 After enabling the plugin, a new panel will show up in the Armature Object Data tab (When selecting an armature)
 
