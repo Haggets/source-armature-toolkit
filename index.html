@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Valve Armature Toolkit</title>
+    <meta name="keywords" content="Valve, Source Engine, Blender">
+    <meta name="description" content="Home page of the Valve Developer Toolkit Blender plugin">
+    <meta name="author" content="Haggets">
+
+    <script src="https://kit.fontawesome.com/8e432592bb.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- Main -->
+    <main>
+        <div>
+            <!-- Title -->
+            <h1 class="title">Valve Armature Toolkit</h1><br>
+            <h2 class="title">Blender plugin that allows for easier operation of the Valve armature.</h2><br>
+            
+            <!-- Links -->
+            <a href="https://github.com/Haggets/valve-armature-toolkit" type="button" class="link" target="_blank"><i class="fab fa-github"></i> Source</a>
+            <a href="https://ko-fi.com/haggets" type="button" class="link" target="_blank"><i class="fas fa-heart"></i> Ko-fi</a>
+            <br><br>
+            <a href="https://github.com/Haggets/valve-armature-toolkit/releases/latest" type="button" class="link" target="_blank"><i class="fas fa-download"></i> Download</a>
+            <a href="https://discord.gg/kH99XSU" type="button" class="link" target="_blank"><i class="fab fa-discord"></i> Discord</a>
+        </div>
+    </main>
+
+    <!-- Description -->
+    <section>
+        <p>The unconventional nature of Valve armatures force a longer and tedious workflow that is not necessary with conventional armature, often being forced to do double the work for the same results that you would have in a common workflow. This plugin aims to fix that gap. <br><br>
+        
+        The <dfn>Valve Armature Toolkit</dfn> or <abbr title="Valve Armature Toolkit">VAT</abbr> for short, comes with many handy features that will ease out the work that comes when working with Source armatures.</p>
+    </section>
+
+    <!-- Feature breakdown -->
+    <section>
+        <div>
+            <h2 class="subtitle">Feature breakdown</h2><br>
+            <p>After selection of an armature...</p><br>
+            <div id="functions">
+                <div id="bone_organization">
+                    <h4>Bone Organization</h4>
+                    <p>Every bone in the armature will be divided by group, moving each group to their corresponding bone layer as well as giving them a specific color to make each group stand out, all of which can be hidden individually by simply deselecting their bone layer.</p>
+                </div>
+                <br>
+                <div id="procedural_bones_linking">
+
+                    <h4>Procedural Bone Linking</h4>
+                    <p>Every helper bone with a function (Such as the wrist, ulna, elbow, knee...) will be linked to their driver bone just like it would in Source, allowing to visualize their deformation as well as allowing more flexible animation of the character.</p>
+                </div>
+            </div>
+        </div>
+        <br>
+        <h3 id="subtitle">Operations</h3>
+        <br>
+        <div id="operations">
+            <div id="armature_rename">
+                <h4>Armature Rename</h4>
+                <p>Due to how the way the Source armature bones are named (L/R not at the end or start, but at the middle of the name), Blender is unable to detect bones as pairs, disabling any kind of symmetry options. <br><br>
+
+                This function temporarily changes the position of L/R to the end of the name so Blender is able to detect bones as pairs, <b>allowing the use of symmetry options</b> for workloads such as weight painting, saving yourself the trouble of having to do work twice.</p>
+            </div>
+            <br>
+            <div id="constraint_symmetry">
+                <h4>Constraint Symmetry</h4>
+                <p>Adds constraints to the opposite side of a pair to allow <b>mirrored armature reproportioning</b>, keeping corrected roll values meaning that animations will play correctly on the reproportioned armature.</p>
+            </div>
+            <br>
+            <div id="weight_armature">
+                <h4>Weight Armature</h4>
+                <p>Procedurally generates a duplicate of the selected armature with all the bones (That should deform) connected, and helper bones in their correct position, compensating if any are missing, allowing for a more <b>convenient automatic vertex weighting</b>, requiring less tweaking.</p>
+            </div>
+            <br>
+            <div id="rigify_retarget">
+                <h4>Rigify Retarget</h4>
+                <p>Procedurally generates a duplicate of the selected armature with all the important bones connected and with Rigify parameters defined, allowing the creation (Or further parameter modification to your liking) of an <b>animation ready armature</b> which the original armature is retargeted to, meaning you can <i>easily</i> animate a <b>character or viewmodel</b> without ever having to touch the original armature and with the <b>ability of being exportable back into Source</b>, giving the user a lot of flexibility (Since all the bones in the Rigify armature work, including the tweak bones whose motion can also be exported). Additionally, you also have the ability to <b>modify a character's facial flexes within the armature</b> in a really intuitive way (Although not exportable)
+            </div>
+        </div>
+    </section>
+
+    <!-- Support -->
+    <section>
+        <h3 class="subtitle">Armature Support:</h3>
+        <br>
+        <ul>
+            <li><i class="fas fa-check"></i>Source Standard (HL2, L4D2...)</li>
+            <li><i class="fas fa-check"></i>Source Viewmodel</li>
+            <li><i class="fas fa-times"></i>Source SFM (Coming soon)</li>
+            <li><i class="fas fa-times"></i>GoldSource (Also coming soon)</li>
+        </ul>
+    </section>
+
+    <!-- Requirements -->
+    <section>
+        <h3 class="subtitle">Requirements:</h3>
+        <br>
+        <ul>
+            <li>Blender +2.8</li>
+            <li>Rigify (Needed for Rigify Retarget)</li>
+        </ul>
+    </section>
+
+    <!-- Author info -->
+    <footer>
+        <p>Author: Haggets</p>
+    </footer>
+</body>
+</html>

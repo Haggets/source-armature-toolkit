@@ -1,0 +1,126 @@
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300&display=swap');
+
+/* Global style */
+
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    font-family: Rubik;
+    color: white;
+}
+
+body {
+    background-color: #1a1a1a;
+}
+
+/* Individual style */
+
+main {
+    background-image: linear-gradient(to bottom right, orange, #ff00aa);
+    background-size: 200%;
+    min-height: 100vh;
+    min-width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border-style: hidden;
+    border-bottom-left-radius: 1em;
+    border-bottom-right-radius: 1em;
+    animation: gradient 10s ease infinite;
+}
+
+p {
+    font-size: 1.1em;
+}
+
+h1 {
+    font-size: 3.25em;
+}
+
+h2 {
+    font-size: 1.25em;
+}
+
+.link {
+    font-size: 1.25em;
+    text-decoration: none;
+    border-radius: 0.5em;
+    padding: 0.5em;
+    transition-duration: 0.25s;
+}
+
+section {
+    font-size: 1.25em;
+    padding-top: 2em;
+    margin: auto;
+    width: 60%;
+}
+
+abbr {
+    text-decoration: none;
+}
+
+.subtitle {
+    font-size: 1.5em;
+    text-align: center;
+}
+
+#subtitle {
+    text-align: center;
+}
+
+#functions {
+    background-image: linear-gradient(to top right, red, orange);
+    background-size: 400%;
+    border-radius: 1em;
+    padding: 1em;
+}
+
+#operations {
+    background-image: linear-gradient(to bottom left, red, orange);
+    background-size: 400%;
+    border-radius: 1em;
+    padding: 1em;
+}
+
+i {
+    margin: 0.25em;
+}
+
+footer {
+    font-size: 0.75em;
+    padding: 3em;
+}
+
+/* Interaction */
+
+.link:hover {
+    color: white;
+    background-color:#343F3E;
+    padding: 0.4em 0.5em;
+}
+
+/* Animations linking */
+
+.title {
+    animation: reveal 1s;
+}
+
+.link {
+    animation: reveal 2s;
+}
+
+/* Keyframes */
+
+@keyframes gradient {
+    0%{background-position: 0% 0%}
+    50%{background-position: 100% 100%}
+    100%{background-position: 0% 0%}
+}
+
+@keyframes reveal {
+    0%{opacity: 0%;}
+    100%{opacity: 100%}
+}
