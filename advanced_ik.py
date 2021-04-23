@@ -682,6 +682,24 @@ def anim_armature(action):
                     
                         ebone.layers[0] = False
 
+            prefix = Prefixes.other
+
+            for container, bone in utils.arm.other_bones.items():
+                if container == 'weapon':
+                    for bone in bone:
+                        if bone:
+                            pbone = armature.pose.bones[prefix + bone]
+                            param = pbone.rigify_parameters
+                            ebone = armature.data.edit_bones[prefix + bone]
+
+                            ebone.layers[19] = True
+
+                            ebone.layers[0] = False
+                            ebone.layers[7] = False
+
+                            pbone.rigify_type = 'basic.super_copy'
+                            param.super_copy_widget_type = 'bone'
+
             #Custom bones
             for container, bone in utils.arm.custom_bones.items():
                 for bone in bone:
@@ -690,7 +708,7 @@ def anim_armature(action):
                             bone = utils.arm.prefix + bone.replace('s.', '')
 
                         ebone = armature.data.edit_bones[bone]
-                        ebone.layers[19] = True
+                        ebone.layers[20] = True
                         
                         ebone.layers[0] = False
                         ebone.layers[8] = False
@@ -724,13 +742,13 @@ def anim_armature(action):
                 armature.rigify_layers.add()
 
             #Rigify layers
-            names = ['Face', 'Face (Primary)','Face (Secondary)','Torso', 'Torso (Tweak)', 'Fingers', 'Fingers (Detail)', 'Arm.L (IK)', 'Arm.L (FK)', 'Arm.L (Tweak)', 'Arm.R (IK)', 'Arm.R (FK)', 'Arm.R (Tweak)', 'Leg.L (IK)', 'Leg.L (FK)', 'Leg.L (Tweak)', 'Leg.R (IK)', 'Leg.R (FK)', 'Leg.R (Tweak)', 'Custom Bones']
+            names = ['Face', 'Face (Primary)','Face (Secondary)','Torso', 'Torso (Tweak)', 'Fingers', 'Fingers (Detail)', 'Arm.L (IK)', 'Arm.L (FK)', 'Arm.L (Tweak)', 'Arm.R (IK)', 'Arm.R (FK)', 'Arm.R (Tweak)', 'Leg.L (IK)', 'Leg.L (FK)', 'Leg.L (Tweak)', 'Leg.R (IK)', 'Leg.R (FK)', 'Leg.R (Tweak)', 'Weapon', 'Custom Bones']
 
-            row_groups = [1,2,2,3,4,5,6,7,8,9,7,8,9,10,11,12,10,11,12,13]
+            row_groups = [1,2,2,3,4,5,6,7,8,9,7,8,9,10,11,12,10,11,12,13,13]
 
-            layer_groups = [5,2,3,3,4,6,5,2,5,4,2,5,4,2,5,4,2,5,4,6]
+            layer_groups = [5,2,3,3,4,6,5,2,5,4,2,5,4,2,5,4,2,5,4,6,6]
 
-            for i, name, row, group in zip(range(20), names, row_groups, layer_groups):
+            for i, name, row, group in zip(range(21), names, row_groups, layer_groups):
                 armature.rigify_layers[i].name = name
                 armature.rigify_layers[i].row = row
                 armature.rigify_layers[i]['group_prop'] = group
@@ -829,6 +847,14 @@ def anim_armature(action):
             for bone in bone:
                 if bone:
                     retarget(container, bone)
+
+        prefix = Prefixes.other
+
+        for container, bone in utils.arm.other_bones.items():
+            if container == 'weapon':
+                for bone in bone:
+                    if bone:
+                        retarget(container, bone)
 
         #Creates additional location constraints for helper bones to copy their driver bone's location
         for cat in utils.arm.helper_bones.keys():

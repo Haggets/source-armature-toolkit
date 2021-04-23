@@ -648,7 +648,7 @@ class Armature: #Armature base
 
         if not group:
             #Creates groups and sets their color
-            for group, color in zip(['Center', 'Left Arm', 'Right Arm', 'Left Leg', 'Right Leg', 'Helpers', 'Attachments', 'Others', 'Custom'], ['THEME03', 'THEME01', 'THEME04', 'THEME01', 'THEME04', 'THEME09', 'THEME14', 'THEME10', 'THEME06']):
+            for group, color in zip(['Center', 'Left Arm', 'Right Arm', 'Left Leg', 'Right Leg', 'Helpers', 'Attachments', 'Weapon', 'Others', 'Custom'], ['THEME03', 'THEME01', 'THEME04', 'THEME01', 'THEME04', 'THEME09', 'THEME14', 'THEME07', 'THEME10', 'THEME06']):
                 armature.pose.bone_groups.new(name=group)
                 armature.pose.bone_groups[group].color_set = color
                 
@@ -719,13 +719,19 @@ class Armature: #Armature base
                             elif bone.startswith('a2.'):
                                 prefix = Prefixes.other
                                 bone = bone.replace('a2.', '')
+
                             armature.pose.bones[prefix + bone].bone_group_index = 6
                             armature.data.bones[prefix + bone].layers[6] = True
-                        else:
+
+                        elif container == 'weapon':
                             prefix = Prefixes.other
-                    
                             armature.pose.bones[prefix + bone].bone_group_index = 7
                             armature.data.bones[prefix + bone].layers[7] = True
+                            armature.data.bones[prefix + bone].layers[0] = False
+                        else:
+                            prefix = Prefixes.other
+                            armature.pose.bones[prefix + bone].bone_group_index = 8
+                            armature.data.bones[prefix + bone].layers[8] = True
                             armature.data.bones[prefix + bone].layers[0] = False
                     
             #Custom bones
@@ -734,12 +740,13 @@ class Armature: #Armature base
                     if bone:
                         if bone.startswith('s.'):
                             bone = self.prefix + bone.replace('s.', '')
-                        armature.pose.bones[bone].bone_group_index = 8
-                        armature.data.bones[bone].layers[8] = True
+
+                        armature.pose.bones[bone].bone_group_index = 9
+                        armature.data.bones[bone].layers[9] = True
                         armature.data.bones[bone].layers[0] = False
 
             #Reveals used layers
-            for i in [0,1,2,3,4,5,6,7,8]:
+            for i in [0,1,2,3,4,5,6,7,8, 9]:
                 armature.data.layers[i] = True
 
             print("Bone groups set!")
@@ -923,19 +930,20 @@ def generate_armature(type, action): #Creates or deletes the weight armature
             for container, bone in arm.other_bones.items():
                 for bone in bone:
                     if bone:
-                        if container == 'weapon':
-                            prefix = Prefixes.other
-                            bone = armature.data.edit_bones[prefix + bone]
-                            armature.data.edit_bones.remove(bone)
-                        elif container == 'attachment':
-                            if bone.startswith('a.'):
-                                prefix = Prefixes.attachment
-                                bone = bone.replace('a.', '')
-                            elif bone.startswith('a2.'):
+                        if type == 'weight':
+                            if container == 'weapon':
                                 prefix = Prefixes.other
-                                bone = bone.replace('a2.', '')
-                            bone = armature.data.edit_bones[prefix + bone]
-                            armature.data.edit_bones.remove(bone)
+                                bone = armature.data.edit_bones[prefix + bone]
+                                armature.data.edit_bones.remove(bone)
+                            elif container == 'attachment':
+                                if bone.startswith('a.'):
+                                    prefix = Prefixes.attachment
+                                    bone = bone.replace('a.', '')
+                                elif bone.startswith('a2.'):
+                                    prefix = Prefixes.other
+                                    bone = bone.replace('a2.', '')
+                                bone = armature.data.edit_bones[prefix + bone]
+                                armature.data.edit_bones.remove(bone)
                         elif container == 'forward':
                             prefix = Prefixes.other
                             bone = armature.data.edit_bones[prefix + bone]
@@ -1154,8 +1162,28 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                     if container == 'head':
                         ebone.tail.xyz = pbone.head.x, pbone.head.y, pbone.head.z/0.919
 
+        if type == 'anim':
+            prefix = Prefixes.other
+            for container, bone in arm.other_bones.items():
+                if container == 'weapon':
+                    for bone in bone:
+                        if bone:
+                            #Creates copy of bone that retains the original rotation for the retarget empties
+                            isolatedbone = armature.data.edit_bones.new(prefix + bone + ".isolated")
+                            isolatedbone.head = armature.pose.bones[prefix + bone].head
+                            isolatedbone.tail = armature.pose.bones[prefix + bone].tail
+                            isolatedbone.roll = armature.data.edit_bones[prefix + bone].roll
+                            isolatedbone.parent = armature.data.edit_bones[prefix + bone]
+                            isolatedbone.use_deform = False
+                            isolatedbone.layers[28] = True
+
+                            for i in range(0, 10):
+                                isolatedbone.layers[i] = False
+
         #Tweaks knee and elbow bones if weight armature
-        if type == 'weight':
+        elif type == 'weight':
+            prefix = arm.prefix
+
             for cat in arm.helper_bones.keys():
                 if cat != 'others':
                     for container, bone in arm.helper_bones[cat].items():
@@ -1361,6 +1389,8 @@ def generate_armature(type, action): #Creates or deletes the weight armature
 
                         ethumbroot.tail = pfinger0.head
 
+        prefix = arm.prefix
+
         #Finger tips tweak
         for container, bone in arm.symmetrical_bones['fingers'].items():
             if container == 'finger0' or container == 'finger1' or container == 'finger2' or container == 'finger3' or container == 'finger4':
@@ -1527,6 +1557,22 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                                 armature.pose.bones[prefix + bone].constraints.remove(constraint)
                             except:
                                 pass
+
+                for container, bone in arm.other_bones.items():
+                    if container == 'weapon':
+                        for bone in bone:
+                            if bone:
+                                try:
+                                    constraint = armature.pose.bones[prefix + bone].constraints["Retarget Location"]
+                                    armature.pose.bones[prefix + bone].constraints.remove(constraint)
+                                except:
+                                    pass
+
+                                try:
+                                    constraint = armature.pose.bones[prefix + bone].constraints["Retarget Rotation"]
+                                    armature.pose.bones[prefix + bone].constraints.remove(constraint)
+                                except:
+                                    pass
 
                 vatinfo.animation_armature = False
                 arm.animation_armature = None
