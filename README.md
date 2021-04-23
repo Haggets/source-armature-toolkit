@@ -5,26 +5,45 @@ Blender plugin focused on bringing a variety of functions to fasten the workflow
 
 ## List of functions
 
+After selecting an armature, the following will happen...
+
+Bone Organization
+Every bone in the armature will be divided by group, moving each group to their corresponding bone layer as well as giving them a specific color to make each group stand out, all of which can be hidden individually by simply deselecting their bone layer.
+
+Layer 0 = Central bones
+Layer 1 = Left hand
+Layer 2 = Right hand
+Layer 3 = Left leg
+Layer 4 = Right Leg
+Layer 5 = Helper bones
+Layer 6 = Attachment bones
+Layer 7 = Weapon bones
+Layer 8 = Other bones
+Layer 9 = Custom bones
+
+Procedural Bone Linking
+Every helper bone with a function (Such as the wrist, ulna, elbow, knee...) will be linked to their driver bone just like it would in Source, allowing to visualize their deformation as well as allowing more flexible animation of the character.
+
+## Operations
+
 ### Armature renaming
-Due to how the way the Source armature bones are named, including the "L" and "R" in the middle of the name rather than in the beginning or the end, it makes it so Blender is unable to detect the bones as pairs, which render any kind of symmetry option useless, including weight painting and posing.
+Due to how the way the Source armature bones are named (L/R not at the end or start, but at the middle of the name), Blender is unable to detect bones as pairs, disabling any kind of symmetry options.
 
-This function allows for the position of the "L" and "R" to be temporarily placed after the name of the bone so it can be detected by Blender as pairs, allowing users to work smarter and faster instead of having to painfully mirror everything manually.
-
-Remember to revert the name change before exporting.
+This function temporarily changes the position of L/R to the end of the name so Blender is able to detect bones as pairs, allowing the use of symmetry options for workloads such as weight painting, saving yourself the trouble of having to do work twice.
 
 ### Constraint Symmetry
-As mentioned previously, the way the bones are named disallow for symmetry, so naturally it is easy to assume that just by changing the placement of the "L" and "R" will allow for bone symmetry which will also allow for reshaping of the armature for characters that do not fit the standard body type. However, another quirk with the armatures that symmetry messes up is that opposite sides of the armature have different roll values (In a normal armature, those values are the same but one is positive and the other is negative), which completely mess up the bones on the other side if the pose is applied with those roll values changed.
-
-This function adds constraints to the opposite side of the armature that allow for it to follow the other side while keeping corrected roll values, making the process a lot faster.
+Adds constraints to the opposite side of a pair to allow mirrored armature reproportioning, keeping corrected roll values meaning that animations will play correctly on the reproportioned armature.
 
 ### Weight Armatures
-Yet another quirk of the Source armature is that bones are not connected to eachother, instead, they're in "bubbles", and parented without connection, which is fine when animating it, but when you're building the vertex weights for a new character with said armature, the weights will be strangely distributed due to the bones not covering the actual length of the character, requiring a lot of manual tweaking that wouldn't be required with a normal armature.
-
-This function procedurally creates a weight armature that connects all the bones it finds in a way that allows for a more convenient automatic vertex weighting, requiring less tweaking overall.
+Procedurally generates a duplicate of the selected armature with all the bones (That should deform) connected, and helper bones in their correct position, compensating if any are missing, allowing for a more convenient automatic vertex weighting, requiring less tweaking.
 
 ### Rigify Retarget
-Function that creates a procedural armature with Rigify and retarge the Source armature onto it, allowing for the usage of an animation ready armature, giving animators a WAY easier time animating characters, and allowing for a lot more flexibility overall. This also includes the ability to use facial flexes with the armature, and said animations can be baked and imported into Source without much hassle. (Not including facial flexes of course)
+Procedurally generates a duplicate of the selected armature with all the important bones connected and with Rigify parameters defined, allowing the creation (Or further parameter modification to your liking) of an animation ready armature which the original armature is retargeted to, meaning you can easily animate a character or viewmodel without ever having to touch the original armature and with the ability of being exportable back into Source, giving the user a lot of flexibility (Since all the bones in the Rigify armature work, including the tweak bones whose motion can also be exported). Additionally, you also have the ability to modify a character's facial flexes within the armature in a really intuitive way (Although not exportable)
 
-The entirety of the Rigify armature is functional, meaning that even the tweak bones work and should be exportable.
+## Examples
 
-Remember to bake the animation onto the Source armature before exporting, otherwise the animation will not show up in the game, that's due to it only following another armature's actions, it is not doing anything on its own.
+![Bone organization](/img/BoneOrganization.png)
+
+![Weight armature](/img/WeightArmature.png)
+
+![Rigify armature](/img/RigifyArmature.png)
