@@ -40,10 +40,16 @@ Procedurally generates a duplicate of the selected armature with all the bones (
 ### Rigify Retarget
 Procedurally generates a duplicate of the selected armature with all the important bones connected and with Rigify parameters defined, allowing the creation (Or further parameter modification to your liking) of an animation ready armature which the original armature is retargeted to, meaning you can easily animate a character or viewmodel without ever having to touch the original armature and with the ability of being exportable back into Source, giving the user a lot of flexibility (Since all the bones in the Rigify armature work, including the tweak bones whose motion can also be exported). Additionally, you also have the ability to modify a character's facial flexes within the armature in a really intuitive way (Although not exportable)
 
-## Examples
+# How to Install
 
-![Bone organization](/img/BoneOrganization.png)
+The plugin is installed like any other, you go to the Blender preferences, Addons, click on install, and select the plugin
 
-![Weight armature](/img/WeightArmature.png)
+![Addons page](/img/Install1.png)
 
-![Rigify armature](/img/RigifyArmature.png)
+![Plugin in Downloads folder](/img/Install1.png)
+
+After enabling the plugin, a new panel will show up in the Armature Object Data tab (When selecting an armature)
+
+![Plugin in Downloads folder](/img/PluginPanel.png)
+
+And now you're free to select the armature you want to modify. The operations you use will only apply to the armature you're currently selecting. Armatures generated from that armature will not show up in the armature selection list to avoid it getting cluttered.
