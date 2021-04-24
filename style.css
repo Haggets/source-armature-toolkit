@@ -54,6 +54,9 @@ h2 {
 section {
     font-size: 1.25em;
     padding-top: 2em;
+}
+
+#description {
     margin: auto;
     width: 60%;
 }
@@ -62,27 +65,32 @@ abbr {
     text-decoration: none;
 }
 
-.subtitle {
+.subtitle1 {
     font-size: 1.5em;
     text-align: center;
 }
 
-#subtitle {
+#subtitle2 {
     text-align: center;
 }
 
-#functions {
-    background-image: linear-gradient(to top right, red, orange);
-    background-size: 400%;
-    border-radius: 1em;
-    padding: 1em;
+.outer_block {
+    margin: auto;
+    width: 80%;
 }
 
-#operations {
-    background-image: linear-gradient(to bottom left, red, orange);
-    background-size: 400%;
+.inner_block {
+    background: linear-gradient(to right, #ff00aa, transparent);
+    border-style: hidden;
     border-radius: 1em;
     padding: 1em;
+    margin: auto;
+    width: 80%;
+}
+
+img {
+    margin: auto;
+    display: flex;
 }
 
 i {

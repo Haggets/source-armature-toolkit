@@ -4,13 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Valve Armature Toolkit</title>
     <meta name="keywords" content="Valve, Source Engine, Blender">
-    <meta name="description" content="Home page of the Valve Developer Toolkit Blender plugin">
+    <meta name="description" content="Home page of the Valve Armature Toolkit Blender plugin">
     <meta name="author" content="Haggets">
-
     <script src="https://kit.fontawesome.com/8e432592bb.js" crossorigin="anonymous"></script>
+    <script src="main.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -24,16 +23,16 @@
             <h2 class="title">Blender plugin that allows for easier operation of the Valve armature.</h2><br>
             
             <!-- Links -->
-            <a href="https://github.com/Haggets/valve-armature-toolkit" type="button" class="link" target="_blank"><i class="fab fa-github"></i> Source</a>
-            <a href="https://ko-fi.com/haggets" type="button" class="link" target="_blank"><i class="fas fa-heart"></i> Ko-fi</a>
+            <a href="https://github.com/Haggets/valve-armature-toolkit" type="button" class="link" target="_blank"><i class="fab fa-github"></i>Source</a>
+            <a href="https://ko-fi.com/haggets" type="button" class="link" target="_blank"><i class="fas fa-heart"></i>Ko-fi</a>
             <br><br>
-            <a href="https://github.com/Haggets/valve-armature-toolkit/releases/latest" type="button" class="link" target="_blank"><i class="fas fa-download"></i> Download</a>
-            <a href="https://discord.gg/kH99XSU" type="button" class="link" target="_blank"><i class="fab fa-discord"></i> Discord</a>
+            <a href="https://github.com/Haggets/valve-armature-toolkit/releases/latest" type="button" class="link" target="_blank"><i class="fas fa-download"></i>Download</a>
+            <a href="https://discord.gg/kH99XSU" type="button" class="link" target="_blank"><i class="fab fa-discord"></i>Discord</a>
         </div>
     </main>
 
     <!-- Description -->
-    <section>
+    <section id="description">
         <p>The unconventional nature of Valve armatures force a longer and tedious workflow that is not necessary with conventional armature, often being forced to do double the work for the same results that you would have in a common workflow. This plugin aims to fix that gap. <br><br>
         
         The <dfn>Valve Armature Toolkit</dfn> or <abbr title="Valve Armature Toolkit">VAT</abbr> for short, comes with many handy features that will ease out the work that comes when working with Source armatures.</p>
@@ -41,26 +40,25 @@
 
     <!-- Feature breakdown -->
     <section>
-        <div>
-            <h2 class="subtitle">Feature breakdown</h2><br>
-            <p>After selection of an armature...</p><br>
-            <div id="functions">
-                <div id="bone_organization">
-                    <h4>Bone Organization</h4>
-                    <p>Every bone in the armature will be divided by group, moving each group to their corresponding bone layer as well as giving them a specific color to make each group stand out, all of which can be hidden individually by simply deselecting their bone layer.</p>
-                </div>
-                <br>
-                <div id="procedural_bones_linking">
+        <h2 class="subtitle1">Feature breakdown</h2><br>
+        <p class="outer_block">After selection of an armature...</p><br>
+        <div class="inner_block">
+            <div id="bone_organization">
+                <h4>Bone Organization</h4>
+                <p>Every bone in the armature will be divided by group, moving each group to their corresponding bone layer as well as giving them a specific color to make each group stand out, all of which can be hidden individually by simply deselecting their bone layer.</p>
+            </div>
+            <br>
+            <div id="procedural_bones_linking">
 
-                    <h4>Procedural Bone Linking</h4>
-                    <p>Every helper bone with a function (Such as the wrist, ulna, elbow, knee...) will be linked to their driver bone just like it would in Source, allowing to visualize their deformation as well as allowing more flexible animation of the character.</p>
-                </div>
+                <h4>Procedural Bone Linking</h4>
+                <p>Every helper bone with a function (Such as the wrist, ulna, elbow, knee...) will be linked to their driver bone just like it would in Source, allowing to visualize their deformation as well as allowing more flexible animation of the character.</p>
+                <br>
             </div>
         </div>
         <br>
-        <h3 id="subtitle">Operations</h3>
+        <h3 id="subtitle2">Operations</h3>
         <br>
-        <div id="operations">
+        <div class="inner_block">
             <div id="armature_rename">
                 <h4>Armature Rename</h4>
                 <p>Due to how the way the Source armature bones are named (L/R not at the end or start, but at the middle of the name), Blender is unable to detect bones as pairs, disabling any kind of symmetry options. <br><br>
@@ -86,20 +84,20 @@
     </section>
 
     <!-- Support -->
-    <section>
-        <h3 class="subtitle">Armature Support:</h3>
+    <section class="outer_block">
+        <h3 class="subtitle1">Armature Support:</h3>
         <br>
         <ul>
             <li><i class="fas fa-check"></i>Source Standard (HL2, L4D2...)</li>
             <li><i class="fas fa-check"></i>Source Viewmodel</li>
+            <li><i class="fas fa-check"></i>GoldSource</li>
             <li><i class="fas fa-times"></i>Source SFM (Coming soon)</li>
-            <li><i class="fas fa-times"></i>GoldSource (Also coming soon)</li>
         </ul>
     </section>
 
     <!-- Requirements -->
-    <section>
-        <h3 class="subtitle">Requirements:</h3>
+    <section class="outer_block">
+        <h3 class="subtitle1">Requirements:</h3>
         <br>
         <ul>
             <li>Blender +2.8</li>
