@@ -10,12 +10,20 @@ def armature_rename(scheme, armature=None): #Bone prefix/suffix repositioning
     def rename(bone):
         bpy.ops.object.mode_set(mode='OBJECT') #Forces object mode to avoid context errors
 
-        if index == 0:
-            old = 'L_'
-            new = '_L'
-        elif index == 1:
-            old = 'R_'
-            new = '_R'
+        if utils.arm.goldsource:
+            if index == 0:
+                old = ' L '
+                new = ' L'
+            elif index == 1:
+                old = ' R '
+                new = ' R'
+        else:
+            if index == 0:
+                old = 'L_'
+                new = '_L'
+            elif index == 1:
+                old = 'R_'
+                new = '_R'
 
         #To which scheme
         if scheme == 1: #Source -> Blender
@@ -90,12 +98,21 @@ def armature_rename(scheme, armature=None): #Bone prefix/suffix repositioning
         utils.arm.get_bones(False)
 
 def bone_rename(scheme, bone, index):
-    if index == 0:
-        old = 'L_'
-        new = '_L'
-    elif index == 1:
-        old = 'R_'
-        new = '_R'
+    if utils.arm.goldsource:
+        if index == 0:
+            old = ' L '
+            new = ' L'
+        elif index == 1:
+            old = ' R '
+            new = ' R'
+    else:
+        if index == 0:
+            old = 'L_'
+            new = '_L'
+        elif index == 1:
+            old = 'R_'
+            new = '_R'
+
 
     #To which scheme
     if scheme == 1: #Source -> Blender

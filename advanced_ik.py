@@ -265,10 +265,10 @@ def anim_armature(action):
                         elif bone == 'EyeRight':
                             define_bone([bone, head], [1.2, 1.2, 10, 9.5, 3.2, 0], '-')
 
-            if utils.arm.central_bones['pelvis']:
-                #Creates 2 pelvis bones for whatever Rigify does with em
-                rigify_pelvis = ['Pelvis_L', 'Pelvis_R']
+            #Creates 2 pelvis bones for whatever Rigify does with em
+            rigify_pelvis = ['Pelvis_L', 'Pelvis_R']
 
+            if utils.arm.central_bones['pelvis']:
                 ppelvis = armature.pose.bones[prefix + utils.arm.central_bones['pelvis'][0]]
                 epelvis = armature.data.edit_bones[prefix + utils.arm.central_bones['pelvis'][0]]
                 
@@ -305,11 +305,11 @@ def anim_armature(action):
                                 palm = 'Palm_' + bone2
                             else:
                                 palm = 'Palm_' + bone
-                            ebone = armature.data.edit_bones[prefix + bone]
+                            efinger = armature.data.edit_bones[prefix + bone]
                             epalm = armature.data.edit_bones.new(palm)
                             rigify_palm[container].append(palm)
-                            ebone.layers[5] = True
-                            ebone.layers[0] = False
+                            efinger.layers[5] = True
+                            efinger.layers[0] = False
                             epalm.layers[5] = True
                             epalm.layers[0] = False
                             epalm.layers[8] = False
@@ -319,10 +319,15 @@ def anim_armature(action):
                             elif index == 1:
                                 sign = '-'
 
-                            ebone.parent = epalm
-                            epalm.parent = armature.data.edit_bones[prefix + utils.arm.symmetrical_bones['arms']['hand'][index]]
+                            efinger.parent = epalm
 
-                            define_bone([palm, prefix + bone, prefix + utils.arm.symmetrical_bones['arms']['hand'][index]], [], sign, False, 2)
+                            if utils.arm.symmetrical_bones['arms']['hand'] and utils.arm.symmetrical_bones['arms']['hand'][index]:
+                                ehand = armature.data.edit_bones[prefix + utils.arm.symmetrical_bones['arms']['hand'][index]]
+                                phand = armature.pose.bones[prefix + utils.arm.symmetrical_bones['arms']['hand'][index]]
+
+                                epalm.parent = ehand
+                                epalm.tail = efinger.head
+                                epalm.head.xyz = ehand.head.x, epalm.tail.y, ehand.head.z
                 else:
                     for bone in bone:
                         if bone:
@@ -333,33 +338,68 @@ def anim_armature(action):
 
             #Creates heels for easier leg tweaking
             rigify_heel = ['Heel_L', 'Heel_R']
-            
+
+            #Creates heel bone if none are present
+            rigify_toe = ['Toe_L', 'Toe_R']
+
             if utils.arm.symmetrical_bones['legs']['foot']:
-                if utils.arm.symmetrical_bones['legs']['foot'][0]:
-                    pfoot = armature.pose.bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][0]]
-                    efoot = armature.data.edit_bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][0]]
+                for index, bone in enumerate(utils.arm.symmetrical_bones['legs']['foot']):
+                    pfoot = armature.pose.bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][index]]
+                    efoot = armature.data.edit_bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][index]]
 
-                    ebone = armature.data.edit_bones.new(rigify_heel[0])
-                    ebone.layers[13] = True
+                    ebone = armature.data.edit_bones.new(rigify_heel[index])
                     ebone.tail.xyz = pfoot.head.x/0.6, pfoot.head.y/0.4, 0
                     ebone.head.xyz = pfoot.head.x/3, pfoot.head.y/0.4, 0
-                    ebone.parent = armature.data.edit_bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][0]]
+                    ebone.parent = efoot
+
+                    if index == 0:
+                        ebone.layers[13] = True
+                    elif index == 1:
+                        ebone.layers[16] = True
 
                     ebone.layers[0] = False
                     ebone.layers[8] = False
 
-                if utils.arm.symmetrical_bones['legs']['foot'][1]:
-                    pfoot = armature.pose.bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][1]]
-                    efoot = armature.data.edit_bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][1]]
+                    if not utils.arm.symmetrical_bones['legs']['toe']:
+                        ebone = armature.data.edit_bones.new(rigify_toe[index])
 
-                    ebone = armature.data.edit_bones.new(rigify_heel[0])
-                    ebone.layers[16] = True
-                    ebone.tail.xyz = pfoot.head.x/0.6, pfoot.head.y/0.4, 0
-                    ebone.head.xyz = pfoot.head.x/3, pfoot.head.y/0.4, 0
-                    ebone.parent = armature.data.edit_bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][1]]
+                        ebone.head = pfoot.tail
+                        if pfoot.tail.y < 0:
+                            ebone.tail.xyz = pfoot.tail.x, pfoot.tail.y*1.25, pfoot.tail.z
+                        elif pfoot.tail.y > 0:
+                            ebone.tail.xyz = pfoot.tail.x, pfoot.tail.y*-1.25, pfoot.tail.z
 
-                    ebone.layers[0] = False
-                    ebone.layers[8] = False
+                        ebone.parent = efoot
+                        ebone.use_connect = True
+
+                        if index == 0:
+                            ebone.layers[13] = True
+                        elif index == 1:
+                            ebone.layers[16] = True
+
+                        ebone.layers[0] = False
+                        ebone.layers[8] = False
+
+            #Creates hand bones 
+            rigify_hands = ['Hand_L', 'Hand_R']
+
+            if utils.arm.symmetrical_bones['arms']['forearm']:
+                for index, bone in enumerate(utils.arm.symmetrical_bones['arms']['forearm']):
+                    pforearm = armature.pose.bones[prefix + bone]
+                    eforearm = armature.data.edit_bones[prefix + bone]
+
+                    if not utils.arm.symmetrical_bones['arms']['hand'] or not utils.arm.symmetrical_bones['arms']['hand'][index]:
+                        ebone = armature.data.edit_bones.new(rigify_hands[index])
+
+                        ebone.head = eforearm.tail
+                        length = eforearm.length
+                        eforearm.length = eforearm.length*1.4
+                        ebone.tail = eforearm.tail
+
+                        eforearm.length = length
+
+                        ebone.parent = eforearm
+                        ebone.use_connect = True
 
             update(0)
 
@@ -594,49 +634,50 @@ def anim_armature(action):
                                 
                 elif cat == 'arms':
                     for container, bone in utils.arm.symmetrical_bones[cat].items():
-                        for bone in bone:
-                            pbone = armature.pose.bones[prefix + bone]
-                            param = pbone.rigify_parameters
-                            ebone = armature.data.edit_bones[prefix + bone]
-
-                            if bone.startswith('L_') or bone.endswith('_L'):
-                                ebone.layers[7] = True
-                            elif bone.startswith('R_') or bone.endswith('_R'):
-                                ebone.layers[10] = True
-
-                            if container == 'clavicle':
-                                pbone.rigify_type = 'basic.super_copy'
-                                param.make_widget = False
-                                ebone.layers[3] = True
-                            elif container == 'upperarm':
-                                pbone.rigify_type = 'limbs.super_limb'
-                                param.tweak_layers[1] = False
-                                param.fk_layers[1] = False
-
-                                if bone.startswith('L_') or bone.endswith('_L'):
-                                    param.fk_layers[8] = True
-                                    param.tweak_layers[9] = True
-                                elif bone.startswith('R_') or bone.endswith('_R'):
-                                    param.fk_layers[11] = True
-                                    param.tweak_layers[12] = True
-
-                                param.segments = 1
-
-                            ebone.layers[0] = False
-                            ebone.layers[1] = False
-                            ebone.layers[2] = False
-
-                elif cat == 'legs':
-                    for container, bone in utils.arm.symmetrical_bones[cat].items():
-                        for bone in bone:
+                        for index, bone in enumerate(bone):
                             if bone:
                                 pbone = armature.pose.bones[prefix + bone]
                                 param = pbone.rigify_parameters
                                 ebone = armature.data.edit_bones[prefix + bone]
 
-                                if bone.startswith('L_') or bone.endswith('_L'):
+                                if index == 0:
+                                    ebone.layers[7] = True
+                                elif index == 1:
+                                    ebone.layers[10] = True
+
+                                if container == 'clavicle':
+                                    pbone.rigify_type = 'basic.super_copy'
+                                    param.make_widget = False
+                                    ebone.layers[3] = True
+                                elif container == 'upperarm':
+                                    pbone.rigify_type = 'limbs.super_limb'
+                                    param.tweak_layers[1] = False
+                                    param.fk_layers[1] = False
+
+                                    if index == 0:
+                                        param.fk_layers[8] = True
+                                        param.tweak_layers[9] = True
+                                    elif index == 1:
+                                        param.fk_layers[11] = True
+                                        param.tweak_layers[12] = True
+
+                                    param.segments = 1
+
+                                ebone.layers[0] = False
+                                ebone.layers[1] = False
+                                ebone.layers[2] = False
+
+                elif cat == 'legs':
+                    for container, bone in utils.arm.symmetrical_bones[cat].items():
+                        for index, bone in enumerate(bone):
+                            if bone:
+                                pbone = armature.pose.bones[prefix + bone]
+                                param = pbone.rigify_parameters
+                                ebone = armature.data.edit_bones[prefix + bone]
+
+                                if index == 0:
                                     ebone.layers[13] = True
-                                elif bone.startswith('R_') or bone.endswith('_R'):
+                                elif index == 1:
                                     ebone.layers[16] = True
 
                                 if container == 'thigh':
@@ -645,10 +686,10 @@ def anim_armature(action):
                                     param.tweak_layers[1] = False
                                     param.fk_layers[1] = False
 
-                                    if bone.startswith('L_') or bone.endswith('_L'):
+                                    if index == 0:
                                         param.fk_layers[14] = True
                                         param.tweak_layers[15] = True
-                                    elif bone.startswith('R_') or bone.endswith('_R'):
+                                    elif index == 1:
                                         param.fk_layers[17] = True
                                         param.tweak_layers[18] = True
                                     param.segments = 1
@@ -708,10 +749,16 @@ def anim_armature(action):
                             bone = utils.arm.prefix + bone.replace('s.', '')
 
                         ebone = armature.data.edit_bones[bone]
+                        pbone = armature.pose.bones[bone]
+                        param = pbone.rigify_parameters
+
                         ebone.layers[20] = True
                         
                         ebone.layers[0] = False
                         ebone.layers[8] = False
+
+                        pbone.rigify_type = 'basic.super_copy'
+                        param.super_copy_widget_type = 'bone'
 
             armature = utils.arm.animation_armature_real
 
@@ -785,52 +832,51 @@ def anim_armature(action):
                 
     def link(): #Organizes armature after empty creation
 
-        def retarget(container, bone, helper=False, helper_target=None): #Creates empties and links them to Rigify armature/Source armature
+        def retarget(bone): #Creates empties and links them to Rigify armature/Source armature
             armature = bpy.data.objects['rig']
             
-            if not helper:
-                #Retarget empties creation
-                try:
-                    collection = bpy.data.collections["Retarget Empties ({})".format(utils.arm.armature.name)[0:60]] #Name length limit
-                except:
-                    collection = bpy.data.collections.new("Retarget Empties ({})".format(utils.arm.armature.name)[0:60])
-                    bpy.context.scene.collection.children.link(collection)
+            #Retarget empties creation
+            try:
+                collection = bpy.data.collections["Retarget Empties ({})".format(utils.arm.armature.name)[0:60]] #Name length limit
+            except:
+                collection = bpy.data.collections.new("Retarget Empties ({})".format(utils.arm.armature.name)[0:60])
+                bpy.context.scene.collection.children.link(collection)
 
-                collection.hide_viewport = True
+            collection.hide_viewport = True
 
-                #Creates base empty and links
-                base = bpy.data.objects.new('base_{} ({})'.format(bone, utils.arm.armature.name)[0:60], None)
-                collection.objects.link(base)
-                base.empty_display_type = 'CUBE'
-                base.hide_select = True
+            #Creates base empty and links
+            base = bpy.data.objects.new('base_{} ({})'.format(bone, utils.arm.armature.name)[0:60], None)
+            collection.objects.link(base)
+            base.empty_display_type = 'CUBE'
+            base.hide_select = True
 
-                #Location constraint
-                loc = base.constraints.new('COPY_LOCATION')
-                loc.target = armature
-                loc.subtarget = 'ORG-' + prefix + bone + '.isolated'
+            #Location constraint
+            loc = base.constraints.new('COPY_LOCATION')
+            loc.target = armature
+            loc.subtarget = 'ORG-' + prefix + bone + '.isolated'
 
-                #Rotation constraint
-                rot = base.constraints.new('COPY_ROTATION')
-                rot.target = armature
-                rot.subtarget = 'ORG-' + prefix + bone + '.isolated'
+            #Rotation constraint
+            rot = base.constraints.new('COPY_ROTATION')
+            rot.target = armature
+            rot.subtarget = 'ORG-' + prefix + bone + '.isolated'
 
-                #Creates target empty and links
-                target = bpy.data.objects.new('target_{} ({})'.format(bone, utils.arm.armature.name)[0:60], None)
-                collection.objects.link(target)
-                target.empty_display_type = 'SPHERE'
+            #Creates target empty and links
+            target = bpy.data.objects.new('target_{} ({})'.format(bone, utils.arm.armature.name)[0:60], None)
+            collection.objects.link(target)
+            target.empty_display_type = 'SPHERE'
 
-                #Parent to base
-                base.parent = parent
-                target.parent = base
+            #Parent to base
+            base.parent = parent
+            target.parent = base
 
-                #Bone connection
-                armature = utils.arm.armature
-                loc = armature.pose.bones[prefix + bone].constraints.new('COPY_LOCATION')
-                loc.name = "Retarget Location"
-                loc.target = target
-                rot = armature.pose.bones[prefix + bone].constraints.new('COPY_ROTATION')
-                rot.name = "Retarget Rotation"
-                rot.target = target
+            #Bone connection
+            armature = utils.arm.armature
+            loc = armature.pose.bones[prefix + bone].constraints.new('COPY_LOCATION')
+            loc.name = "Retarget Location"
+            loc.target = target
+            rot = armature.pose.bones[prefix + bone].constraints.new('COPY_ROTATION')
+            rot.name = "Retarget Rotation"
+            rot.target = target
 
         #Creates parent for all bases for easier storage/manipulation
         parent = bpy.data.objects.new('parent_' + utils.arm.armature.name, None)
@@ -841,12 +887,12 @@ def anim_armature(action):
             for container, bone in utils.arm.symmetrical_bones[cat].items():
                 for bone in bone:
                     if bone:
-                        retarget(container, bone)
+                        retarget(bone)
 
         for container, bone in utils.arm.central_bones.items():
             for bone in bone:
                 if bone:
-                    retarget(container, bone)
+                    retarget(bone)
 
         prefix = Prefixes.other
 
@@ -854,7 +900,14 @@ def anim_armature(action):
             if container == 'weapon':
                 for bone in bone:
                     if bone:
-                        retarget(container, bone)
+                        retarget(bone)
+
+        prefix = ''
+
+        for container, bone in utils.arm.custom_bones.items():
+            for bone in bone:
+                if bone:
+                    retarget(bone)
 
         #Creates additional location constraints for helper bones to copy their driver bone's location
         for cat in utils.arm.helper_bones.keys():
