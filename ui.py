@@ -25,6 +25,8 @@ class VAT_PT_mainpanel(bpy.types.Panel): #Main panel that subpanels will use
                 layout.label(text="Type: Custom Prefix Armature")
             elif vatinfo.scheme == -1:
                 layout.label(text="Type: Unknown Armature")
+            elif utils.arm.goldsource:
+                layout.label(text="Type: GoldSource Armature")
             elif utils.arm.viewmodel:
                 layout.label(text="Type: Viewmodel Armature")
             elif utils.arm.sfm:
@@ -57,7 +59,7 @@ class VAT_PT_armaturerename(bpy.types.Panel): #Armature rename panel
         col = layout.column()
         if vatproperties.target_armature:
             if vatinfo.scheme == 0:
-                col.label(text="Current: Source Scheme")
+                col.label(text="Current: Default Scheme")
             elif vatinfo.scheme == 1:
                 col.label(text="Current: Blender Scheme")
         box = layout.box()
