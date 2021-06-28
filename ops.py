@@ -3,6 +3,8 @@ from .armature_rename import armature_rename
 from .constraint_symmetry import constraint_symmetry
 from .weight_armature import weight_armature
 from .advanced_ik import anim_armature
+from .advanced_ik import bake
+from .advanced_ik import export
 from . import utils
 from . import props
 
@@ -211,5 +213,60 @@ class VAT_OT_rigifyretarget_link(bpy.types.Operator):
 
     def execute(self, context):
         anim_armature(2)
+
+        return{'FINISHED'}
+
+class VAT_OT_rigifyretarget_bake_single(bpy.types.Operator):
+    """Bakes selected NLA strip from the animation armature onto the original armature"""
+    bl_idname = "vat.rigifyretarget_bake_single"
+    bl_label = "Single Animation Bake"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        vatproperties = bpy.context.scene.vatproperties
+        vatinfo = bpy.context.scene.vatinfo
+        if vatproperties.target_armature and vatinfo.animation_armature and not vatinfo.animation_armature_setup:
+            if utils.arm.animation_armature.animation_data.nla_tracks.active:
+                return (vatinfo.scheme != -1 and utils.arm.animation_armature.animation_data.nla_tracks.active.strips and utils.arm.animation_armature.animation_data.nla_tracks.active.strips[0].select and vatproperties.retarget_constraints)
+
+    def execute(self, context):
+        bake(0)
+
+        return{'FINISHED'}
+
+class VAT_OT_rigifyretarget_bake_all(bpy.types.Operator):
+    """Bakes all NLA strips from the animation armature onto the original armature"""
+    bl_idname = "vat.rigifyretarget_bake_all"
+    bl_label = "All Animations Bake"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        vatproperties = bpy.context.scene.vatproperties
+        vatinfo = bpy.context.scene.vatinfo
+        if vatproperties.target_armature and vatinfo.animation_armature and not vatinfo.animation_armature_setup:
+            return (vatinfo.scheme != -1 and utils.arm.animation_armature.animation_data.nla_tracks and vatproperties.retarget_constraints)
+
+    def execute(self, context):
+        bake(1)
+
+        return{'FINISHED'}
+
+class VAT_OT_rigifyretarget_export_all(bpy.types.Operator):
+    """Exports all baked data from the Source armature to SMD format through Blender Source Tools"""
+    bl_idname = "vat.rigifyretarget_export_all"
+    bl_label = "All Animations Export"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        vatproperties = bpy.context.scene.vatproperties
+        vatinfo = bpy.context.scene.vatinfo
+        if vatproperties.target_armature and vatinfo.animation_armature and not vatinfo.animation_armature_setup:
+            return (vatinfo.scheme != -1 and utils.arm.animation_armature.animation_data.nla_tracks)
+
+    def execute(self, context):
+        export()
 
         return{'FINISHED'}

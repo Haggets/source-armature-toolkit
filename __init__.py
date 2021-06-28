@@ -24,7 +24,7 @@ bl_info = {
     "tracker_url": "https://github.com/Haggets/valve-armature-toolkit/issues",
     "category": "Armature"}
             
-classes = [props.VAT_properties, props.VAT_info, preferences.VAT_updaterpreferences, ui.VAT_PT_mainpanel, ui.VAT_PT_armaturerename, ui.VAT_PT_constraintsymmetry, ui.VAT_PT_weightarmature, ui.VAT_PT_rigifyretarget, ops.VAT_OT_armaturerename_blender, ops.VAT_OT_armaturerename_source, ops.VAT_OT_constraintsymmetry_create, ops.VAT_OT_constraintsymmetry_delete, ops.VAT_OT_constraintsymmetry_apply, ops.VAT_OT_weightarmature_create, ops.VAT_OT_weightarmature_delete, ops.VAT_OT_rigifyretarget_create, ops.VAT_OT_rigifyretarget_delete, ops.VAT_OT_rigifyretarget_link]
+classes = [props.VAT_properties, props.VAT_info, preferences.VAT_preferences, ui.VAT_PT_mainpanel, ui.VAT_PT_armaturerename, ui.VAT_PT_constraintsymmetry, ui.VAT_PT_weightarmature, ui.VAT_PT_rigifyretarget, ui.VAT_PT_rigifyretargetexport, ui.VAT_PT_rigifyretargetparameters, ops.VAT_OT_armaturerename_blender, ops.VAT_OT_armaturerename_source, ops.VAT_OT_constraintsymmetry_create, ops.VAT_OT_constraintsymmetry_delete, ops.VAT_OT_constraintsymmetry_apply, ops.VAT_OT_weightarmature_create, ops.VAT_OT_weightarmature_delete, ops.VAT_OT_rigifyretarget_create, ops.VAT_OT_rigifyretarget_delete, ops.VAT_OT_rigifyretarget_link, ops.VAT_OT_rigifyretarget_bake_single, ops.VAT_OT_rigifyretarget_bake_all, ops.VAT_OT_rigifyretarget_export_all]
 
 def register():
 
@@ -50,10 +50,11 @@ def unregister():
         bpy.utils.unregister_class(cls)
         
     bpy.app.handlers.load_post.remove(utils.create_armature)
-    bpy.app.handlers.undo_post.append(utils.armatures_reset)
-    bpy.app.handlers.redo_post.append(utils.armatures_reset)
+    bpy.app.handlers.undo_post.remove(utils.armatures_reset)
+    bpy.app.handlers.redo_post.remove(utils.armatures_reset)
         
     del bpy.types.Scene.vatproperties
+    del bpy.types.Scene.vatinfo
 
 if __name__ == "__main__":
     register()
