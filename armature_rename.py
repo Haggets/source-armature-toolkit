@@ -17,6 +17,13 @@ def armature_rename(scheme, armature=None): #Bone prefix/suffix repositioning
             elif index == 1:
                 old = ' R '
                 new = ' R'
+        elif bone.count('l_') or bone.count('r_') or bone.count('_l') or bone.count('_r'):
+            if index == 0:
+                old = 'l_'
+                new = '_l'
+            elif index == 1:
+                old = 'r_'
+                new = '_r'
         else:
             if index == 0:
                 old = 'L_'
@@ -57,6 +64,9 @@ def armature_rename(scheme, armature=None): #Bone prefix/suffix repositioning
                 for bone in utils.arm.helper_bones[cat].values():
                     for index, bone in enumerate(bone):
                         if bone:
+                            #Nick's helper wrist without side suffix
+                            if bone == 's2.wrist':
+                                continue
                             prefix, bone = helper_convert(bone)
                             rename(bone)
 
@@ -77,17 +87,25 @@ def armature_rename(scheme, armature=None): #Bone prefix/suffix repositioning
             
             if utils.arm.helper_bones:
                 for cat in utils.arm.helper_bones.keys():
-                    for bone in utils.arm.helper_bones[cat].values():
-                        for index, bone in enumerate(bone):
-                            if bone:
-                                prefix, bone = helper_convert(bone)
-                                rename(bone)
+                    for container, bone in utils.arm.helper_bones[cat].items():
+                        #Wrist helper bone is removed from weight armature since it serves no purpose
+                        if container.count('wrist_helper') != 1:
+                            for index, bone in enumerate(bone):
+                                if bone:
+                                    #Nick's helper wrist without side suffix
+                                    if bone == 's2.wrist':
+                                        continue
+                                    prefix, bone = helper_convert(bone)
+                                    rename(bone)
+
+            update(1, utils.arm.armature)
+
         #Reverts back to previously used mode
         bpy.ops.object.mode_set(mode=current_mode)
     else:
         single = True
         for cat in utils.arm.symmetrical_bones.keys():
-            for bone in utils.arm.symmetrical_bones[cat].values():
+            for container, bone in utils.arm.symmetrical_bones[cat].items():
                 for index, bone in enumerate(bone):
                     if bone:
                         rename(bone)

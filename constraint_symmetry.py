@@ -176,6 +176,10 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
         elif action == 1:
             print("Rotation constraints not found for:", final_report_rot)
 
+def update_constraint(self, context):
+    vatproperties = bpy.context.scene.vatproperties
+    constraint_update()
+
 def constraint_update(prefix=None, bone=None):
     vatproperties = bpy.context.scene.vatproperties
     armature = utils.arm.armature

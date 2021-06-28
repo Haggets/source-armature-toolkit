@@ -1,5 +1,7 @@
 import bpy
 from . import utils
+from . import advanced_ik
+from . import constraint_symmetry
 
 class VAT_properties(bpy.types.PropertyGroup): #Defines global properties the plugin will use
 
@@ -15,20 +17,23 @@ class VAT_properties(bpy.types.PropertyGroup): #Defines global properties the pl
     def object_poll(self, object):
         return object.type == 'MESH'
         
-    target_armature : bpy.props.PointerProperty(type=bpy.types.Object,
+    target_armature : bpy.props.PointerProperty(
+        type=bpy.types.Object,
         name='Armature',
         description="Armature that will be used to perform operations on",
         poll=armature_poll, 
         update=utils.create_armature
         )
     
-    target_object : bpy.props.PointerProperty(type=bpy.types.Object,
+    target_object : bpy.props.PointerProperty(
+        type=bpy.types.Object,
         name='Object',
         description="Object linked to the armature that will be used for shapekeys",
         poll=object_poll
         )
 
-    custom_scheme_enabled : bpy.props.BoolProperty(name="Enable custom prefix",
+    custom_scheme_enabled : bpy.props.BoolProperty(
+        name="Enable custom prefix",
         description="If to allow usage of custom prefixes that will replace the default Source prefixes",
         default=False
         ) 
@@ -52,19 +57,30 @@ class VAT_properties(bpy.types.PropertyGroup): #Defines global properties the pl
         name="Symmetry Offset",
         description="If disabled, the location of bones will be the opposite of the location of its pair, else its initial locationn ill be unchanged",
         default=False,
-        update=utils.update_constraint
+        update=constraint_symmetry.update_constraint
     )
 
     symmetry_upperarm_rotation_fix : bpy.props.BoolProperty(
         name="Opposite Arm Rotation Fix",
         description="If the opposite arm rotates in the wrong direction, enable this",
         default=False,
-        update=utils.update_constraint
+        update=constraint_symmetry.update_constraint
+    )
+
+    retarget_constraints : bpy.props.BoolProperty(
+        name="Retarget Constraints",
+        description="Used to preview the animation for the armature after baking",
+        default=True,
+        update=advanced_ik.update_retarget_constraints
     )
 
 class VAT_info(bpy.types.PropertyGroup):
 
     #Operator checks for undos and redos
+
+    armature_name : bpy.props.StringProperty(
+        default=''
+    )
 
     scheme : bpy.props.IntProperty(
         default=0
