@@ -172,7 +172,7 @@ class Armature: #Armature base
                     ##Gold Source##
                     elif bone.title().startswith('Bip0') or bone.count('Bone') or bone.count('Dummy'):
                         vatinfo.goldsource = True
-                        self.side = [' L ', ' R ', ' L', ' R']
+                        self.side = [' L ', ' R ', '_L', '_R']
                         helper_bones = []
                         central_bones = []
 
@@ -1674,7 +1674,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                         ethigh.length = length
 
         if type == 'anim':
-            #Fix for legs/arms rotating the wrong way in most characters with the animation armature
+            #Fix for legs/arms bending the wrong way in most characters with the animation armature
             for index, bone in enumerate(arm.symmetrical_bones['arms']['forearm']):
                 if bone:
                     prefix, bone = bone_convert(bone)
@@ -1687,17 +1687,18 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                         if eforearm.head.y <= eupperarm.head.y:
                             eforearm.head.y = eupperarm.head.y + 0.25*unit
 
-            for index, bone in enumerate(arm.symmetrical_bones['legs']['calf']):
-                if bone:
-                    prefix, bone = bone_convert(bone)
-                    ecalf = armature.data.edit_bones[prefix + bone]
+            if not arm.symmetrical_bones['legs'].get('thighlow'):
+                for index, bone in enumerate(arm.symmetrical_bones['legs']['calf']):
+                    if bone:
+                        prefix, bone = bone_convert(bone)
+                        ecalf = armature.data.edit_bones[prefix + bone]
 
-                    if arm.symmetrical_bones['legs']['thigh'] and arm.symmetrical_bones['legs']['thigh'][index]:
-                        prefix, bone = bone_convert(arm.symmetrical_bones['legs']['thigh'][index])
-                        ethigh = armature.data.edit_bones[prefix + bone]
+                        if arm.symmetrical_bones['legs']['thigh'] and arm.symmetrical_bones['legs']['thigh'][index]:
+                            prefix, bone = bone_convert(arm.symmetrical_bones['legs']['thigh'][index])
+                            ethigh = armature.data.edit_bones[prefix + bone]
 
-                        if ecalf.head.y > ethigh.head.y:
-                            ecalf.head.y = ethigh.head.y - 0.25*unit
+                            if ecalf.head.y > ethigh.head.y:
+                                ecalf.head.y = ethigh.head.y - 0.25*unit
         
         ##Weight armature bone tweaks##
         elif type == 'weight':
