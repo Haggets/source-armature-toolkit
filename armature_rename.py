@@ -1,36 +1,30 @@
 import bpy
 from . import utils
-from .utils import helper_convert
+from .utils import bone_convert
 from .utils import update
 
 def armature_rename(scheme, armature=None): #Bone prefix/suffix repositioning
-
     vatinfo = bpy.context.scene.vatinfo
 
-    def rename(bone):
+    def rename(prefix, bone, index):
         bpy.ops.object.mode_set(mode='OBJECT') #Forces object mode to avoid context errors
 
-        if utils.arm.goldsource:
+        if bone.startswith(utils.arm.side[0]) or bone.startswith(utils.arm.side[1]) or bone.endswith(utils.arm.side[2]) or bone.endswith(utils.arm.side[3]):
             if index == 0:
-                old = ' L '
-                new = ' L'
+                old = utils.arm.side[0]
+                new = utils.arm.side[2]
             elif index == 1:
-                old = ' R '
-                new = ' R'
-        elif bone.count('l_') or bone.count('r_') or bone.count('_l') or bone.count('_r'):
-            if index == 0:
-                old = 'l_'
-                new = '_l'
-            elif index == 1:
-                old = 'r_'
-                new = '_r'
+                old = utils.arm.side[1]
+                new = utils.arm.side[3]
         else:
             if index == 0:
-                old = 'L_'
-                new = '_L'
+                old = utils.arm.side[0].casefold()
+                new = utils.arm.side[2].casefold()
             elif index == 1:
-                old = 'R_'
-                new = '_R'
+                old = utils.arm.side[1].casefold()
+                new = utils.arm.side[3].casefold()
+
+        #print(bone, old, new)
 
         #To which scheme
         if scheme == 1: #Source -> Blender
@@ -39,90 +33,82 @@ def armature_rename(scheme, armature=None): #Bone prefix/suffix repositioning
         elif scheme == 0: #Blender -> Source
             armature.pose.bones[prefix + bone].name = prefix + old + bone.replace(new, '')
 
-    #Updates bone list in case it was modified
-    utils.arm.get_bones(False)
-
-    prefix = utils.arm.prefix
-
-    current_mode = bpy.context.object.mode
-
-    single = False
-
-    if not armature:
-        armature = utils.arm.armature
-
+    def convert(single):
+        prefix = vatinfo.prefix
         #Symmetrical
         for cat in utils.arm.symmetrical_bones.keys():
             for bone in utils.arm.symmetrical_bones[cat].values():
                 for index, bone in enumerate(bone):
                     if bone:
-                        rename(bone)
+                        prefix, bone = bone_convert(bone)
+                        rename(prefix, bone, index)
         
-        #Helpers
-        if utils.arm.helper_bones:
-            for cat in utils.arm.helper_bones.keys():
-                for bone in utils.arm.helper_bones[cat].values():
-                    for index, bone in enumerate(bone):
-                        if bone:
-                            #Nick's helper wrist without side suffix
-                            if bone == 's2.wrist':
-                                continue
-                            prefix, bone = helper_convert(bone)
-                            rename(bone)
-
-        #Renames generated armatures to be on par with the original armature
-
-        prefix = utils.arm.prefix
-
-        #Weight armature
-        if vatinfo.weight_armature:
-            armature = utils.arm.weight_armature
-            update(1, armature)
-
-            for cat in utils.arm.symmetrical_bones.keys():
-                for bone in utils.arm.symmetrical_bones[cat].values():
-                    for index, bone in enumerate(bone):
-                        if bone:
-                            rename(bone)
-            
+        if not single:
+            #Helpers
             if utils.arm.helper_bones:
                 for cat in utils.arm.helper_bones.keys():
-                    for container, bone in utils.arm.helper_bones[cat].items():
-                        #Wrist helper bone is removed from weight armature since it serves no purpose
-                        if container.count('wrist_helper') != 1:
-                            for index, bone in enumerate(bone):
-                                if bone:
-                                    #Nick's helper wrist without side suffix
-                                    if bone == 's2.wrist':
-                                        continue
-                                    prefix, bone = helper_convert(bone)
-                                    rename(bone)
+                    for bone in utils.arm.helper_bones[cat].values():
+                        for index, bone in enumerate(bone):
+                            if bone:
+                                #Nick's helper wrist without side suffix
+                                if bone == 'h2.wrist':
+                                    continue
+                                prefix, bone = bone_convert(bone)
+                                if bone.title().startswith(utils.arm.side[0]) or bone.title().startswith(utils.arm.side[1]) or bone.title().endswith(utils.arm.side[2]) or bone.title().endswith(utils.arm.side[3]):
+                                    rename(prefix, bone, index)
 
-            update(1, utils.arm.armature)
+    #Updates bone list in case it was modified
+    utils.arm.get_bones(False)
 
-        #Reverts back to previously used mode
-        bpy.ops.object.mode_set(mode=current_mode)
+    current_mode = bpy.context.object.mode
+    selected_objects = bpy.context.selected_objects
+    active_object = bpy.context.view_layer.objects.active
+
+    if not armature:
+        armature = utils.arm.armature
+        convert(False)
+        if vatinfo.weight_armature:
+            armature = utils.arm.weight_armature
+            convert(False)
+
+        update(1, utils.arm.armature)
     else:
-        single = True
-        for cat in utils.arm.symmetrical_bones.keys():
-            for container, bone in utils.arm.symmetrical_bones[cat].items():
-                for index, bone in enumerate(bone):
-                    if bone:
-                        rename(bone)
+        convert(True)
+    
+    #Reselects all previous objects
+    for object in selected_objects:
+        object.select_set(True)
+    bpy.context.view_layer.objects.active = active_object
+    bpy.context.view_layer.objects.active = armature
 
-    if not single:
+    #Defaults back to object mode to force updates on vertex groups
+    if current_mode != 'OBJECT' and current_mode != 'EDIT' and current_mode != 'POSE':
+        bpy.ops.object.mode_set(mode='OBJECT')
+    else:
+        bpy.ops.object.mode_set(mode=current_mode)
+
+    if not armature:
         utils.arm.get_bones(True)
     else:
         utils.arm.get_bones(False)
 
 def bone_rename(scheme, bone, index):
-    if utils.arm.goldsource:
+    vatinfo = bpy.context.scene.vatinfo
+
+    if vatinfo.goldsource:
         if index == 0:
             old = ' L '
             new = ' L'
         elif index == 1:
             old = ' R '
             new = ' R'
+    elif bone.count('l_') or bone.count('r_') or bone.count('_l') or bone.count('_r'):
+        if index == 0:
+            old = 'l_'
+            new = '_l'
+        elif index == 1:
+            old = 'r_'
+            new = '_r'
     else:
         if index == 0:
             old = 'L_'
@@ -130,7 +116,6 @@ def bone_rename(scheme, bone, index):
         elif index == 1:
             old = 'R_'
             new = '_R'
-
 
     #To which scheme
     if scheme == 1: #Source -> Blender

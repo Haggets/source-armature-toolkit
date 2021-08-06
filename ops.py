@@ -5,8 +5,34 @@ from .weight_armature import weight_armature
 from .advanced_ik import anim_armature
 from .advanced_ik import bake
 from .advanced_ik import export
+from .armature_creation import armature
 from . import utils
-from . import props
+
+class VAT_OT_create_armature(bpy.types.Operator):
+    """Creates armature from scratch"""
+    bl_idname = "vat.create_armature"
+    bl_label = "Create armature from scratch"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        vatinfo = bpy.context.scene.vatinfo
+
+        armature(0)
+        vatinfo.creating_armature = 1
+        
+        return{'FINISHED'}
+
+class VAT_OT_convert_armature(bpy.types.Operator):
+    """Converts armature to be Source like"""
+    bl_idname = 'vat.convert_armature'
+    bl_label = 'Convert Armature'
+    bl_description = 'Converts armature to be like Source armatures (Unconnected with different orientation)'
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    def execute(self, context):
+        pass
+        
+        return{"FINISHED"}
 
 class VAT_OT_armaturerename_blender(bpy.types.Operator): #Converts armature scheme to become Blender friendly
     """Converts to Blender friendly scheme to allow for symmetry"""
@@ -18,13 +44,19 @@ class VAT_OT_armaturerename_blender(bpy.types.Operator): #Converts armature sche
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         vatinfo = bpy.context.scene.vatinfo
-        if vatproperties.target_armature:
-            return (not utils.arm.sfm and vatinfo.scheme != -1 and vatinfo.scheme == 0)
+
+        if vatproperties.target_armature and vatinfo.scheme == 0:
+            return (not vatinfo.sfm and not vatinfo.sbox)
     
     def execute(self, context):
+        vatproperties = bpy.context.scene.vatproperties
         vatinfo = bpy.context.scene.vatinfo
-        armature_rename(1)
-        vatinfo.scheme = 1
+
+        if not vatproperties.target_armature.hide_get() and not vatproperties.target_armature.visible_get():
+            self.report({'ERROR'}, "Selected armature is in an excluded collection, place it in an active collection.")
+        else:
+            armature_rename(1)
+            vatinfo.scheme = 1
         
         return{'FINISHED'}
     
@@ -38,13 +70,19 @@ class VAT_OT_armaturerename_source(bpy.types.Operator): #Converts armature schem
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         vatinfo = bpy.context.scene.vatinfo
-        if vatproperties.target_armature:
-            return (not utils.arm.sfm and vatinfo.scheme != -1 and vatinfo.scheme == 1)
+
+        if vatproperties.target_armature and vatinfo.scheme == 1:
+            return (not vatinfo.sfm and not vatinfo.sbox)
     
     def execute(self, context):
+        vatproperties = bpy.context.scene.vatproperties
         vatinfo = bpy.context.scene.vatinfo
-        armature_rename(0)
-        vatinfo.scheme = 0
+
+        if not vatproperties.target_armature.hide_get() and not vatproperties.target_armature.visible_get():
+            self.report({'ERROR'}, "Selected armature is in an excluded collection, place it in an active collection.")
+        else:
+            armature_rename(0)
+            vatinfo.scheme = 0
 
         return{'FINISHED'}
     
@@ -58,17 +96,18 @@ class VAT_OT_constraintsymmetry_create(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         vatinfo = bpy.context.scene.vatinfo
-        if vatproperties.target_armature:
-            if vatinfo.scheme != -1:
-                return (not vatinfo.symmetry)
+
+        if vatproperties.target_armature and vatinfo.scheme != -1:
+            return (not vatinfo.symmetry)
 
     def execute(self, context):
         vatproperties = bpy.context.scene.vatproperties
         vatinfo = bpy.context.scene.vatinfo
+
         constraint_symmetry(0, vatproperties.affected_side)
-        if vatproperties.affected_side == 'OP1':
+        if vatproperties.affected_side == 'LTR':
             vatinfo.symmetry = 1
-        elif vatproperties.affected_side == 'OP2':
+        elif vatproperties.affected_side == 'RTL':
             vatinfo.symmetry = 2
         
         return{'FINISHED'}
@@ -83,16 +122,17 @@ class VAT_OT_constraintsymmetry_delete(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         vatinfo = bpy.context.scene.vatinfo
-        if vatproperties.target_armature:
-            if vatinfo.scheme != -1:
-                if vatproperties.affected_side == 'OP1':
-                    return (vatinfo.symmetry == 1)
-                elif vatproperties.affected_side == 'OP2':
-                    return (vatinfo.symmetry == 2)
+
+        if vatproperties.target_armature and vatinfo.scheme != -1:
+            if vatproperties.affected_side == 'LTR':
+                return (vatinfo.symmetry == 1)
+            elif vatproperties.affected_side == 'RTL':
+                return (vatinfo.symmetry == 2)
 
     def execute(self, context):
         vatproperties = bpy.context.scene.vatproperties
         vatinfo = bpy.context.scene.vatinfo
+
         constraint_symmetry(1, vatproperties.affected_side)
         vatinfo.symmetry = 0
         
@@ -107,12 +147,15 @@ class VAT_OT_constraintsymmetry_apply(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        if vatproperties.target_armature:
+        vatinfo = bpy.context.scene.vatinfo
+
+        if vatproperties.target_armature and vatinfo.scheme != -1:
             return(context.object.mode == 'POSE')
 
     def execute(self, context):
         vatproperties = bpy.context.scene.vatproperties
         vatinfo = bpy.context.scene.vatinfo
+
         bpy.ops.pose.armature_apply(selected=False)
         constraint_symmetry(1, vatproperties.affected_side)
         vatinfo.symmetry = 0
@@ -129,13 +172,19 @@ class VAT_OT_weightarmature_create(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         vatinfo = bpy.context.scene.vatinfo
-        if vatproperties.target_armature:
-            return (not vatinfo.weight_armature and vatinfo.scheme != -1)
+
+        if vatproperties.target_armature and vatinfo.scheme != -1:
+            return (not vatinfo.weight_armature)
 
     def execute(self, context):
+        vatproperties = bpy.context.scene.vatproperties
         vatinfo = bpy.context.scene.vatinfo
-        weight_armature(0)
-        vatinfo.weight_armature = True
+
+        if not vatproperties.target_armature.hide_get() and not vatproperties.target_armature.visible_get():
+            self.report({'ERROR'}, "Selected armature is in an excluded collection, place it in an active collection.")
+        else:
+            weight_armature(0)
+            vatinfo.weight_armature = True
 
         return{'FINISHED'}
 
@@ -149,11 +198,13 @@ class VAT_OT_weightarmature_delete(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         vatinfo = bpy.context.scene.vatinfo
-        if vatproperties.target_armature:
-            return (vatinfo.weight_armature and vatinfo.scheme != -1)
+
+        if vatproperties.target_armature and vatinfo.scheme != -1:
+            return (vatinfo.weight_armature)
 
     def execute(self, context):
         vatinfo = bpy.context.scene.vatinfo
+
         weight_armature(1)
         vatinfo.weight_armature = False
 
@@ -169,13 +220,20 @@ class VAT_OT_rigifyretarget_create(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         vatinfo = bpy.context.scene.vatinfo
-        if vatproperties.target_armature:
-            return (not vatinfo.animation_armature and vatinfo.scheme != -1)
+
+        if vatproperties.target_armature and vatinfo.scheme != -1:
+            return (not vatinfo.animation_armature)
 
     def execute(self, context):
+        vatproperties = bpy.context.scene.vatproperties
         vatinfo = bpy.context.scene.vatinfo
-        anim_armature(0)
-        vatinfo.animation_armature = True
+
+        if not vatproperties.target_armature.hide_get() and not vatproperties.target_armature.visible_get():
+            self.report({'ERROR'}, "Selected armature is in an excluded collection, place it in an active collection.")
+        else:
+            anim_armature(0)
+            vatinfo.animation_armature = True
+            vatinfo.animation_armature_setup = True
 
         return{'FINISHED'}
 
@@ -189,13 +247,37 @@ class VAT_OT_rigifyretarget_delete(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         vatinfo = bpy.context.scene.vatinfo
-        if vatproperties.target_armature:
-            return (vatinfo.animation_armature and vatinfo.scheme != -1)
+
+        if vatproperties.target_armature and vatinfo.scheme != -1:
+            return (vatinfo.animation_armature)
 
     def execute(self, context):
         vatinfo = bpy.context.scene.vatinfo
+
         anim_armature(1)
         vatinfo.animation_armature = False
+        vatinfo.animation_armature_setup = False
+
+        return{'FINISHED'}
+
+class VAT_OT_rigifyretarget_generate(bpy.types.Operator):
+    """Generates Rigify armature"""
+    bl_idname = "vat.rigifyretarget_generate"
+    bl_label = "Animation Ready Armature Generation"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        vatproperties = bpy.context.scene.vatproperties
+        vatinfo = bpy.context.scene.vatinfo
+
+        if vatproperties.target_armature and vatinfo.scheme != -1:
+            return (context.object.name == vatproperties.target_armature.name + '.anim_setup')
+
+    def execute(self, context):
+        bpy.ops.pose.rigify_generate()
+        armature = bpy.data.objects[utils.arm.armature.name + '.anim']
+        armature.scale = utils.arm.armature.scale
 
         return{'FINISHED'}
 
@@ -208,16 +290,20 @@ class VAT_OT_rigifyretarget_link(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
-        if vatproperties.target_armature:
-            return (context.object.name == "rig")
+        vatinfo = bpy.context.scene.vatinfo
+
+        if vatproperties.target_armature and vatinfo.scheme != -1:
+            return (context.object.name == vatproperties.target_armature.name + '.anim')
 
     def execute(self, context):
+        vatinfo = bpy.context.scene.vatinfo
         anim_armature(2)
+        vatinfo.animation_armature_setup = False
 
         return{'FINISHED'}
 
 class VAT_OT_rigifyretarget_bake_single(bpy.types.Operator):
-    """Bakes selected NLA strip from the animation armature onto the original armature"""
+    """Bakes selected NLA strip/current action from the animation armature onto the original armature"""
     bl_idname = "vat.rigifyretarget_bake_single"
     bl_label = "Single Animation Bake"
     bl_options = {'REGISTER', 'UNDO'}
@@ -226,12 +312,19 @@ class VAT_OT_rigifyretarget_bake_single(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         vatinfo = bpy.context.scene.vatinfo
-        if vatproperties.target_armature and vatinfo.animation_armature and not vatinfo.animation_armature_setup:
-            if utils.arm.animation_armature.animation_data.nla_tracks.active:
-                return (vatinfo.scheme != -1 and utils.arm.animation_armature.animation_data.nla_tracks.active.strips and utils.arm.animation_armature.animation_data.nla_tracks.active.strips[0].select and vatproperties.retarget_constraints)
+
+        if vatproperties.target_armature and vatinfo.scheme != -1:
+            if vatinfo.animation_armature and not vatinfo.animation_armature_setup and vatproperties.retarget_constraints:
+                if utils.arm.animation_armature.animation_data:
+                    return (utils.arm.animation_armature.animation_data.action or utils.arm.animation_armature.animation_data.nla_tracks and utils.arm.animation_armature.animation_data.nla_tracks[0].strips)
 
     def execute(self, context):
-        bake(0)
+        vatproperties = bpy.context.scene.vatproperties
+
+        if not vatproperties.target_armature.hide_get() and not vatproperties.target_armature.visible_get() and not utils.arm.animation_armature.hide_get() and not utils.arm.animation_armature.visible_get():
+            self.report({'ERROR'}, "Selected armature is in an excluded collection, enable said collection.")
+        else:
+            bake(0)
 
         return{'FINISHED'}
 
@@ -245,11 +338,19 @@ class VAT_OT_rigifyretarget_bake_all(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         vatinfo = bpy.context.scene.vatinfo
-        if vatproperties.target_armature and vatinfo.animation_armature and not vatinfo.animation_armature_setup:
-            return (vatinfo.scheme != -1 and utils.arm.animation_armature.animation_data.nla_tracks and vatproperties.retarget_constraints)
+
+        if vatproperties.target_armature and vatinfo.scheme != -1:
+            if vatinfo.animation_armature and not vatinfo.animation_armature_setup and vatproperties.retarget_constraints:
+                if utils.arm.animation_armature.animation_data:
+                    return (utils.arm.animation_armature.animation_data.nla_tracks and utils.arm.animation_armature.animation_data.nla_tracks[0].strips)
 
     def execute(self, context):
-        bake(1)
+        vatproperties = bpy.context.scene.vatproperties
+
+        if not vatproperties.target_armature.hide_get() and not vatproperties.target_armature.visible_get() and not utils.arm.animation_armature.hide_get() and not utils.arm.animation_armature.visible_get():
+            self.report({'ERROR'}, "Selected armature is in an excluded collection, enable said collection.")
+        else:
+            bake(1)
 
         return{'FINISHED'}
 
@@ -263,8 +364,11 @@ class VAT_OT_rigifyretarget_export_all(bpy.types.Operator):
     def poll(cls, context):
         vatproperties = bpy.context.scene.vatproperties
         vatinfo = bpy.context.scene.vatinfo
-        if vatproperties.target_armature and vatinfo.animation_armature and not vatinfo.animation_armature_setup:
-            return (vatinfo.scheme != -1 and utils.arm.animation_armature.animation_data.nla_tracks)
+        
+        if vatproperties.target_armature and vatinfo.scheme != -1 and not vatinfo.sbox:
+            if vatinfo.animation_armature and not vatinfo.animation_armature_setup and utils.arm.animation_armature and not vatproperties.retarget_constraints:
+                if utils.arm.animation_armature.animation_data:
+                    return (utils.arm.animation_armature.animation_data.nla_tracks)
 
     def execute(self, context):
         export()

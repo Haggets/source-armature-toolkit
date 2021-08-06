@@ -1,11 +1,11 @@
 import bpy
-import math 
+from math import radians 
 from . import utils
 from .utils import Prefixes
 from .utils import update
 from .utils import generate_armature
 from .utils import generate_shapekey_dict
-from .utils import helper_convert
+from .utils import bone_convert
 from .armature_rename import armature_rename
 from .armature_rename import bone_rename
 
@@ -19,15 +19,12 @@ def anim_armature(action):
         #Armature creation
         generate_armature('anim', action)
 
-        if utils.arm.central_bones['pelvis']:
-            armature = utils.arm.armature
-            prefix = utils.arm.prefix
-            ppelvis = armature.pose.bones[prefix + utils.arm.central_bones['pelvis'][0]]
-            #Equivalent to 1 meter relative to the pelvis location in order to maintain consistency between different scales
-            global unit
-            
-            unit = ppelvis.head.z*1.02746481 #*0.1027464784
-            #The scale used in the operations below are relative to the standard size of a Source model correctly matching the scene scale in Blender (Models scaled down by 0.0254)
+        unit = vatinfo.unit
+
+        utils.arm.shapekeys = {}
+        utils.arm.facial_bones = []
+
+        material_eyes = False
 
         #Creation
         if action == 0:
@@ -35,34 +32,14 @@ def anim_armature(action):
 
             #Selects animation armature
             update(1, armature)
-
-            '''#Creates driver so the original armature mimics the animation armature's scale
-            driver = utils.arm.armature.driver_add('scale')
-
-            for index, driver in enumerate(driver):
-                #Parameters and target
-                variable = driver.driver.variables.new() #Creates new variable onto the shapekey
-                variable.name = "scale"
-                driver.driver.expression = variable.name #Changes expression to created variable's name
-                variable.type = 'TRANSFORMS' #Changes type of variable to transform
-
-                target = variable.targets[0]
-                target.id = armature #Links variable to animation armature
-                target.transform_space = 'LOCAL_SPACE'
-                if index == 0:
-                    target.transform_type = 'SCALE_X'
-                elif index == 1:
-                    target.transform_type = 'SCALE_Y'
-                elif index == 2:
-                    target.transform_type = 'SCALE_Z'''
                 
             #Hides all but the first layer
             for i in [1,2,3,5,4,6,7]:
                 armature.data.layers[i] = False
 
             #Rigify portion
-            prefix = utils.arm.prefix
-                    
+            prefix = vatinfo.prefix
+
             #Checks if there are shapekeys, if so, create driver bones for them
             if vatproperties.target_object:
                 try:
@@ -81,8 +58,6 @@ def anim_armature(action):
                     vatproperties.target_object.data = object_data
 
                     utils.arm.shapekeys = generate_shapekey_dict(utils.arm.shapekeys, shapekeys_raw)
-
-                    head = prefix + utils.arm.central_bones['head'][0]
                     
                     #Generates widgets for easier representation of every driver bone
                     create_widgets()
@@ -98,206 +73,335 @@ def anim_armature(action):
                     middle_lip = False
                     chin = False
 
-                    if utils.arm.central_bones['pelvis']:
-                        ppelvis = armature.pose.bones[prefix + utils.arm.central_bones['pelvis'][0]]
-                        for cat in utils.arm.shapekeys.keys():
-                            for container, shapekey in utils.arm.shapekeys[cat].items():
-                                if cat == 'eyebrows':
-                                    if container:
-                                        if not eyebrows: 
-                                            eyebrows = True
-                                            #Inner, outer and full eyebrows
-                                            for bone in ['Eyebrow_L', 'Eyebrow_R', 'Inner_Eyebrow_L', 'Inner_Eyebrow_R', 'Outer_Eyebrow_L', 'Outer_Eyebrow_R']:
+                    for cat in utils.arm.shapekeys.keys():
+                        for container, shapekey in utils.arm.shapekeys[cat].items():
+                            if cat == 'eyebrows':
+                                if container:
+                                    if not eyebrows: 
+                                        eyebrows = True
+                                        #Inner, outer and full eyebrows
+                                        for bone in ['Eyebrow_L', 'Eyebrow_R', 'Inner_Eyebrow_L', 'Inner_Eyebrow_R', 'Outer_Eyebrow_L', 'Outer_Eyebrow_R']:
+                                            utils.arm.facial_bones.append(bone)
+
+                                            ebone = armature.data.edit_bones.new(bone)
+                                            ebone.use_deform = False
+
+                                            if bone == 'Eyebrow_L':
+                                                ebone.head.xyz = 1.18783*unit, -4.17032*unit, 68.5886*unit
+                                            elif bone == 'Eyebrow_R':
+                                                ebone.head.xyz = -1.18783*unit, -4.17032*unit, 68.5886*unit
+                                            elif bone == 'Inner_Eyebrow_L':
+                                                ebone.head.xyz = 0.574764*unit, -4.17032*unit, 68.3012*unit
+                                            elif bone == 'Inner_Eyebrow_R':
+                                                ebone.head.xyz = -0.574764*unit, -4.17032*unit, 68.3012*unit
+                                            elif bone == 'Outer_Eyebrow_L':
+                                                ebone.head.xyz = 1.82008*unit, -4.17032*unit, 68.3012*unit
+                                            elif bone == 'Outer_Eyebrow_R':
+                                                ebone.head.xyz = -1.82008*unit, -4.17032*unit, 68.3012*unit
+
+                                            ebone.tail.xyz = ebone.head.x, ebone.head.y + 0.5*unit, ebone.head.z
+
+                            elif cat == 'eyes':
+                                if container:
+                                    if not eyes:
+                                        eyes = True
+                                        #Upper and lower eyelids
+                                        for bone in ['UpperEye_L', 'UpperEye_R', 'LowerEye_L', 'LowerEye_R']:
+                                            utils.arm.facial_bones.append(bone)
+
+                                            ebone = armature.data.edit_bones.new(bone)
+                                            ebone.use_deform = False
+                                        
+                                            if bone == 'UpperEye_L':
+                                                ebone.head.xyz = 1.18783*unit, -3.53386*unit, 68.0906*unit
+                                            elif bone == 'UpperEye_R':
+                                                ebone.head.xyz = -1.18783*unit, -3.53386*unit, 68.0906*unit
+                                            elif bone == 'LowerEye_L':
+                                                ebone.head.xyz = 1.18783*unit, -3.53386*unit, 67.5157*unit
+                                            elif bone == 'LowerEye_R':
+                                                ebone.head.xyz = -1.18783*unit, -3.53386*unit, 67.5157*unit
+                                                
+                                            ebone.tail.xyz = ebone.head.x, ebone.head.y + 0.5*unit, ebone.head.z
+
+                            elif cat == 'cheek':
+                                if container:
+                                    if not cheek:
+                                        cheek = True
+                                        #Cheeks for puffing and squinting
+                                        for bone in ['Cheek_L', 'Cheek_R']:
+                                            utils.arm.facial_bones.append(bone)
+
+                                            ebone = armature.data.edit_bones.new(bone)
+                                            ebone.use_deform = False
+
+                                            if bone == 'Cheek_L':
+                                                ebone.head.xyz = 1.91587*unit, -3.25701*unit, 65.6189*unit
+                                                ebone.tail.xyz = 1.76452*unit, -2.78046*unit, ebone.head.z
+                                            elif bone == 'Cheek_R':
+                                                ebone.head.xyz = -1.91587*unit, -3.25701*unit, 65.6189*unit
+                                                ebone.tail.xyz = -1.76452*unit, -2.78046*unit, ebone.head.z
+
+                                            ebone.length = 0.5*unit
+                                        
+                            elif cat == 'nose':
+                                if container:
+                                    if not nose:
+                                        nose = True
+                                        #Nostrils
+                                        for bone in ['Nostril_L', 'Nostril_R']:
+                                            utils.arm.facial_bones.append(bone)
+
+                                            ebone = armature.data.edit_bones.new(bone)
+                                            ebone.use_deform = False
+
+                                            if bone == 'Nostril_L':
+                                                ebone.head.xyz = 0.766339*unit, -3.92756*unit, 65.6*unit
+                                            elif bone == 'Nostril_R':
+                                                ebone.head.xyz = -0.766339*unit, -3.92756*unit, 65.6*unit
+
+                                            ebone.tail.xyz = ebone.head.x, ebone.head.y + 0.5*unit, ebone.head.z
+
+
+                            if cat == 'mouth':
+                                if container:
+                                    if not mouth:
+                                        #Mouth corners
+                                        if container == 'AU12' or container == 'AU15' or container == 'AU24' or container == 'AU18Z' or container == 'AU22Z':
+                                            mouth = True
+                                            for bone in ['MouthCorner_L', 'MouthCorner_R']:
                                                 utils.arm.facial_bones.append(bone)
 
                                                 ebone = armature.data.edit_bones.new(bone)
                                                 ebone.use_deform = False
 
-                                                if bone == 'Eyebrow_L':
-                                                    ebone.head.xyz = 0.030171*unit, -0.105926*unit, 1.74215*unit
-                                                elif bone == 'Eyebrow_R':
-                                                    ebone.head.xyz = -0.030171*unit, -0.105926*unit, 1.74215*unit
-                                                elif bone == 'Inner_Eyebrow_L':
-                                                    ebone.head.xyz = 0.014599*unit, -0.105926*unit, 1.73485*unit
-                                                elif bone == 'Inner_Eyebrow_R':
-                                                    ebone.head.xyz = -0.014599*unit, -0.105926*unit, 1.73485*unit
-                                                elif bone == 'Outer_Eyebrow_L':
-                                                    ebone.head.xyz = 0.04623*unit, -0.105926*unit, 1.73485*unit
-                                                elif bone == 'Outer_Eyebrow_R':
-                                                    ebone.head.xyz = -0.04623*unit, -0.105926*unit, 1.73485*unit
+                                                if bone == 'MouthCorner_L':
+                                                    ebone.head.xyz = 1.20563*unit, -3.80961*unit, 64.8528*unit
+                                                    ebone.tail.xyz = 0.976012*unit, -3.36545*unit, ebone.head.z
+                                                elif bone == 'MouthCorner_R':
+                                                    ebone.head.xyz = -1.20563*unit, -3.80961*unit, 64.8528*unit
+                                                    ebone.tail.xyz = -0.976012*unit, -3.36545*unit, ebone.head.z
+                                                
+                                                ebone.length = 0.5*unit
 
-                                                ebone.tail.xyz = ebone.head.x, ebone.head.y+0.0127*unit, ebone.head.z
-
-                                elif cat == 'eyes':
-                                    if container:
-                                        if not eyes:
-                                            eyes = True
-                                            #Upper and lower eyelids
-                                            for bone in ['UpperEye_L', 'UpperEye_R', 'LowerEye_L', 'LowerEye_R']:
-                                                utils.arm.facial_bones.append(bone)
-
-                                                ebone = armature.data.edit_bones.new(bone)
-                                                ebone.use_deform = False
-                                            
-                                                if bone == 'UpperEye_L':
-                                                    ebone.head.xyz = 0.030171*unit, -0.08976*unit, 1.7295*unit
-                                                elif bone == 'UpperEye_R':
-                                                    ebone.head.xyz = -0.030171*unit, -0.08976*unit, 1.7295*unit
-                                                elif bone == 'LowerEye_L':
-                                                    ebone.head.xyz = 0.030171*unit, -0.08976*unit, 1.7149*unit
-                                                elif bone == 'LowerEye_R':
-                                                    ebone.head.xyz = -0.030171*unit, -0.08976*unit, 1.7149*unit
-                                                    
-                                                ebone.tail.xyz = ebone.head.x, ebone.head.y+0.0127*unit, ebone.head.z
-
-                                elif cat == 'cheek':
-                                    if container:
-                                        if not cheek:
-                                            cheek = True
-                                            #Cheeks for puffing and squinting
-                                            for bone in ['Cheek_L', 'Cheek_R']:
+                                    elif not upper_lip:
+                                        #Upper lip
+                                        if container == 'AU10':
+                                            upper_lip = True
+                                            for bone in ['UpperLip_L', 'UpperLip_R']:
                                                 utils.arm.facial_bones.append(bone)
 
                                                 ebone = armature.data.edit_bones.new(bone)
                                                 ebone.use_deform = False
 
-                                                if bone == 'Cheek_L':
-                                                    ebone.head.xyz = 0.048663*unit, -0.082728*unit, 1.66672*unit
-                                                    ebone.tail.xyz = 0.044819*unit, -0.070624*unit, ebone.head.z
-                                                elif bone == 'Cheek_R':
-                                                    ebone.head.xyz = -0.048663*unit, -0.082728*unit, 1.66672*unit
-                                                    ebone.tail.xyz = -0.044819*unit, -0.070624*unit, ebone.head.z
+                                                if bone == 'UpperLip_L':
+                                                    ebone.head.xyz = 0.459803*unit, -4.21496*unit, 65.1402*unit
+                                                elif bone == 'UpperLip_R':
+                                                    ebone.head.xyz = -0.459803*unit, -4.21496*unit, 65.1402*unit
 
-                                                ebone.length = 0.0127*unit
-                                            
-                                elif cat == 'nose':
-                                    if container:
-                                        if not nose:
-                                            nose = True
-                                            #Nostrils
-                                            for bone in ['Nostril_L', 'Nostril_R']:
+                                                ebone.tail.xyz = ebone.head.x, ebone.head.y + 0.5*unit, ebone.head.z
+
+
+                                    elif not lower_lip:
+                                        #Lower lip
+                                        if container == 'AU17D' or container == 'AU16' or container == 'AU32':
+                                            lower_lip = True
+                                            for bone in ['LowerLip_L', 'LowerLip_R']:
                                                 utils.arm.facial_bones.append(bone)
 
                                                 ebone = armature.data.edit_bones.new(bone)
                                                 ebone.use_deform = False
 
-                                                if bone == 'Nostril_L':
-                                                    ebone.head.xyz = 0.019465*unit, -0.09976*unit, 1.66624*unit
-                                                elif bone == 'Nostril_R':
-                                                    ebone.head.xyz = -0.019465*unit, -0.09976*unit, 1.66624*unit
+                                                if bone == 'LowerLip_L':
+                                                    ebone.head.xyz = 0.459803*unit, -4.13831*unit, 64.5654*unit
+                                                elif bone == 'LowerLip_R':
+                                                    ebone.head.xyz = -0.459803*unit, -4.13831*unit, 64.5654*unit
 
-                                                ebone.tail.xyz = ebone.head.x, ebone.head.y+0.0127*unit, ebone.head.z
-
-
-                                if cat == 'mouth':
-                                    if container:
-                                        if not mouth:
-                                            #Mouth corners
-                                            if container == 'AU12' or container == 'AU15' or container == 'AU24' or container == 'AU18Z' or container == 'AU22Z':
-                                                mouth = True
-                                                for bone in ['MouthCorner_L', 'MouthCorner_R']:
-                                                    utils.arm.facial_bones.append(bone)
-
-                                                    ebone = armature.data.edit_bones.new(bone)
-                                                    ebone.use_deform = False
-
-                                                    if bone == 'MouthCorner_L':
-                                                        ebone.head.xyz = 0.030623*unit, -0.096764*unit, 1.64726*unit
-                                                        ebone.tail.xyz = 0.024791*unit, -0.085483*unit, 1.64726*unit
-                                                    elif bone == 'MouthCorner_R':
-                                                        ebone.head.xyz = -0.030623*unit, -0.096764*unit, 1.64726*unit
-                                                        ebone.tail.xyz = -0.024791*unit, -0.085483*unit, 1.64726*unit
-                                                    
-                                                    ebone.length = 0.0127*unit
-
-                                        elif not upper_lip:
-                                            #Upper lip
-                                            if container == 'AU10':
-                                                upper_lip = True
-                                                for bone in ['UpperLip_L', 'UpperLip_R']:
-                                                    utils.arm.facial_bones.append(bone)
-
-                                                    ebone = armature.data.edit_bones.new(bone)
-                                                    ebone.use_deform = False
-
-                                                    if bone == 'UpperLip_L':
-                                                        ebone.head.xyz = 0.011679*unit, -0.10706*unit, 1.65456*unit
-                                                    elif bone == 'UpperLip_R':
-                                                        ebone.head.xyz = -0.011679*unit, -0.10706*unit, 1.65456*unit
-
-                                                    ebone.tail.xyz = ebone.head.x, ebone.head.y+0.0127*unit, ebone.head.z
+                                                ebone.tail.xyz = ebone.head.x, ebone.head.y + 0.5*unit, ebone.head.z
 
 
-                                        elif not lower_lip:
-                                            #Lower lip
-                                            if container == 'AU17D' or container == 'AU16' or container == 'AU32':
-                                                lower_lip = True
-                                                for bone in ['LowerLip_L', 'LowerLip_R']:
-                                                    utils.arm.facial_bones.append(bone)
-
-                                                    ebone = armature.data.edit_bones.new(bone)
-                                                    ebone.use_deform = False
-
-                                                    if bone == 'LowerLip_L':
-                                                        ebone.head.xyz = 0.011679*unit, -0.105113*unit, 1.63996*unit
-                                                    elif bone == 'LowerLip_R':
-                                                        ebone.head.xyz = -0.011679*unit, -0.105113*unit, 1.63996*unit
-
-                                                    ebone.tail.xyz = ebone.head.x, ebone.head.y+0.0127*unit, ebone.head.z
-
-
-                                        elif not middle_lip:
-                                            #Middle lip
-                                            if container == 'AD96L' or container == 'AD96R':
-                                                middle_lip = True
-                                                for bone in ['MiddleLip']:
-                                                    utils.arm.facial_bones.append(bone)
-
-                                                    ebone = armature.data.edit_bones.new(bone)
-                                                    ebone.use_deform = False
-
-                                                    ebone.head.xyz = 0, -0.111926*unit, 1.64726*unit
-                                                    ebone.tail.xyz = ebone.head.x, ebone.head.y+0.0127*unit, ebone.head.z
-
-                                if cat == 'chin':
-                                    if container:
-                                        if not chin:
-                                            chin = True
-                                            for bone in ['Chin']:
+                                    elif not middle_lip:
+                                        #Middle lip
+                                        if container == 'AD96L' or container == 'AD96R':
+                                            middle_lip = True
+                                            for bone in ['MiddleLip']:
                                                 utils.arm.facial_bones.append(bone)
 
                                                 ebone = armature.data.edit_bones.new(bone)
                                                 ebone.use_deform = False
-                                            
-                                                ebone.head.xyz = 0, -0.109493*unit, 1.59616*unit
-                                                ebone.tail.xyz = ebone.head.x, -0.097449*unit, 1.60015*unit
 
-                                                ebone.length = 0.0127*unit
+                                                ebone.head.xyz = 0, -4.40654*unit, 64.8528*unit
+                                                ebone.tail.xyz = ebone.head.x, ebone.head.y + 0.5*unit, ebone.head.z
 
-                eyes = []
-                utils.arm.eyes_material = []
+                            if cat == 'chin':
+                                if container:
+                                    if not chin:
+                                        chin = True
+                                        for bone in ['Chin']:
+                                            utils.arm.facial_bones.append(bone)
 
+                                            ebone = armature.data.edit_bones.new(bone)
+                                            ebone.use_deform = False
+                                        
+                                            ebone.head.xyz = 0, -4.31075*unit, 62.8409*unit
+                                            ebone.tail.xyz = ebone.head.x, -3.83612*unit, 62.9982*unit
+
+                                            ebone.length = 0.5*unit
+
+                #Material eyes bone setup
                 for material in vatproperties.target_object.data.materials:
-                    if material.name.casefold().count('eyeball_l'):
-                        eyes.append('EyeLeft')
-                        utils.arm.eyes_material.append(material)
-                    elif material.name.casefold().count('eyeball_r'):
-                        eyes.append('EyeRight')
-                        utils.arm.eyes_material.append(material)
-                    
-                if eyes:
-                    for bone in eyes:
-                        utils.arm.facial_bones.append(bone)
+                    if material.name.title().count('Eyeball'):
+                        material_eyes = True
+                        name = material.name
 
-                        ebone = armature.data.edit_bones.new(bone)
-                        ebone.use_deform = False
+                        edriver = armature.data.edit_bones.new('driver_' + name)
+                        edriver.use_deform = False
+                        
+                        if name.title().count('L_') or name.title().count('_L'):
+                            edriver.head.xyz = 1.18783*unit, -15*unit, 67.8032*unit
+                        elif name.title().count('R_') or name.title().count('_R'):
+                            edriver.head.xyz = -1.18783*unit, -15*unit, 67.8032*unit
 
-                        if bone == 'EyeLeft':
-                            ebone.head.xyz = 0.030171*unit, -0.16976*unit, 1.7222*unit
-                        elif bone == 'EyeRight':
-                            ebone.head.xyz = -0.030171*unit, -0.16976*unit, 1.7222*unit
+                        edriver.tail.xyz = edriver.head.x, edriver.head.y+0.5*unit, edriver.head.z
 
-                        ebone.tail.xyz = ebone.head.x, ebone.head.y+0.0127*unit, ebone.head.z
+                        if utils.arm.central_bones['head']:
+                            prefix, bone = bone_convert(utils.arm.central_bones['head'][0])
+                            edriver.parent = armature.data.edit_bones[prefix + bone]
+
+                        edriver.layers[1] = True
+                        edriver.layers[0] = False
+                        edriver.layers[8] = False
+                        edriver.layers[9] = False
+
+                        update(0)
+
+                        pdriver = armature.pose.bones['driver_' + name]
+                        param = pdriver.rigify_parameters
+
+                        #Locks rotation and scale since they aren't meant to be used
+                        pdriver.lock_location = False, True, False
+                        pdriver.lock_rotation_w = True
+                        pdriver.lock_rotation = True, True, True
+                        pdriver.lock_scale = True, True, True
+
+                        pdriver.custom_shape_scale = 3
+                        param.optional_widget_type = 'circle'
+
+                        pdriver.rigify_type = 'basic.raw_copy'
+
+            #Drivers for eyelid bones in S&Box playermodels
+            if vatinfo.sbox:
+                create_widgets(['UpDown'])
+                for container, bone in utils.arm.custom_bones.items():
+                    for bone in bone:
+                        if bone:
+                            if bone.count('lid_upper') or bone.count('lid_lower'):
+                                prefix, bone = bone_convert(bone)
+                                ebone = armature.data.edit_bones[prefix + bone]
+                                edriver = armature.data.edit_bones.new('driver_' + prefix + bone)
+
+                                edriver.head.xyz = ebone.head.x, ebone.head.y - 5*unit, ebone.head.z
+                                if bone.count('lid_upper'):
+                                    edriver.head.z = edriver.head.z + 1*unit
+                                    edriver.tail.xyz = edriver.head.x, edriver.head.y - 5*unit, edriver.head.z
+                                elif bone.count('lid_lower'):
+                                    edriver.head.z = edriver.head.z - 5*unit
+                                    edriver.tail.xyz = edriver.head.x, edriver.head.y - 5*unit, edriver.head.z
+
+                                edriver.length = 5*unit
+
+                                if utils.arm.central_bones['head']:
+                                    prefix2, bone2 = bone_convert(utils.arm.central_bones['head'][0])
+                                    edriver.parent = armature.data.edit_bones[prefix2 + bone2]
+
+                                edriver.layers[0] = True
+                                edriver.layers[9] = False
+
+                                update(0)
+
+                                pbone = armature.pose.bones[prefix + bone]
+                                pdriver = armature.pose.bones['driver_' + prefix + bone]
+                                transform = pbone.constraints.new('TRANSFORM')
+
+                                transform.target = armature
+                                transform.subtarget = pdriver.name
+                                transform.target_space = 'LOCAL'
+                                transform.owner_space = 'LOCAL'
+
+                                transform.from_min_z = -4*unit
+                                transform.from_max_z = 4*unit
+
+                                transform.map_to = 'ROTATION'
+                                transform.to_min_z_rot = radians(-90)
+                                transform.to_max_z_rot = radians(90)
+
+                                limit_loc = pdriver.constraints.new('LIMIT_LOCATION')
+                                limit_loc.owner_space = 'LOCAL'
+                                limit_loc.use_transform_limit = True
+                                limit_loc.use_min_z = True
+                                limit_loc.use_max_z = True
+                                limit_loc.min_z = -4*unit
+                                limit_loc.max_z = 4*unit
+
+                                #Bone should only be able to move on the Z axis
+                                pdriver.lock_location = True, True, False
+                                pdriver.lock_rotation_w = True
+                                pdriver.lock_rotation = True, True, True
+                                pdriver.lock_scale = True, True, True
+
+                                pbone.rigify_type = ''
+                                pdriver.rigify_type = 'basic.raw_copy'
+
+                                pdriver.custom_shape = bpy.data.objects['UpDown']
+                                pdriver.custom_shape_scale = 0.1
+
+            #Eye driver
+            for container, bone in utils.arm.custom_bones.items():
+                for bone in bone:
+                    if bone:
+                        if not material_eyes:
+                            if bone.count('eye'):
+                                if bone.count('eyebrow') or bone.count('eyelid'):
+                                    pass
+                                else:
+                                    prefix, bone = bone_convert(bone)
+                                    ebone = armature.data.edit_bones[prefix + bone]
+                                    edriver = armature.data.edit_bones.new('driver_' + bone)
+                                    
+                                    if vatinfo.sbox:
+                                        edriver.head.xyz = ebone.head.x, -50*unit, ebone.head.z
+                                        edriver.tail.xyz = edriver.head.x, edriver.head.y - 5*unit, edriver.head.z
+                                    else:
+                                        edriver.head.xyz = ebone.head.x, -50*unit, ebone.head.z
+                                        edriver.tail.xyz = edriver.head.x, edriver.head.y - 5*unit, edriver.head.z
+
+                                    edriver.layers[0] = True
+
+                                    if vatinfo.titanfall:
+                                        if utils.arm.central_bones['neck2']:
+                                            prefix2, bone2 = bone_convert(utils.arm.central_bones['neck2'][0])
+                                            ebone.parent = armature.data.edit_bones[prefix2+ bone2]
+                                    else:
+                                        if utils.arm.central_bones['head']:
+                                            prefix2, bone2 = bone_convert(utils.arm.central_bones['head'][0])
+                                            edriver.parent = armature.data.edit_bones[prefix2 + bone2]
+
+                                    update(0)
+
+                                    pbone = armature.pose.bones[prefix + bone]
+                                    pdriver = armature.pose.bones['driver_' + bone]
+                                    param = pdriver.rigify_parameters
+                                    
+                                    #Locks rotation and scale since they aren't meant to be used
+                                    pdriver.lock_location = False, True, False
+                                    pdriver.lock_rotation_w = True
+                                    pdriver.lock_rotation = True, True, True
+                                    pdriver.lock_scale = True, True, True
+
+                                    pdriver.custom_shape_scale = 1
+                                    param.optional_widget_type = 'circle'
+
+                                    pbone.rigify_type = ''
+                                    pdriver.rigify_type = 'basic.raw_copy'
 
             #Checks how many spine bones there are for the spines.basic_spine Rigify parameter (At least 3 are required)
             spines = 0
@@ -312,13 +416,9 @@ def anim_armature(action):
 
             if spines > 2:
                 if utils.arm.central_bones['pelvis']:
-                    if utils.arm.viewmodel:
-                        prefix = Prefixes.other
-                    else:
-                        prefix = utils.arm.prefix
-
-                    ppelvis = armature.pose.bones[prefix + utils.arm.central_bones['pelvis'][0]]
-                    epelvis = armature.data.edit_bones[prefix + utils.arm.central_bones['pelvis'][0]]
+                    prefix, bone = bone_convert(utils.arm.central_bones['pelvis'][0])
+                    ppelvis = armature.pose.bones[prefix + bone]
+                    epelvis = armature.data.edit_bones[prefix + bone]
                     
                     for index, bone in enumerate(rigify_pelvis):
                         ebone = armature.data.edit_bones.new(bone)
@@ -331,52 +431,88 @@ def anim_armature(action):
                         ebone.layers[9] = False
 
                         #New pelvis bone positioning
+                        if vatinfo.sbox:
+                            ebone.tail.yz = ppelvis.head.y-10*unit, ppelvis.head.z+12*unit
+                        else:
+                            ebone.tail.yz = ppelvis.head.y-4*unit, ppelvis.head.z+5*unit
+
                         if index == 0:
-                            ebone.tail.xyz = 0.097327*unit, -0.078756*unit, 1.09493*unit
+                            if vatinfo.sbox:
+                                ebone.tail.x = ppelvis.head.x+10*unit
+                            else:
+                                ebone.tail.x = ppelvis.head.x+3.83177*unit
                         elif index == 1:
-                            ebone.tail.xyz = -0.097327*unit, -0.078756*unit, 1.09493*unit
-                
-            prefix = utils.arm.prefix
-
-            #Creates multiple palm bones for fingers
-            rigify_palm = {'finger1': [], 'finger2': [], 'finger3': [], 'finger4': []}
-
-            #How many finger roots there are (There must be at least 2 for palm bones)
-            fingers = 0
-
-            for container, bone in utils.arm.symmetrical_bones['fingers'].items():
-                if container == 'finger1' or container == 'finger2' or container == 'finger3' or container == 'finger3' or container == 'finger4':
-                    if bone:
-                        fingers += 1
+                            if vatinfo.sbox:
+                                ebone.tail.x = ppelvis.head.x-10*unit
+                            else:
+                                ebone.tail.x = ppelvis.head.x-3.83177*unit
             
-            if fingers > 1:
+            rigify_palm = {}
+
+            if utils.arm.symmetrical_bones['fingers'].get('indexmeta') or utils.arm.symmetrical_bones['fingers'].get('middlemeta') or utils.arm.symmetrical_bones['fingers'].get('ringmeta'):
+                for container, bone in utils.arm.symmetrical_bones['fingers'].items():
+                    if container.count('meta'):
+                        for bone in bone:
+                            if bone:
+                                prefix, bone = bone_convert(bone)
+                                pbone = armature.pose.bones[prefix + bone]
+
+                                if container.count('indexmeta'):
+                                    pbone.rigify_type = 'limbs.super_palm'
+                                else:
+                                    pbone.rigify_type = ''
+
+            elif utils.arm.symmetrical_bones['fingers'].get('fingercarpal'):
+                for bone in utils.arm.symmetrical_bones['fingers']['fingercarpal']:
+                    if bone:
+                        prefix, bone = bone_convert(bone)
+                        pbone = armature.pose.bones[prefix + bone]
+
+                        pbone.rigify_type = 'basic.super_copy'
+                        pbone.rigify_parameters.super_copy_widget_type = 'bone'
+            
+            #Disabled, more trouble than they're worth and rather purposeless anyways, only for S&Box armatures (Since they already have palm bones)
+            '''else:
+                #Creates multiple palm bones for fingers
+                rigify_palm = {'finger1': [], 'finger2': [], 'finger3': [], 'finger4': []}
+
+                #How many finger roots there are (There must be at least 2 for palm bones)
+                fingers = 0
+
                 for container, bone in utils.arm.symmetrical_bones['fingers'].items():
                     if container == 'finger1' or container == 'finger2' or container == 'finger3' or container == 'finger3' or container == 'finger4':
-                        for index, bone in enumerate(bone):
-                            if bone:
-                                if vatinfo.scheme == 0:
-                                    bone2 = bone_rename(1, bone, index)
-                                    palm = 'Palm_' + bone2
-                                else:
-                                    palm = 'Palm_' + bone
-                                efinger = armature.data.edit_bones[prefix + bone]
-                                epalm = armature.data.edit_bones.new(palm)
-                                rigify_palm[container].append(palm)
-                                efinger.layers[5] = True
-                                efinger.layers[0] = False
-                                epalm.layers[5] = True
-                                epalm.layers[0] = False
-                                epalm.layers[8] = False
+                        if bone:
+                            fingers += 1
+                
+                if fingers > 1:
+                    for container, bone in utils.arm.symmetrical_bones['fingers'].items():
+                        if container == 'finger1' or container == 'finger2' or container == 'finger3' or container == 'finger3' or container == 'finger4':
+                            for index, bone in enumerate(bone):
+                                if bone:
+                                    prefix, bone = bone_convert(bone)
+                                    if vatinfo.scheme == 0 and not vatinfo.sbox:
+                                        bone2 = bone_rename(1, bone, index)
+                                        palm = 'Palm_' + bone2
+                                    else:
+                                        palm = 'Palm_' + bone
+                                    efinger = armature.data.edit_bones[prefix + bone]
+                                    epalm = armature.data.edit_bones.new(palm)
+                                    rigify_palm[container].append(palm)
+                                    efinger.layers[5] = True
+                                    efinger.layers[0] = False
+                                    epalm.layers[5] = True
+                                    epalm.layers[0] = False
+                                    epalm.layers[8] = False
 
-                                efinger.parent = epalm
+                                    efinger.parent = epalm
 
-                                if utils.arm.symmetrical_bones['arms']['hand'] and utils.arm.symmetrical_bones['arms']['hand'][index]:
-                                    ehand = armature.data.edit_bones[prefix + utils.arm.symmetrical_bones['arms']['hand'][index]]
-                                    phand = armature.pose.bones[prefix + utils.arm.symmetrical_bones['arms']['hand'][index]]
+                                    if utils.arm.symmetrical_bones['arms']['hand'] and utils.arm.symmetrical_bones['arms']['hand'][index]:
+                                        prefix, bone = bone_convert(utils.arm.symmetrical_bones['arms']['hand'][index])
+                                        ehand = armature.data.edit_bones[prefix + bone]
 
-                                    epalm.parent = ehand
-                                    epalm.tail = efinger.head
-                                    epalm.head.xyz = ehand.head.x, epalm.tail.y, ehand.head.z
+                                        epalm.parent = ehand
+                                        epalm.tail = efinger.head
+                                        epalm.head.xyz = ehand.head.x, epalm.tail.y, ehand.head.z'''
 
             #Creates heels for easier leg tweaking
             rigify_heel = ['Heel_L', 'Heel_R']
@@ -386,12 +522,32 @@ def anim_armature(action):
 
             if utils.arm.symmetrical_bones['legs']['foot']:
                 for index, bone in enumerate(utils.arm.symmetrical_bones['legs']['foot']):
-                    pfoot = armature.pose.bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][index]]
-                    efoot = armature.data.edit_bones[prefix + utils.arm.symmetrical_bones['legs']['foot'][index]]
+                    prefix, bone = bone_convert(utils.arm.symmetrical_bones['legs']['foot'][index])
+                    pfoot = armature.pose.bones[prefix + bone]
+                    efoot = armature.data.edit_bones[prefix + bone]
 
                     ebone = armature.data.edit_bones.new(rigify_heel[index])
-                    ebone.tail.xyz = pfoot.head.x/0.6, pfoot.head.y/0.4, 0
-                    ebone.head.xyz = pfoot.head.x/3, pfoot.head.y/0.4, 0
+                    if index == 0:
+                        if vatinfo.goldsource:
+                            ebone.head.xyz = efoot.head.x - 2*unit, efoot.head.y + 3*unit, 0
+                            ebone.tail.xyz = efoot.head.x + 2*unit, efoot.head.y + 3*unit, 0
+                        elif vatinfo.sbox:
+                            ebone.head.xyz = efoot.head.x - 2*unit, efoot.head.y + 5*unit, 0
+                            ebone.tail.xyz = efoot.head.x + 2*unit, efoot.head.y + 5*unit, 0
+                        else:
+                            ebone.head.xyz = efoot.head.x - 2*unit, efoot.head.y + 4*unit, 0
+                            ebone.tail.xyz = efoot.head.x + 2*unit, efoot.head.y + 4*unit, 0
+                    elif index == 1:
+                        if vatinfo.goldsource:
+                            ebone.head.xyz = efoot.head.x + 2*unit, efoot.head.y + 3*unit, 0
+                            ebone.tail.xyz = efoot.head.x - 2*unit, efoot.head.y + 3*unit, 0
+                        elif vatinfo.sbox:
+                            ebone.head.xyz = efoot.head.x + 2*unit, efoot.head.y + 5*unit, 0
+                            ebone.tail.xyz = efoot.head.x - 2*unit, efoot.head.y + 5*unit, 0
+                        else:
+                            ebone.head.xyz = efoot.head.x + 2*unit, efoot.head.y + 4*unit, 0
+                            ebone.tail.xyz = efoot.head.x - 2*unit, efoot.head.y + 4*unit, 0
+
                     ebone.parent = efoot
 
                     if index == 0:
@@ -427,7 +583,7 @@ def anim_armature(action):
 
             if utils.arm.symmetrical_bones['arms']['forearm']:
                 for index, bone in enumerate(utils.arm.symmetrical_bones['arms']['forearm']):
-                    pforearm = armature.pose.bones[prefix + bone]
+                    prefix, bone = bone_convert(bone)
                     eforearm = armature.data.edit_bones[prefix + bone]
 
                     if not utils.arm.symmetrical_bones['arms']['hand'] or not utils.arm.symmetrical_bones['arms']['hand'][index]:
@@ -443,23 +599,21 @@ def anim_armature(action):
                         ebone.parent = eforearm
                         ebone.use_connect = True
             
-            prefix = Prefixes.other
-
             #Creates camera target if armature is a viewmodel
-            if utils.arm.viewmodel:
+            if vatinfo.viewmodel:
                 if utils.arm.other_bones['viewmodel']:
                     for bone in utils.arm.other_bones['viewmodel']:
-                        if bone == 'Camera':
+                        if bone.count('Camera'):
+                            prefix, bone = bone_convert(bone)
                             pcamera = armature.pose.bones[prefix + bone]
                             etarget = armature.data.edit_bones.new('Camera_Target')
-                            prefix = utils.arm.prefix
-    
-                            ppelvis = armature.pose.bones[prefix + utils.arm.central_bones['pelvis'][0]]
+                            
+                            prefix, bone = bone_convert(utils.arm.central_bones['pelvis'][0])
+                            ppelvis = armature.pose.bones[prefix + bone]
                             etarget.head.xyz = pcamera.head.x, -ppelvis.head.z, pcamera.head.z
-                            etarget.tail.xyz = etarget.head.x, etarget.head.y*1.5, etarget.head.z
-                            etarget.length = 2
-
-            prefix = utils.arm.prefix
+                            etarget.tail.xyz = etarget.head.x, etarget.head.y*0.5*unit, etarget.head.z
+                            etarget.length = 2*unit
+                            break
 
             update(0)
 
@@ -473,7 +627,12 @@ def anim_armature(action):
 
                     pbone.rigify_type = 'basic.raw_copy'
                     ebone.layers[0] = True
-                    ebone.parent = armature.data.edit_bones[prefix + utils.arm.central_bones['head'][0]]
+                    if utils.arm.central_bones['head']:
+                        prefix2, bone2 = bone_convert(utils.arm.central_bones['head'][0])
+                    elif utils.arm.central_bones['neck']:
+                        prefix2, bone2 = bone_convert(utils.arm.central_bones['neck'][0])
+                        
+                    ebone.parent = armature.data.edit_bones[prefix2 + bone2]
 
                     #Locks rotation and scale since they aren't meant to be used
                     pbone.lock_rotation_w = True
@@ -484,13 +643,6 @@ def anim_armature(action):
                     pbone.lock_scale[0] = True
                     pbone.lock_scale[1] = True
                     pbone.lock_scale[2] = True
-
-                    if utils.arm.central_bones['pelvis']:
-                        prefix = utils.arm.prefix
-                        ppelvis = armature.pose.bones[prefix + utils.arm.central_bones['pelvis'][0]]
-                        #Equivalent to 1 meter relative to the pelvis location in order to maintain consistency between different scales
-                        unit = ppelvis.head.z*0.02609761
-                        #Unit change, relative to the size it would be if imported from Blender Source Tools (For the sake of readability, and my patience)
 
                     #Locks axis locations for bones who don't need it
                     if bone.count('Cheek') or bone.count('LowerLip') or bone.count('UpperLip'):
@@ -515,6 +667,7 @@ def anim_armature(action):
 
                     #Min X
                     limit_loc.use_min_x = True
+
                     if bone.count('MouthCorner'):
                         limit_loc.min_x = -0.5*unit
 
@@ -524,28 +677,25 @@ def anim_armature(action):
                     elif bone == 'Nostril_R':
                         limit_loc.min_x = -0.5*unit
 
-                    elif bone == 'EyeLeft' or bone == 'EyeRight':
-                        limit_loc.min_x = -4*unit
-
                     else:
-                        limit_loc.min_x = -1*unit
+                        limit_loc.min_x = -1*unit   
 
                     #Max X
                     limit_loc.use_max_x = True
+                    
                     if bone.count('MouthCorner') or bone == 'Nostril_L':
                         limit_loc.max_x = 0.5*unit
 
                     elif bone == 'Nostril_R':
                         limit_loc.max_x = 0
 
-                    elif bone == 'EyeLeft' or bone == 'EyeRight':
-                        limit_loc.max_x = 4*unit
-
                     else:
                         limit_loc.max_x = 1*unit
 
                     #Min Y
+                    
                     limit_loc.use_min_y = True
+
                     if bone.count('Cheek'):
                         limit_loc.min_y = -1*unit
 
@@ -561,6 +711,7 @@ def anim_armature(action):
 
                     #Min Z
                     limit_loc.use_min_z = True
+                    
                     if bone.count('Cheek') or bone.count('Nostril') or bone.count('UpperLip'):
                         limit_loc.min_z = 0
                         
@@ -573,9 +724,6 @@ def anim_armature(action):
                     elif bone.count('Chin'):
                         limit_loc.min_z = -1.5*unit
                         
-                    elif bone == 'EyeLeft' or bone == 'EyeRight':
-                        limit_loc.min_z = -4*unit
-
                     else:
                         limit_loc.min_z = -1*unit
 
@@ -587,9 +735,6 @@ def anim_armature(action):
 
                     elif bone.count('Eyebrow') or bone.count('UpperLip') or bone.count('MouthCorner') or bone.count('Nostril') or bone.count('LowerLip'):
                         limit_loc.max_z = 0.5*unit
-
-                    elif bone == 'EyeLeft' or bone == 'EyeRight':
-                        limit_loc.max_z = 4*unit
 
                     else:
                         limit_loc.max_z = 1*unit
@@ -669,18 +814,11 @@ def anim_armature(action):
 
                         ebone.layers[1] = True
                         ebone.layers[0] = False
-
-                    elif bone == 'EyeLeft' or bone == 'EyeRight':
-                        widget = bpy.data.objects['Circle']
-                        pbone.custom_shape = widget
-                        pbone.custom_shape_scale = 1.5
                         
-                        ebone.layers[1] = True
-                        ebone.layers[0] = False
-
                     if bone.count('Inner_Eyebrow') or bone.count('Outer_Eyebrow') or bone.count('Nostril') or bone.count('Cheek') or bone.count('MiddleLip'):
                         ebone.layers[2] = True
                         ebone.layers[0] = False
+                        ebone.layers[1] = False
 
                     ebone.layers[8] = False
                     ebone.layers[9] = False
@@ -694,9 +832,10 @@ def anim_armature(action):
                         pbone.rigify_parameters.make_control = False
                 
             #Rigify palm
-            for bone in rigify_palm['finger1']:
-                pbone = armature.pose.bones[bone]
-                pbone.rigify_type = 'limbs.super_palm'
+            if rigify_palm:
+                for bone in rigify_palm['finger1']:
+                    pbone = armature.pose.bones[bone]
+                    pbone.rigify_type = 'limbs.super_palm'
 
             #For reference:
             #Face (Primary) = Layer 0
@@ -714,12 +853,23 @@ def anim_armature(action):
                     for container, bone in utils.arm.symmetrical_bones[cat].items():
                         for bone in bone:
                             if bone:
+                                prefix, bone = bone_convert(bone)
+                                ebone = armature.data.edit_bones[prefix + bone]
+                                pbone = armature.pose.bones[prefix + bone]
+                                param = pbone.rigify_parameters
                                 if container == 'finger0' or container == 'finger1' or container == 'finger2' or container == 'finger3' or container == 'finger4':
-                                    pbone = armature.pose.bones[prefix + bone]
-                                    param = pbone.rigify_parameters
-                                    ebone = armature.data.edit_bones[prefix + bone]
-
-                                    pbone.rigify_type = 'limbs.super_finger'
+                                    if ebone.children:
+                                        pbone.rigify_type = 'limbs.super_finger'
+                                        if utils.arm.symmetrical_bones['legs'].get('thighlow'):
+                                            if container == 'finger0':
+                                                param.primary_rotation_axis = 'Z'
+                                            else:
+                                                param.primary_rotation_axis = '-X'
+                                        elif vatinfo.viewmodel and not vatinfo.special_viewmodel:
+                                            if container == 'finger0':
+                                                param.primary_rotation_axis = '-Z'
+                                    else:
+                                        pbone.rigify_type = 'basic.super_copy'
                                     param.make_extra_ik_control = True
                                     param.tweak_layers[6] = True
                                     param.tweak_layers[1] = False
@@ -729,8 +879,6 @@ def anim_armature(action):
                                     ebone.layers[1] = False
                                     ebone.layers[2] = False
                                 else:
-                                    ebone = armature.data.edit_bones[prefix + bone]
-
                                     ebone.layers[5] = True
                                     ebone.layers[0] = False
                                     ebone.layers[1] = False
@@ -739,9 +887,10 @@ def anim_armature(action):
                     for container, bone in utils.arm.symmetrical_bones[cat].items():
                         for index, bone in enumerate(bone):
                             if bone:
+                                prefix, bone = bone_convert(bone)
+                                ebone = armature.data.edit_bones[prefix + bone]
                                 pbone = armature.pose.bones[prefix + bone]
                                 param = pbone.rigify_parameters
-                                ebone = armature.data.edit_bones[prefix + bone]
 
                                 if index == 0:
                                     ebone.layers[7] = True
@@ -751,7 +900,7 @@ def anim_armature(action):
                                 if container == 'clavicle':
                                     pbone.rigify_type = 'basic.super_copy'
                                     param.make_widget = False
-                                    if not utils.arm.viewmodel:
+                                    if not vatinfo.viewmodel:
                                         ebone.layers[3] = True
                                 elif container == 'upperarm':
                                     pbone.rigify_type = 'limbs.super_limb'
@@ -775,9 +924,10 @@ def anim_armature(action):
                     for container, bone in utils.arm.symmetrical_bones[cat].items():
                         for index, bone in enumerate(bone):
                             if bone:
+                                prefix, bone = bone_convert(bone)
+                                ebone = armature.data.edit_bones[prefix + bone]
                                 pbone = armature.pose.bones[prefix + bone]
                                 param = pbone.rigify_parameters
-                                ebone = armature.data.edit_bones[prefix + bone]
 
                                 if index == 0:
                                     ebone.layers[13] = True
@@ -787,7 +937,10 @@ def anim_armature(action):
                                 if container == 'thigh':
                                     if utils.arm.symmetrical_bones['legs']['calf'] and utils.arm.symmetrical_bones['legs']['foot']:
                                         pbone.rigify_type = 'limbs.super_limb'
-                                        param.limb_type = 'leg'
+                                        if utils.arm.symmetrical_bones['legs'].get('thighlow'):
+                                            param.limb_type = 'paw'
+                                        else:
+                                            param.limb_type = 'leg'
                                         param.tweak_layers[1] = False
                                         param.fk_layers[1] = False
                                     else:
@@ -800,6 +953,8 @@ def anim_armature(action):
                                         param.fk_layers[17] = True
                                         param.tweak_layers[18] = True
                                     param.segments = 1
+                                elif container == 'hip':
+                                    pbone.rigify_type = 'basic.super_copy'
 
                                 ebone.layers[0] = False
                                 ebone.layers[3] = False
@@ -809,85 +964,79 @@ def anim_armature(action):
             for container, bone in utils.arm.central_bones.items():
                 for bone in bone:
                     if bone:
-                        if bone == 'Bip01' and utils.arm.viewmodel:
-                            prefix = Prefixes.other
+                        if vatinfo.titanfall and container == 'head':
+                            pass
                         else:
-                            prefix = utils.arm.prefix
+                            prefix, bone = bone_convert(bone)
+                            ebone = armature.data.edit_bones[prefix + bone]
+                            pbone = armature.pose.bones[prefix + bone]
+                            param = pbone.rigify_parameters
 
-                        pbone = armature.pose.bones[prefix + bone]
-                        param = pbone.rigify_parameters
-                        ebone = armature.data.edit_bones[prefix + bone]
+                            ebone.layers[3] = True
 
-                        ebone.layers[3] = True
+                            if container == 'pelvis':
+                                if not vatinfo.viewmodel:
+                                    if spines > 2 :
+                                        pbone.rigify_type = 'spines.basic_spine'
+                                        param.pivot_pos = 2
+                                        param.tweak_layers[1] = False
+                                        param.tweak_layers[4] = True
+                                        param.fk_layers[1] = False
+                                        param.fk_layers[4] = True
+                                    else:
+                                        pbone.rigify_type = 'basic.copy_chain'
 
-                        if container == 'pelvis':
-                            if not utils.arm.viewmodel:
-                                if spines > 2 :
-                                    pbone.rigify_type = 'spines.basic_spine'
-                                    param.pivot_pos = 2
+                            elif container == 'neck':
+                                if utils.arm.central_bones['head']:
+                                    pbone.rigify_type = 'spines.super_head'
+                                    if utils.arm.central_bones['pelvis']:
+                                        param.connect_chain = True
                                     param.tweak_layers[1] = False
                                     param.tweak_layers[4] = True
-                                    param.fk_layers[1] = False
-                                    param.fk_layers[4] = True
                                 else:
-                                    pbone.rigify_type = 'basic.copy_chain'
-
-                        elif container == 'neck':
-                            if utils.arm.central_bones['head']:
-                                pbone.rigify_type = 'spines.super_head'
-                                param.connect_chain = True
-                                param.tweak_layers[1] = False
-                                param.tweak_layers[4] = True
-                            else:
-                                pbone.rigify_type = 'basic.super_copy'
-                    
-                        ebone.layers[0] = False
-
-            prefix = Prefixes.other
+                                    pbone.rigify_type = 'basic.super_copy'
+                        
+                            ebone.layers[0] = False
 
             for container, bone in utils.arm.other_bones.items():
-                if container == 'weapon':
-                    for bone in bone:
-                        if bone:
+                for bone in bone:
+                    if bone:
+                        if container == 'forward'  or container == 'root' or container == 'ik' or bone.count('neckB'):
+                            continue
+                        else:
+                            prefix, bone = bone_convert(bone)
                             pbone = armature.pose.bones[prefix + bone]
                             param = pbone.rigify_parameters
                             ebone = armature.data.edit_bones[prefix + bone]
 
-                            ebone.layers[20] = True
+                            if container == 'weapon':
+                                ebone.layers[20] = True
+                                ebone.layers[0] = False
+                                ebone.layers[7] = False
+                                pbone.rigify_type = 'basic.super_copy'
+                                param.super_copy_widget_type = 'bone'
 
-                            ebone.layers[0] = False
-                            ebone.layers[7] = False
+                            elif container == 'attachment':
+                                ebone.layers[19] = True
+                                ebone.layers[0] = False
+                                ebone.layers[6] = False
+                                ebone.layers[7] = False
 
-                            pbone.rigify_type = 'basic.super_copy'
-                            param.super_copy_widget_type = 'bone'
-                elif container == 'attachment':
-                    prefix = Prefixes.attachment
-                    for bone in bone:
-                        if bone:
-                            if bone.startswith('a.'):
-                                prefix = Prefixes.attachment
-                                bone = bone.replace('a.', '')
-                            elif bone.startswith('a2.'):
-                                prefix = Prefixes.other
-                                bone = bone.replace('a2.', '')
+                                pbone.rigify_type = 'basic.super_copy'
+                                param.super_copy_widget_type = 'bone'
+                            else:
+                                ebone.layers[21] = True
+                                ebone.layers[0] = False
+                                ebone.layers[8] = False
 
-                            pbone = armature.pose.bones[prefix + bone]
-                            param = pbone.rigify_parameters
-                            ebone = armature.data.edit_bones[prefix + bone]
-
-                            ebone.layers[19] = True
-
-                            ebone.layers[0] = False
-                            ebone.layers[7] = False
-
-                            pbone.rigify_type = 'basic.super_copy'
-                            param.super_copy_widget_type = 'bone'
-                    
+                                pbone.rigify_type = 'basic.super_copy'
+                                param.super_copy_widget_type = 'bone'
                             
-            if utils.arm.viewmodel:
+            if vatinfo.viewmodel:
                 if utils.arm.other_bones['viewmodel']:
-                    for bone in bone:
-                        if bone == 'Camera':
+                    for bone in utils.arm.other_bones['viewmodel']:
+                        if bone.count('attach_camera'):
+                            prefix, bone = bone_convert(bone)
                             pbone = armature.pose.bones[prefix + bone]
                             param = pbone.rigify_parameters
                             ebone = armature.data.edit_bones[prefix + bone]
@@ -905,8 +1054,8 @@ def anim_armature(action):
                     ptarget = armature.pose.bones['Camera_Target']
                     param = ptarget.rigify_parameters
 
-                    ptarget.rigify_type = 'basic.super_copy'
-                    param.super_copy_widget_type = 'circle'
+                    ptarget.rigify_type = 'basic.raw_copy'
+                    param.optional_widget_type = 'circle'
 
                     ptarget.lock_location[1] = True
                     ptarget.lock_rotation[0] = True
@@ -921,13 +1070,12 @@ def anim_armature(action):
             for container, bone in utils.arm.custom_bones.items():
                 for bone in bone:
                     if bone:
-                        if bone.startswith('s.'):
-                            bone = utils.arm.prefix + bone.replace('s.', '')
-                        elif bone.startswith('s3.'):
-                            bone = Prefixes.other + bone.replace('s3.', '')
+                        if bone.count('eye') or bone.count('lid_upper') or bone.count('lid_lower'):
+                            continue
+                        prefix, bone = bone_convert(bone)
 
-                        ebone = armature.data.edit_bones[bone]
-                        pbone = armature.pose.bones[bone]
+                        ebone = armature.data.edit_bones[prefix + bone]
+                        pbone = armature.pose.bones[prefix + bone]
                         param = pbone.rigify_parameters
 
                         ebone.layers[22] = True
@@ -935,8 +1083,12 @@ def anim_armature(action):
                         ebone.layers[0] = False
                         ebone.layers[9] = False
 
-                        pbone.rigify_type = 'basic.super_copy'
-                        param.super_copy_widget_type = 'bone'
+                        if utils.arm.chain_start.count(bone):
+                            pbone.rigify_type = 'basic.copy_chain'
+                            param.super_copy_widget_type = 'bone'
+                        elif utils.arm.chainless_bones.count(bone):
+                            pbone.rigify_type = 'basic.super_copy'
+                            param.super_copy_widget_type = 'bone'
 
             armature = utils.arm.animation_armature_real
 
@@ -982,17 +1134,16 @@ def anim_armature(action):
             armature.rigify_layers[28].row = 14
             armature.rigify_layers[28]['group_prop'] = 1
 
-            armature.layers[0] = False
+            for i in range(0, 32):
+                armature.layers[i] = False
 
-            vatinfo.animation_armature_setup = True
-
-            for i in [0,1,3,5,7,10,13,16,19,20]:
+            for i in [0,1,3,5,7,10,13,16,19,20,21,22]:
                     armature.layers[i] = True
 
             bpy.ops.object.mode_set(mode='OBJECT')
 
             #Renames armature to allow it being compatible with pose symmetry
-            if vatinfo.scheme == 0:
+            if vatinfo.scheme == 0 and not vatinfo.sbox:
                 armature_rename(1, utils.arm.animation_armature)
 
             print("Animation armature created!")
@@ -1000,9 +1151,9 @@ def anim_armature(action):
         elif action == 1:
             #Deletes Left/Right vertex groups if present
             if vatproperties.target_object:
-                print(vatproperties.target_object.data.name)
+                #print(vatproperties.target_object.data.name)
                 data = vatproperties.target_object.data.name.replace('.anim', '')
-                print(data)
+                #print(data)
                 data = bpy.data.meshes[data]
                 vatproperties.target_object.data = data
 
@@ -1011,7 +1162,7 @@ def anim_armature(action):
     def link(): #Organizes armature after empty creation
 
         def retarget(bone): #Creates empties and links them to Rigify armature/Source armature
-            armature = bpy.data.objects['rig']
+            armature = bpy.data.objects[utils.arm.armature.name + '.anim']
             
             #Retarget empties creation
             try:
@@ -1027,14 +1178,17 @@ def anim_armature(action):
             collection.objects.link(base)
             base.empty_display_type = 'CUBE'
             base.hide_select = True
+            base.empty_display_size = unit
 
             #Location constraint
             loc = base.constraints.new('COPY_LOCATION')
+            loc.name = "Location Retarget (Standard)"
             loc.target = armature
             loc.subtarget = 'ORG-' + prefix + bone + '.isolated'
 
             #Rotation constraint
             rot = base.constraints.new('COPY_ROTATION')
+            rot.name = "Rotation Retarget (Standard)"
             rot.target = armature
             rot.subtarget = 'ORG-' + prefix + bone + '.isolated'
 
@@ -1042,12 +1196,14 @@ def anim_armature(action):
             target = bpy.data.objects.new('target_{} ({})'.format(bone, utils.arm.armature.name)[0:60], None)
             collection.objects.link(target)
             target.empty_display_type = 'SPHERE'
+            target.empty_display_size = unit
 
             #Parent to base
             base.parent = parent
             target.parent = base
 
             #Bone connection
+
             armature = utils.arm.armature
             loc = armature.pose.bones[prefix + bone].constraints.new('COPY_LOCATION')
             loc.name = "Retarget Location"
@@ -1056,48 +1212,73 @@ def anim_armature(action):
             rot.name = "Retarget Rotation"
             rot.target = target
 
+            #Blender freaks out, needs to be added temporarily when the parameter is toggled, update
+            '''if bone.endswith('_L') or bone.endswith('_R'):
+                if bone.endswith('_L'):
+                    try:
+                        loc = armature.pose.bones[prefix + bone.replace('_L', '_fk_L')].constraints.new('COPY_LOCATION')
+                        rot = armature.pose.bones[prefix + bone.replace('_L', '_fk_L')].constraints.new('COPY_ROTATION')
+                    except: #If bone only has FK variant, so no name change
+                        loc = armature.pose.bones[prefix + bone].constraints.new('COPY_LOCATION')
+                        rot = armature.pose.bones[prefix + bone].constraints.new('COPY_ROTATION')
+                elif bone.endswith('_R'):
+                    try:
+                        loc = armature.pose.bones[prefix + bone.replace('_R', '_fk_R')].constraints.new('COPY_LOCATION')
+                        rot = armature.pose.bones[prefix + bone.replace('_R', '_fk_R')].constraints.new('COPY_ROTATION')
+                    except:
+                        loc = armature.pose.bones[prefix + bone].constraints.new('COPY_LOCATION')
+                        rot = armature.pose.bones[prefix + bone].constraints.new('COPY_ROTATION')
+                    
+                loc.name = "Retarget Location"
+                loc.target = target
+                loc.mute = True
+
+                rot.name = "Retarget Rotation"
+                rot.target = target
+                rot.mute = True
+            
+            loc = base.constraints.new('COPY_LOCATION')
+            loc.name = "Location Retarget (Inverse)"
+            loc.target = armature
+            loc.subtarget = prefix + bone
+            loc.mute = True
+
+            rot = base.constraints.new('COPY_ROTATION')
+            rot.name = "Location Retarget (Inverse)"
+            rot.target = armature
+            rot.subtarget = prefix + bone
+            rot.mute = True'''
+
+        unit = vatinfo.unit
+
         #Creates parent for all bases for easier storage/manipulation
         parent = bpy.data.objects.new('parent_' + utils.arm.armature.name, None)
-
-        prefix = utils.arm.prefix
 
         for cat in utils.arm.symmetrical_bones:
             for container, bone in utils.arm.symmetrical_bones[cat].items():
                 for bone in bone:
                     if bone:
+                        prefix, bone = bone_convert(bone)
                         retarget(bone)
 
         for container, bone in utils.arm.central_bones.items():
             for bone in bone:
                 if bone:
-                    if bone == 'Bip01' and utils.arm.viewmodel:
-                        prefix = Prefixes.other
-                    else:
-                        prefix = utils.arm.prefix
-
+                    prefix, bone = bone_convert(bone)
                     retarget(bone)
 
-        prefix = Prefixes.other
-
         for container, bone in utils.arm.other_bones.items():
-            if container == 'weapon':
-                for bone in bone:
-                    if bone:
-                        retarget(bone)
-            elif container == 'viewmodel':
-                for bone in bone:
-                    if bone == 'Camera' or bone == 'Bip01':
-                        retarget(bone)
-
-        prefix = ''
+            for bone in bone:
+                if bone:
+                    if container == 'weapon' or container == 'viewmodel':
+                        prefix, bone = bone_convert(bone)
+                        if container == 'weapon' or bone.title().count('Camera'):
+                            retarget(bone)
 
         for container, bone in utils.arm.custom_bones.items():
             for bone in bone:
                 if bone:
-                    if bone.startswith('s.'):
-                        bone = utils.arm.prefix + bone.replace('s.', '')
-                    elif bone.startswith('s3.'):
-                        bone = Prefixes.other + bone.replace('s3.', '')
+                    prefix, bone = bone_convert(bone)
                     retarget(bone)
 
         #Creates additional location constraints for helper bones to copy their driver bone's location
@@ -1107,30 +1288,23 @@ def anim_armature(action):
                     if container == 'knee' or container == 'elbow':
                         for index, bone in enumerate(bone):
                             if bone:
-                                prefix, bone = helper_convert(bone)
+                                prefix, bone = bone_convert(bone)
                                 armature = utils.arm.armature
                                 loc = armature.pose.bones[prefix + bone].constraints.new('COPY_LOCATION')
                                 loc.name = "Retarget Location"
 
                                 if container == 'knee':
-                                    loc.target = bpy.data.objects['target_{} ({})'.format(utils.arm.symmetrical_bones['legs']['calf'][index], utils.arm.armature.name)[0:60]]
+                                    prefix, bone = bone_convert(utils.arm.symmetrical_bones['legs']['calf'][index])
+                                    loc.target = bpy.data.objects['target_{} ({})'.format(bone, utils.arm.armature.name)[0:60]]
                                 elif container == 'elbow':
-                                    loc.target = bpy.data.objects['target_{} ({})'.format(utils.arm.symmetrical_bones['arms']['forearm'][index], utils.arm.armature.name)[0:60]]
-
-        prefix = utils.arm.prefix
+                                    prefix, bone = bone_convert(utils.arm.symmetrical_bones['arms']['forearm'][index])
+                                    loc.target = bpy.data.objects['target_{} ({})'.format(bone, utils.arm.armature.name)[0:60]]
 
         #Connects parent to collection
         collection = bpy.data.collections["Retarget Empties ({})".format(utils.arm.armature.name)[0:60]]
         collection.objects.link(parent)
 
-        #Forces Rigify armature to use setup armature's scale
-        scale = utils.arm.animation_armature.scale
-
-        #Renames armature to prior generated armature
-        armature = bpy.data.objects['rig']
-        armature.name = utils.arm.armature.name + '.anim'
-        armature.data.name = utils.arm.armature_real.name + '.anim'
-        armature.scale = scale
+        armature = bpy.data.objects[utils.arm.armature.name + '.anim']
 
         utils.update(1, armature)
 
@@ -1139,43 +1313,20 @@ def anim_armature(action):
             for container, bone in utils.arm.symmetrical_bones[cat].items():
                 for bone in bone:
                     if bone:
+                        prefix, bone = bone_convert(bone)
                         armature.data.edit_bones['ORG-' + prefix + bone + '.isolated'].parent = armature.data.edit_bones['DEF-' + prefix + bone]
 
         #Deletes generated armature
         generate_armature('anim', 2)
 
+        armature = utils.arm.animation_armature
+
         #Creates camera at camera bone if armature is a viewmodel
-        if utils.arm.viewmodel:
+        if vatinfo.viewmodel:
             if utils.arm.other_bones['viewmodel']:
-                camera_data = bpy.data.cameras.new('viewmodel_camera')
-                camera = bpy.data.objects.new('viewmodel_camera', camera_data)
-                prefix = Prefixes.other
-
-                camera.data.angle = 0.942478
-                camera.rotation_euler[0] = math.radians(-90)
-                camera.rotation_euler[1] = math.radians(180)
-
-                loc = camera.constraints.new('COPY_LOCATION')
-                loc.target = utils.arm.armature
-                loc.subtarget = prefix + 'Camera'
-                rot = camera.constraints.new('COPY_ROTATION')
-                rot.target = utils.arm.armature
-                rot.subtarget = prefix + 'Camera'
-                rot.invert_x = True
-                rot.invert_z = True
-                rot.target_space = 'LOCAL'
-                rot.owner_space = 'LOCAL'
-
-                try:
-                    collection = bpy.data.collections['Animation Armature']
-                    collection.objects.link(camera)
-                except:
-                    pass
-
-                prefix = Prefixes.other
-
                 for bone in utils.arm.other_bones['viewmodel']:
-                    if bone == 'Camera':
+                    if bone.count('Camera'):
+                        prefix, bone = bone_convert(bone)
                         pcamera = armature.pose.bones[prefix + bone]
                         ecamera = armature.data.edit_bones[prefix + bone]
                         
@@ -1189,7 +1340,6 @@ def anim_armature(action):
                         rot.subtarget = 'Camera_Target'
                         rot.use_x = False
                         rot.use_z = False
-                        rot.invert_y = True
                         rot.target_space = 'LOCAL'
 
                         etarget = armature.data.edit_bones['Camera_Target']
@@ -1199,21 +1349,183 @@ def anim_armature(action):
 
                         #Relocates the position of the camera to where it would be in game
                         if ecamera.head.z >= 0.25:
-                            armature.pose.bones[prefix + bone].location[1] = -ecamera.head.z
+                            pcamera.location[2] = -ecamera.head.z*0.0713206
+                            pcamera.location[1] = -ecamera.head.z
                             armature.pose.bones['Camera_Target'].location[2] = -ecamera.head.z
-                            armature.pose.bones[prefix + bone].location[2] = -ecamera.head.z*0.0713206
 
                             armature.pose.bones['root'].location[2] = -ecamera.head.z
-                
-        vatinfo.animation_armature = True
-        vatinfo.animation_armature_setup = False
-        utils.arm.animation_armature = armature
-        utils.arm.animation_armature_real = armature.data
+
+                        ##Camera##
+                        camera_data = bpy.data.cameras.new('viewmodel_camera')
+                        camera = bpy.data.objects.new('viewmodel_camera', camera_data)
+
+                        camera.data.angle = 0.942478
+                        camera.rotation_euler[0] = radians(90)
+                        camera.rotation_euler[2] = radians(180)
+
+                        loc = camera.constraints.new('COPY_LOCATION')
+                        loc.target = utils.arm.animation_armature
+                        loc.subtarget = pcamera.name
+                        rot = camera.constraints.new('COPY_ROTATION')
+                        rot.target = utils.arm.animation_armature
+                        rot.subtarget = pcamera.name
+                        rot.invert_x = True
+                        rot.invert_z = True
+                        rot.target_space = 'LOCAL'
+                        rot.owner_space = 'LOCAL'
+
+                        collection = utils.arm.armature.users_collection[0]
+                        collection.objects.link(camera)
+                        
+                        bpy.context.scene.camera = camera
+        
+        material_eyes = False
+
+        #Recheck in case user undoes after linking and then trying to relink
+        if vatproperties.target_object:
+            for material in vatproperties.target_object.data.materials:
+                if material.name.title().count('Eyeball'):
+                    material_eyes = True
+                    break
+
+        if not material_eyes:
+            for container, bone in utils.arm.custom_bones.items():
+                for bone in bone:
+                    if bone:
+                        if bone.count('eye'):
+                            if bone.count('eyebrow') or bone.count('eyelid'):
+                                continue
+                            else:
+                                prefix, bone = bone_convert(bone)
+                                ebone = armature.data.edit_bones['ORG-' + prefix + bone]
+                                pbone = armature.pose.bones['ORG-' + prefix + bone]
+
+                                trackto = pbone.constraints.new('TRACK_TO')
+                                trackto.target = armature
+                                trackto.subtarget = 'driver_' + bone
+                                if vatinfo.sbox:
+                                    trackto.track_axis = 'TRACK_X'
+
+                            ebone.layers[27] = True
+                            ebone.layers[0] = False
+
+        if vatproperties.target_object:
+            utils.arm.animation_armature_real['target_object'] = vatproperties.target_object.name
+            utils.arm.animation_armature_real['target_object_data'] = vatproperties.target_object.data.name.replace('.anim', '')
+
+        utils.arm.animation_armature_real.layers[21] = False
+
 
     def face_flex_setup(): #Sets up drivers for face flexes that will be controlled by face bones
-        prefix = utils.arm.prefix
+        unit = vatinfo.unit
         
-        if utils.arm.shapekeys:
+        eye_left = ''
+        eye_right = ''
+
+        #Recheck in case user undoes after linking and then trying to relink
+        for material in vatproperties.target_object.data.materials:
+            if material.name.title().count('Eyeball'):
+                eye_texture = False
+
+                if not material.use_nodes:
+                    material.use_nodes = True
+
+                link = material.node_tree.links
+                node = material.node_tree.nodes
+
+                try:
+                    imgtexture = node['Image Texture']
+                    output_loc = imgtexture.location
+                    eye_texture = True
+                except:
+                    try:
+                        output_loc = node['Material Output'].location
+                    except:
+                        output_loc = (0,0)
+
+                #Checks if mapping node already exists
+                try:
+                    mapping = node['VAT Eye Movement']
+                except:
+                    mapping = node.new('ShaderNodeMapping')
+                    mapping.name = "VAT Eye Movement"
+                    mapping.width = 315 #So all the label is visible
+                    if eye_texture:
+                        mapping.location = output_loc[0] - 400, output_loc[1]
+                    else:
+                        mapping.location = output_loc[0], output_loc[1] + 420
+                        mapping.label = "Connect to iris(+Normal/Specular) texture's vector input"
+
+                #Checks if texture coordinates node already exists
+                try:
+                    texcoord = node['VAT Eye Movement Origin']
+                except:
+                    texcoord = node.new('ShaderNodeTexCoord')
+                    texcoord.name = "VAT Eye Movement Origin"
+                    texcoord.location = mapping.location[0] - 200, mapping.location[1]
+                
+                if not texcoord.outputs['UV'].links:
+                    link.new(texcoord.outputs['UV'], mapping.inputs['Vector'])
+
+                if eye_texture:
+                    if not mapping.outputs['Vector'].links:
+                        link.new(mapping.outputs['Vector'], imgtexture.inputs['Vector'])
+                    imgtexture.extension = 'EXTEND'
+
+                #Driver portion
+                driver = mapping.inputs['Location'].driver_add('default_value')
+
+                if not driver[0].driver.variables:
+                    variable = driver[0].driver.variables.new() #Creates new variable onto the shapekey
+                else:
+                    variable = driver[0].driver.variables[0]
+
+                variable.name = "eye_x"
+                driver[0].driver.expression = variable.name #Changes expression to created variable's name
+                variable.type = 'TRANSFORMS' #Changes type of variable to transform
+
+                target = variable.targets[0]
+                target.id = utils.arm.animation_armature
+                target.transform_space = 'LOCAL_SPACE'
+                target.transform_type = 'LOC_X'
+
+                target.bone_target = 'driver_' + material.name
+                if material.name.title().count('L_') or material.name.title().count('_L'):
+                    driver[0].modifiers[0].coefficients[1] = -0.25/unit
+                    eye_left = 'driver_' + material.name
+                elif material.name.title().count('R_') or material.name.title().count('_R'):
+                    driver[0].modifiers[0].coefficients[1] = 0.25/unit
+                    eye_right = 'driver_' + material.name
+
+                if not driver[1].driver.variables:
+                    variable = driver[1].driver.variables.new() #Creates new variable onto the shapekey
+                else:
+                    variable = driver[1].driver.variables[0]
+
+                variable.name = "eye_z"
+                driver[1].driver.expression = variable.name #Changes expression to created variable's name
+                variable.type = 'TRANSFORMS' #Changes type of variable to transform
+
+                target = variable.targets[0]
+                target.id = utils.arm.animation_armature
+                target.transform_space = 'LOCAL_SPACE'
+                target.transform_type = 'LOC_Z'
+
+                driver[1].modifiers[0].coefficients[1] = -0.25/unit
+
+                target.bone_target = 'driver_' + material.name
+
+        shapekeys_raw = []
+        utils.arm.unused_shapekeys = ['AU6L+AU6R', 'AU25L+AU25R', 'AU22L+AU22R', 'AU20L+AU20R', 'AU18L+AU18R', 'AU26ZL+AU26ZR', 'AU12AU25L+AU12AU25R', 'upper_right', 'upper_right.001', 'lower_right', 'lower_right.001', 'upper_left', 'upper_left.001', 'lower_left', 'lower_left.001']
+        utils.arm.shapekeys = {'basis': {'basis': ''}, 'eyebrows': {'AU1': '', 'AU2': '', 'AU4': '', 'AU1AU2': '', 'AU1AU4': '', 'AU2AU4': ''}, 'eyes': {'f01': '', 'f02': '', 'f03': '', 'f04': '', 'AU42': ''}, 'cheek': {'AU6Z': '', 'AU13': ''}, 'nose': {'AU9': '', 'AU38': ''}, 'mouth': {'AU12': '', 'AU15': '', 'AU10': '', 'AU17D': '', 'AU16': '', 'AU32': '', 'AU24': '', 'AU18Z': '', 'AU22Z': '', 'AD96L': '', 'AD96R': ''}, 'chin': {'AU31': '', 'AU26': '', 'AU27': '', 'AU27Z': '', 'AD30L': '', 'AD30R': '', 'AU17': ''}}
+
+        try:
+            shapekeys_raw = vatproperties.target_object.data.shape_keys.key_blocks.keys()
+            utils.arm.shapekeys = generate_shapekey_dict(utils.arm.shapekeys, shapekeys_raw)
+        except:
+            shapekeys_raw = None
+
+        if shapekeys_raw:
             keyblocks = vatproperties.target_object.data.shape_keys.key_blocks
 
             #Vertex group creation
@@ -1221,7 +1533,6 @@ def anim_armature(action):
             #Creates vertex groups
             left_group = vatproperties.target_object.vertex_groups.new(name='Left')
             right_group = vatproperties.target_object.vertex_groups.new(name='Right')
-            print('second?')
 
             #Left side
             for vertex in vatproperties.target_object.data.vertices:
@@ -1233,7 +1544,7 @@ def anim_armature(action):
                 elif vertex.co[0] < -0.005:
                     right_group.add([vertex.index], 1, 'REPLACE')
 
-                elif vertex.co[0] <0.005 >-0.005:
+                elif vertex.co[0] <0.005 > -0.005:
                     left_group.add([vertex.index], 0.5, 'REPLACE')
                     right_group.add([vertex.index], 0.5, 'REPLACE')
 
@@ -1357,14 +1668,14 @@ def anim_armature(action):
                             target.transform_type = 'LOC_Z'
 
                             if container == 'AU42':
-                                driver.driver.expression = variable.name + '/4'
+                                driver.driver.expression = variable.name + '/5'
 
                             elif container != 'f01':
                                 #Creates another driver controlled by the corresponding eye bone
                                 variable2 = driver.driver.variables.new()
                                 variable2.name = "eye"
                                     
-                                driver.driver.expression = variable.name + '+' + variable2.name + '/4' #Combines the old driver with the new driver, making the latter have less influence
+                                driver.driver.expression = '{} + {}/5'.format(variable.name, variable2.name) #Combines the old driver with the new driver, making the latter have less influence
                                 variable2.type = 'TRANSFORMS'
 
                                 target2 = variable2.targets[0]
@@ -1382,24 +1693,30 @@ def anim_armature(action):
                             elif container == 'f02':
                                 if shapekey.endswith('_L'):
                                     target.bone_target = "UpperEye_L"
-                                    target2.bone_target = 'EyeLeft'
+                                    if eye_left:
+                                        target2.bone_target = eye_left
                                 elif shapekey.endswith('_R'):
                                     target.bone_target = "UpperEye_R"
-                                    target2.bone_target = 'EyeRight'
+                                    if eye_right:
+                                        target2.bone_target = eye_right
 
                             elif container == 'f03' or container == 'f04':
                                 if shapekey.endswith('_L'):
                                     target.bone_target = "LowerEye_L"
-                                    target2.bone_target = 'EyeLeft'
+                                    if eye_left:
+                                        target2.bone_target = eye_left
                                 elif shapekey.endswith('_R'):
                                     target.bone_target = "LowerEye_R"
-                                    target2.bone_target = 'EyeRight'
+                                    if eye_right:
+                                        target2.bone_target = eye_right
 
                             elif container == 'AU42':
                                 if shapekey.endswith('_L'):
-                                    target.bone_target = 'EyeLeft'
+                                    if eye_left:
+                                        target.bone_target = eye_left
                                 elif shapekey.endswith('_R'):
-                                    target.bone_target = 'EyeRight'
+                                    if eye_right:
+                                        target.bone_target = eye_right
                             
                             if container == 'f01' or container == 'f03' or container == 'AU42':
                                 driver.modifiers[0].coefficients[1] = -5/unit
@@ -1689,129 +2006,40 @@ def anim_armature(action):
 
                                 elif container == 'AD30R':
                                     driver.modifiers[0].coefficients[1] = -1/unit
-
-            del shapekey
-
-            if utils.arm.eyes_material:
-                for material in utils.arm.eyes_material:
-                    material = vatproperties.target_object.data.materials[material.name]
-
-                    eye_texture = False
-
-                    if not material.use_nodes:
-                        material.use_nodes = True
-
-                    link = material.node_tree.links
-                    node = material.node_tree.nodes
-
-                    try:
-                        imgtexture = node['Image Texture']
-                        output_loc = imgtexture.location
-                        eye_texture = True
-                    except:
-                        try:
-                            output_loc = node['Material Output'].location
-                        except:
-                            output_loc = (0,0)
-
-                    #Checks if mapping node already exists
-                    try:
-                        mapping = node['VAT Eye Movement']
-                    except:
-                        mapping = node.new('ShaderNodeMapping')
-                        mapping.name = "VAT Eye Movement"
-                        mapping.width = 315 #So all the label is visible
-                        if eye_texture:
-                            mapping.location = output_loc[0] - 400, output_loc[1]
-                        else:
-                            mapping.location = output_loc[0], output_loc[1] + 420
-                            mapping.label = "Connect to iris(+Normal/Specular) texture's vector input"
-
-                    #Checks if texture coordinates node already exists
-                    try:
-                        texcoord = node['VAT Eye Movement Origin']
-                    except:
-                        texcoord = node.new('ShaderNodeTexCoord')
-                        texcoord.name = "VAT Eye Movement Origin"
-                        texcoord.location = mapping.location[0] - 200, mapping.location[1]
-                    
-                    if not texcoord.outputs['UV'].links:
-                        link.new(texcoord.outputs['UV'], mapping.inputs['Vector'])
-
-                    if eye_texture:
-                        if not mapping.outputs['Vector'].links:
-                            link.new(mapping.outputs['Vector'], imgtexture.inputs['Vector'])
-                        imgtexture.extension = 'EXTEND'
-
-                    #Driver portion
-                    driver = mapping.inputs['Location'].driver_add('default_value')
-
-                    variable = driver[0].driver.variables.new() #Creates new variable onto the shapekey
-                    variable.name = "eye_x"
-                    driver[0].driver.expression = variable.name #Changes expression to created variable's name
-                    variable.type = 'TRANSFORMS' #Changes type of variable to transform
-
-                    target = variable.targets[0]
-                    target.id = utils.arm.animation_armature
-                    target.transform_space = 'LOCAL_SPACE'
-                    target.transform_type = 'LOC_X'
-
-                    if material.name.count('eyeball_l'):
-                        target.bone_target = 'EyeLeft'
-                        driver[0].modifiers[0].coefficients[1] = -0.25
-                    elif material.name.count('eyeball_r'):
-                        target.bone_target = 'EyeRight'
-                        driver[0].modifiers[0].coefficients[1] = 0.25
-
-                    variable = driver[1].driver.variables.new() #Creates new variable onto the shapekey
-                    variable.name = "eye_z"
-                    driver[1].driver.expression = variable.name #Changes expression to created variable's name
-                    variable.type = 'TRANSFORMS' #Changes type of variable to transform
-
-                    target = variable.targets[0]
-                    target.id = utils.arm.animation_armature
-                    target.transform_space = 'LOCAL_SPACE'
-                    target.transform_type = 'LOC_Z'
-
-                    driver[1].modifiers[0].coefficients[1] = -0.25
-
-                    if material.name.count('eyeball_l'):
-                        target.bone_target = 'EyeLeft'
-                    elif material.name.count('eyeball_r'):
-                        target.bone_target = 'EyeRight'
-
-                del utils.arm.eyes_material
                 
-    def create_widgets():
+    def create_widgets(widget=[]):
 
         #Creates widgets collection before Rigify
-        collection = bpy.data.collections.new('Widgets')
-        bpy.context.scene.collection.children.link(collection)
+        try:
+            collection = bpy.data.collections['Widgets']
+        except:
+            collection = bpy.data.collections.new('Widgets')
+            bpy.context.scene.collection.children.link(collection)
 
-        collection.hide_viewport = True
-        
+            collection.hide_viewport = True
+            
         #Empty that stores all the generated widgets for easier storage/manipulation
-        parent = bpy.data.objects.new('parent_widgets', None)
+        try:
+            parent = bpy.data.objects['parent_widgets']
+        except:
+            parent = bpy.data.objects.new('parent_widgets', None)
+            collection.objects.link(parent)
 
-        for widget in ['4Directions', 'Cheek', 'LowerLip', 'MiddleLip', 'UpperLip', 'Nostril_L', 'Nostril_R', 'UpDown', 'Circle']:
+        if not widget:
+            widget = ['4Directions', 'Cheek', 'LowerLip', 'MiddleLip', 'UpperLip', 'Nostril_L', 'Nostril_R', 'UpDown']
+            
+        for widget in widget:
             try:
                 bpy.data.objects[widget]
             except:
                 #Creates mesh datablock and object
                 mesh = bpy.data.meshes.new(widget)
-                if widget == 'Circle':
-                    object = bpy.data.objects.new(widget, None)
-                else:
-                    object = bpy.data.objects.new(widget, mesh)
+                object = bpy.data.objects.new(widget, mesh)
                 object.parent = parent
 
                 #Gets Rigify's collection and links to it
                 collection = bpy.data.collections['Widgets']
                 collection.objects.link(object)
-
-                if widget == 'Circle':
-                    object.empty_display_type = 'CIRCLE'
-                    continue
 
                 faces = []
 
@@ -1850,8 +2078,6 @@ def anim_armature(action):
 
                 object.data.from_pydata(vertices, edges, faces)
 
-        collection.objects.link(parent)
-
         print("Facial flex widgets generated!")
 
     #Updates bone list in case it was modified
@@ -1861,14 +2087,18 @@ def anim_armature(action):
         generate_rigify(action)
 
     elif action == 2: #Creates empties and links it to Source armature, also creates widgets and setups facial flexes
-        if vatinfo.scheme == 0:
+        if vatinfo.scheme == 0 and not vatinfo.sbox:
             armature_rename(1, utils.arm.armature)
             link()
-            face_flex_setup()
+            if vatproperties.target_object:
+                face_flex_setup()
             armature_rename(0, utils.arm.armature)
         else:
             link()
-            face_flex_setup()
+            if vatproperties.target_object:
+                face_flex_setup()
+
+        vatproperties.retarget_constraints = True
 
         vatproperties.target_object = None
 
@@ -1877,83 +2107,162 @@ def anim_armature(action):
         bpy.context.view_layer.objects.active = utils.arm.animation_armature
         bpy.ops.object.mode_set(mode='OBJECT')
 
-import bpy
+        try:
+            bpy.context.scene.collection.objects.unlink(utils.arm.animation_armature)
+        except:
+            pass
+        try:
+            collection = utils.arm.armature.users_collection[0]
+            collection.objects.link(utils.arm.animation_armature)
+        except:
+            pass
 
 def bake(mode):
 
-    def bake_strip(track):
-        strip = track.strips[0]
+    #mode 0 = single
+    #mode 1 = all
 
-        track.mute = False
+    def bake_strip(nla_track):
+        vatproperties = bpy.context.scene.vatproperties
 
-        armature.animation_data.nla_tracks.active = track
+        if not armature.animation_data.action or armature.animation_data.action and armature.animation_data.nla_tracks.active:
+            strip = nla_track.strips[0]
+            action = strip.action
+
+            #Unmutes track and strip in case they were muted
+            nla_track.mute = False
+            strip.mute = False
+        else:
+            action = armature.animation_data.action
 
         #Changes the anim armature's action name so the original armature can have it
-        if strip.action.name.startswith('_'):
-            name = strip.action.name[1:]
+        if action.name.startswith('_'):
+            name = action.name[1:]
         else:
-            name = strip.action.name
-            strip.action.name = '_' + strip.action.name
-            
-        #Original armature's NLA tracks
-        track2 = armature2.animation_data.nla_tracks
+            name = action.name
+            action.name = '_' + action.name
         
-        #Creates new action to store baked data in, track and strip, or overrides existing one
+        #Original armature's NLA tracks
+        nla_track2 = armature2.animation_data.nla_tracks
+        
+        #Creates new action to store baked data in, or overrides existing one
+
+        #Recontructs actions, strips (And tracks if in bulk) to account for any change made in the animation armature track
         try:
-            action = bpy.data.actions[name]
+            action2 = bpy.data.actions[name]
+            bpy.data.actions.remove(action2)
+            action2 = bpy.data.actions.new(name)
         except:
-            action = bpy.data.actions.new(name)
+            action2 = bpy.data.actions.new(name)
             
         try:
-            new_track = track2[name]
+            bake_track = nla_track2[name]
+            if mode == 1:
+                nla_track2.remove(bake_track)
+                bake_track = nla_track2.new()
+                bake_track.name = name
         except:
-            new_track = track2.new()
-            new_track.name = name
+            bake_track = nla_track2.new()
+            bake_track.name = name
             
         try:
-            new_strip = new_track.strips[name]
+            bake_strip = bake_track.strips[name]
+            bake_track.strips.remove(bake_strip)
+            bake_strip = bake_track.strips.new(name, 0, action2)
         except:
-            new_strip = new_track.strips.new(name, 0, action)
+            bake_strip = bake_track.strips.new(name, 0, action2)
         
         #Selection, tweak mode and bake
-        new_track.select = True
-        new_strip.select = True
+        bake_track.select = True
+        bake_strip.select = True
         armature2.animation_data.use_tweak_mode = True
         
-        bpy.ops.nla.bake(frame_start=strip.frame_start, frame_end=strip.frame_end, only_selected=False, visual_keying=True, use_current_action=True, bake_types={'POSE'})
+        if not vatproperties.bake_helper_bones or utils.arm.other_bones.get('ik'):
+            bpy.ops.pose.select_all(action='SELECT')
+            if not vatproperties.bake_helper_bones:
+                for cat in utils.arm.helper_bones.keys():
+                    for container, bone in utils.arm.helper_bones[cat].items():
+                        for bone in bone:
+                            if bone:
+                                prefix, bone = bone_convert(bone)
+                                armature2.data.bones[prefix + bone].select = False
+            
+            if utils.arm.other_bones.get('ik'):
+                for bone in utils.arm.other_bones['ik']:
+                    if bone:
+                        prefix, bone = bone_convert(bone)
+                        armature2.data.bones[prefix + bone].select = False
+
+            bpy.ops.nla.bake(frame_start=action.frame_range[0], frame_end=action.frame_range[1], only_selected=True, visual_keying=True, use_current_action=True, bake_types={'POSE'})
+        else:
+            bpy.ops.nla.bake(frame_start=action.frame_range[0], frame_end=action.frame_range[1], only_selected=False, visual_keying=True, use_current_action=True, bake_types={'POSE'})
         
         armature2.animation_data.use_tweak_mode = False
-        track.mute = True
-        new_track.select = False
-        new_track.mute = True
+
+        if mode == 1:
+            track.mute = True
+
+        bake_track.mute = True
+        bake_track.select = False
         bpy.ops.pose.transforms_clear()
 
     armature = utils.arm.animation_armature
     armature2 = utils.arm.armature
-
-    if armature.select_get() == True:
-        armature.select_set(False)
         
     #Gets current mode to set it back after operation completion
     current_mode = bpy.context.object.mode
+    selected_objects = bpy.context.selected_objects
+    active_object = bpy.context.view_layer.objects.active
     bpy.ops.object.mode_set(mode='OBJECT')
 
-    if armature2.select_get() == True:
-        armature2.select_set(True)
-        bpy.context.view_layer.objects.active = armature2
+    #Resets the position of all bones for both armatures to avoid other actions from messing with the selected action
+    if armature.hide_get() or not armature.select_get():
+        armature.hide_set(False)
+        armature.select_set(True)
+
+    bpy.context.view_layer.objects.active = armature
 
     bpy.ops.object.mode_set(mode='POSE')
-    
-    bpy.ops.pose.select_all(action='SELECT')
-    bpy.ops.pose.transforms_clear()
 
     if armature.animation_data.use_tweak_mode == True:
         armature.animation_data.use_tweak_mode = False
 
+    #Selects the bones and resets any bone translations
+    bpy.ops.pose.select_all(action='SELECT')
+    bpy.ops.pose.transforms_clear()
 
-    #Disables every track to avoid tracks overriding others
-    for track in armature.animation_data.nla_tracks:
-        track.mute = True
+    bpy.ops.object.mode_set(mode='OBJECT')
+    armature.select_set(False)
+
+    if armature2.hide_get() or not armature2.select_get():
+        armature2.hide_set(False)
+        armature2.select_set(True)
+
+    bpy.context.view_layer.objects.active = armature2
+
+    if not armature2.animation_data:
+        armature2.animation_data_create()
+
+    bpy.ops.object.mode_set(mode='POSE')
+    
+    if armature2.animation_data.use_tweak_mode == True:
+        armature2.animation_data.use_tweak_mode = False
+
+    #Selects the bones and resets any bone translations
+    bpy.ops.pose.select_all(action='SELECT')
+    bpy.ops.pose.transforms_clear()
+
+    unmuted_track = []
+
+    if not armature.animation_data.action:
+        for track in armature.animation_data.nla_tracks:
+            if track.mute == False:
+                unmuted_track.append(track.name)
+                track.mute = True
+
+    for track in armature2.animation_data.nla_tracks:
+        if track.mute == False:
+            track.mute = True
 
     if mode == 0:
         bake_strip(armature.animation_data.nla_tracks.active)
@@ -1961,6 +2270,15 @@ def bake(mode):
     elif mode == 1:
         for track in armature.animation_data.nla_tracks:
             bake_strip(track)
+
+    #Reenables disabled tracks
+    for track in unmuted_track:
+        track = armature.animation_data.nla_tracks[track]
+        track.mute = False
+
+    for object in selected_objects:
+        object.select_set(True)
+    bpy.context.view_layer.objects.active = active_object
 
     bpy.ops.object.mode_set(mode=current_mode)
 
@@ -1972,9 +2290,10 @@ def export():
 
     bpy.ops.object.select_all(action='DESELECT')
 
-    if armature.select_get() == True:
+    if armature.hide_get() or not armature.select_get():
+        armature.hide_set(False)
         armature.select_set(True)
-
+        
     bpy.context.view_layer.objects.active = armature
         
     if armature.animation_data.use_tweak_mode == True:
@@ -2003,15 +2322,12 @@ def export():
         armature.animation_data.use_tweak_mode = False
         track.select = False
         strip.select = False
+    
+    bpy.ops.object.mode_set(mode=current_mode)
 
-def update_retarget_constraints(self, context):
-    retarget_constraints()
-
-def retarget_constraints():
+def retarget_constraints(self, context):
     vatproperties = bpy.context.scene.vatproperties
     vatinfo = bpy.context.scene.vatinfo
-
-    prefix = utils.arm.prefix
     armature = utils.arm.armature
 
     if vatproperties.retarget_constraints:
@@ -2024,6 +2340,7 @@ def retarget_constraints():
             for container, bone in utils.arm.symmetrical_bones[cat].items():
                 for bone in bone:
                     if bone:
+                        prefix, bone = bone_convert(bone)
                         try:
                             armature.pose.bones[prefix + bone].constraints['Retarget Location'].mute = value
                         except:
@@ -2037,10 +2354,7 @@ def retarget_constraints():
         for container, bone in utils.arm.central_bones.items():
             for bone in bone:
                 if bone:
-                    if bone == 'Bip01' and utils.arm.viewmodel:
-                        prefix = Prefixes.other
-                    else:
-                        prefix = utils.arm.prefix
+                    prefix, bone = bone_convert(bone)
                     try:
                         armature.pose.bones[prefix + bone].constraints['Retarget Location'].mute = value
                     except:
@@ -2050,13 +2364,29 @@ def retarget_constraints():
                         armature.pose.bones[prefix + bone].constraints['Retarget Rotation'].mute = value
                     except:
                         pass
+        
+        for cat in utils.arm.helper_bones.keys():
+            for container, bone in utils.arm.helper_bones[cat].items():
+                for bone in bone:
+                    if bone:
+                        prefix, bone = bone_convert(bone)
+                        if vatinfo.viewmodel:
+                            try:
+                                armature.pose.bones[prefix + bone].constraints['Procedural Bone'].mute = value
+                            except:
+                                pass
 
-        prefix = Prefixes.other
+                        if container == 'knee' or container == 'elbow':
+                            try:
+                                armature.pose.bones[prefix + bone].constraints['Retarget Location'].mute = value
+                            except:
+                                pass
 
         for container, bone in utils.arm.other_bones.items():
             if container == 'weapon' or container == 'viewmodel':
                 for bone in bone:
                     if bone:
+                        prefix, bone = bone_convert(bone)
                         try:
                             armature.pose.bones[prefix + bone].constraints['Retarget Location'].mute = value
                         except:
@@ -2066,20 +2396,26 @@ def retarget_constraints():
                             armature.pose.bones[prefix + bone].constraints['Retarget Rotation'].mute = value
                         except:
                             pass
-        
-        for cat in utils.arm.helper_bones.keys():
-            for container, bone in utils.arm.helper_bones[cat].items():
-                for bone in bone:
-                    if bone:
-                        prefix, bone = helper_convert(bone)
-                        
-                        try:
-                            armature.pose.bones[prefix + bone].constraints['Procedural Bone'].mute = value
-                        except:
-                            pass
 
-                        if container == 'knee' or container == 'elbow':
-                            try:
-                                armature.pose.bones[prefix + bone].constraints['Retarget Location'].mute = value
-                            except:
-                                pass
+        for container, bone in utils.arm.custom_bones.items():
+            for bone in bone:
+                if bone:
+                    prefix, bone = bone_convert(bone)
+                    try:
+                        armature.pose.bones[prefix + bone].constraints['Retarget Location'].mute = value
+                    except:
+                        pass
+
+                    try:
+                        armature.pose.bones[prefix + bone].constraints['Retarget Rotation'].mute = value
+                    except:
+                        pass
+        
+        if armature.animation_data:
+            for track in armature.animation_data.nla_tracks:
+                if vatproperties.retarget_constraints:
+                    if track.mute == False:
+                        track.mute = True
+                else:
+                    if track.mute == True:
+                        track.mute = False

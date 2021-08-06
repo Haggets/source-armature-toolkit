@@ -2,6 +2,7 @@ import bpy
 from . import utils
 from . import advanced_ik
 from . import constraint_symmetry
+from . import armature_creation
 
 class VAT_properties(bpy.types.PropertyGroup): #Defines global properties the plugin will use
 
@@ -32,24 +33,12 @@ class VAT_properties(bpy.types.PropertyGroup): #Defines global properties the pl
         poll=object_poll
         )
 
-    custom_scheme_enabled : bpy.props.BoolProperty(
-        name="Enable custom prefix",
-        description="If to allow usage of custom prefixes that will replace the default Source prefixes",
-        default=False
-        ) 
-
-    custom_scheme_prefix : bpy.props.StringProperty(
-        name='Prefix',
-        description="Custom prefix that will be used instead",
-        default=''
-        )
-
     affected_side : bpy.props.EnumProperty(
         name="Affected side", 
         description="Side that will be used for applying symmetry constraints", 
         items=[
-            ('OP1', "Left Side", "Left to Right"), 
-            ('OP2', "Right Side", "Right to Left")
+            ('LTR', "Left Side", "Left to Right"), 
+            ('RTL', "Right Side", "Right to Left")
         ]
     )
 
@@ -71,20 +60,75 @@ class VAT_properties(bpy.types.PropertyGroup): #Defines global properties the pl
         name="Retarget Constraints",
         description="Used to preview the animation for the armature after baking",
         default=True,
-        update=advanced_ik.update_retarget_constraints
+        update=advanced_ik.retarget_constraints
+    )
+
+    bake_helper_bones : bpy.props.BoolProperty(
+        name="Bake Helper Bones",
+        description="Only required for viewmodels",
+        default=False,
+    )
+
+    #Armature creation selection
+
+    game_armature_type : bpy.props.EnumProperty(
+        name="Type",
+        description="Armature type",
+        items=[
+            ('PM', "Playermodel", "World armature"),
+            ('VM', "Viewmodel", "View armature")
+        ],
+        update=utils.update_armature
+    )
+
+    game_armature : bpy.props.EnumProperty(
+        name="Game Armature", 
+        description="Create armature from the selected game", 
+        items=[
+            ('HL2', "Half Life 2/Garry's Mod", "Citizen armature"), 
+            ('L4D2', "Left 4 Dead 2", "Survivor armatures"),
+            ('SBOX', "S&Box", "Standard S&Box armature"),
+        ],
+        update=utils.update_armature
+    )
+
+    game_armature_l4d2 : bpy.props.EnumProperty(
+        name="L4D Survivor Armatures",
+        description="Selection of survivor armatures",
+        items=[
+            ('BILL', "Bill", ""),
+            ('FRANCIS', "Francis", ""),
+            ('LOUIS', "Louis", ""),
+            ('ZOEY', "Zoey", ""),
+            ('COACH', "Coach", ""),
+            ('ELLIS', "Ellis", ""),
+            ('NICK', "Nick", ""),
+            ('ROCHELLE', "Rochelle", "")
+        ],
+        update=utils.update_armature
     )
 
 class VAT_info(bpy.types.PropertyGroup):
 
-    #Operator checks for undos and redos
+    unit : bpy.props.FloatProperty(
+        default=0
+    )
 
+    ##Operator checks for undos and redos##
+    creating_armature : bpy.props.BoolProperty(
+        default=False
+    )
+    
     armature_name : bpy.props.StringProperty(
         default=''
     )
 
-    scheme : bpy.props.IntProperty(
-        default=0
-        #-1 = No armature, 0 = Source, 1 = Blender, 2 = SFM, 3 = Custom 1, 4 = Custom 2
+    generated_armature_name : bpy.props.StringProperty(
+        default=''
+    )
+
+    unconverted_armature : bpy.props.BoolProperty(
+        default=False
     )
 
     symmetry : bpy.props.IntProperty(
@@ -92,14 +136,50 @@ class VAT_info(bpy.types.PropertyGroup):
         #0 = Neither side, 1 = Left, 2 = Right
     )
 
+    ##Weight armature
     weight_armature : bpy.props.BoolProperty(
         default=False
     )
 
+    ##Animation armature data##
     animation_armature : bpy.props.BoolProperty(
         default=False
     )
 
     animation_armature_setup : bpy.props.BoolProperty(
+        default=False
+    )
+
+    ##Armature information
+    prefix : bpy.props.StringProperty(
+        default=''
+    )
+
+    scheme : bpy.props.IntProperty(
+        default=0
+        #-1 = No armature, 0 = Default, 1 = Blender Friendly
+    )
+
+    viewmodel : bpy.props.BoolProperty(
+        default=False
+    )
+
+    special_viewmodel : bpy.props.BoolProperty(
+        default=False
+    )
+
+    goldsource : bpy.props.BoolProperty(
+        default=False
+    )
+
+    titanfall : bpy.props.BoolProperty(
+        default=False
+    )
+
+    sbox : bpy.props.BoolProperty(
+        default=False
+    )
+
+    sfm : bpy.props.BoolProperty(
         default=False
     )

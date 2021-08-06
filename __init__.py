@@ -7,6 +7,7 @@ from . import preferences
 from . import armature_rename
 from . import constraint_symmetry
 from . import weight_armature
+from . import armature_creation
 from . import utils
 from . import props
 from . import ops
@@ -24,7 +25,7 @@ bl_info = {
     "tracker_url": "https://github.com/Haggets/valve-armature-toolkit/issues",
     "category": "Armature"}
             
-classes = [props.VAT_properties, props.VAT_info, preferences.VAT_preferences, ui.VAT_PT_mainpanel, ui.VAT_PT_armaturerename, ui.VAT_PT_constraintsymmetry, ui.VAT_PT_weightarmature, ui.VAT_PT_rigifyretarget, ui.VAT_PT_rigifyretargetexport, ui.VAT_PT_rigifyretargetparameters, ops.VAT_OT_armaturerename_blender, ops.VAT_OT_armaturerename_source, ops.VAT_OT_constraintsymmetry_create, ops.VAT_OT_constraintsymmetry_delete, ops.VAT_OT_constraintsymmetry_apply, ops.VAT_OT_weightarmature_create, ops.VAT_OT_weightarmature_delete, ops.VAT_OT_rigifyretarget_create, ops.VAT_OT_rigifyretarget_delete, ops.VAT_OT_rigifyretarget_link, ops.VAT_OT_rigifyretarget_bake_single, ops.VAT_OT_rigifyretarget_bake_all, ops.VAT_OT_rigifyretarget_export_all]
+classes = [props.VAT_properties, props.VAT_info, preferences.VAT_preferences, ui.VAT_PT_mainpanel, ui.VAT_PT_armaturerename, ui.VAT_PT_constraintsymmetry, ui.VAT_PT_weightarmature, ui.VAT_PT_rigifyretarget, ui.VAT_PT_rigifyretargetexport, ops.VAT_OT_create_armature, ops.VAT_OT_convert_armature, ops.VAT_OT_armaturerename_blender, ops.VAT_OT_armaturerename_source, ops.VAT_OT_constraintsymmetry_create, ops.VAT_OT_constraintsymmetry_delete, ops.VAT_OT_constraintsymmetry_apply, ops.VAT_OT_weightarmature_create, ops.VAT_OT_weightarmature_delete, ops.VAT_OT_rigifyretarget_create, ops.VAT_OT_rigifyretarget_delete, ops.VAT_OT_rigifyretarget_generate, ops.VAT_OT_rigifyretarget_link, ops.VAT_OT_rigifyretarget_bake_single, ops.VAT_OT_rigifyretarget_bake_all, ops.VAT_OT_rigifyretarget_export_all]
 
 def register():
 
