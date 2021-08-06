@@ -9,11 +9,7 @@ class VAT_PT_mainpanel(bpy.types.Panel): #Main panel that subpanels will use
     bl_idname = 'VAT_PT_mainpanel'
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
-    bl_context = 'data'
-
-    @classmethod 
-    def poll(cls, context): #Won't show up unless there is a selected armature
-        return (context.object is not None and context.object.type == 'ARMATURE')
+    bl_context = 'object'
 
     def draw(self, context):
         vatproperties = bpy.context.scene.vatproperties
@@ -22,25 +18,48 @@ class VAT_PT_mainpanel(bpy.types.Panel): #Main panel that subpanels will use
         col = layout.column()
         
         col.prop(vatproperties, 'target_armature') #Armature that will be affected by the utilities
-        if vatproperties.target_armature:
-            if vatproperties.custom_scheme_enabled and vatproperties.custom_scheme_prefix:
-                col.label(text="Type: Custom Prefix Armature")
-            elif vatinfo.scheme == -1:
-                col.label(text="Type: Unknown Armature")
-            elif utils.arm.goldsource:
-                col.label(text="Type: GoldSource Armature")
-            elif utils.arm.viewmodel:
-                col.label(text="Type: Viewmodel Armature")
-            elif utils.arm.sfm:
-                col.label(text="Type: Source Filmmaker Armature (Unsupported)")
-            elif not utils.arm.sfm:
-                col.label(text="Type: Default Source Armature")
-        else:
-            col.label(text="No Armature...")
+        if not vatproperties.target_armature and not vatinfo.creating_armature:
+            col.operator('vat.create_armature')
+        
+        if vatinfo.creating_armature:
+            col.prop(vatproperties, 'game_armature_type')
+            col.prop(vatproperties, 'game_armature')
 
-        col.prop(vatproperties, 'custom_scheme_enabled')
-        if vatproperties.custom_scheme_enabled:
-            col.prop(vatproperties, 'custom_scheme_prefix')
+            #L4D2 survivors
+            if vatproperties.game_armature_type == 'PM' and vatproperties.game_armature == 'L4D2':
+                col.prop(vatproperties, 'game_armature_l4d2')
+
+            col.operator('vat.create_armature_apply')
+
+            if vatproperties.game_armature == 'SBOX' and vatinfo.creating_armature:
+                if vatproperties.game_armature_type == 'PM':
+                    col.label(text="These may be prone to changing...")
+                else:
+                    col.label(text="Not currently available...")
+
+        if vatinfo.unconverted_armature:
+            col.operator('vat.convert_armature')
+
+        if not vatinfo.creating_armature:
+            if vatproperties.target_armature:
+                if vatinfo.scheme == -1:
+                    col.label(text="Type: Unknown Armature")
+                elif vatinfo.viewmodel:
+                    col.label(text="Type: Viewmodel Armature")
+                elif vatinfo.goldsource:
+                    col.label(text="Type: GoldSource Armature")
+                elif vatinfo.titanfall:
+                    col.label(text="Type: Titanfall Armature")
+                elif vatinfo.sbox:
+                    col.label(text="Type: S&Box Armature")
+                elif vatinfo.sfm:
+                    col.label(text="Type: Source Filmmaker Armature (Unsupported)")
+                else:
+                    col.label(text="Type: Default Source Armature")
+            else:
+                col.label(text="No Armature...")
+        else:
+            col.label(text="Select armature in plugin once done")
         
 class VAT_PT_armaturerename(bpy.types.Panel): #Armature rename panel
     bl_label = "Armature Renaming"
@@ -65,7 +84,7 @@ class VAT_PT_armaturerename(bpy.types.Panel): #Armature rename panel
             if vatinfo.scheme == 0:
                 col.label(text="Current: Default Scheme")
             elif vatinfo.scheme == 1:
-                col.label(text="Current: Blender Scheme")
+                col.label(text="Current: Blender Friendly Scheme")
 
         if preferences.show_info:
             box = layout.box()
@@ -88,8 +107,8 @@ class VAT_PT_constraintsymmetry(bpy.types.Panel): #Constraint Symmetry panel
         layout = self.layout
         
         row = layout.row()
-        row.operator('vat.constraintsymmetry_create', text='Generate')
-        row.operator('vat.constraintsymmetry_delete', text='Delete')
+        row.operator('vat.constraintsymmetry_create', text='Add')
+        row.operator('vat.constraintsymmetry_delete', text='Remove')
 
         row = layout.row()
         row.prop(vatproperties, 'affected_side', expand=True)
@@ -97,7 +116,7 @@ class VAT_PT_constraintsymmetry(bpy.types.Panel): #Constraint Symmetry panel
         col = layout.column()
         col.operator('vat.constraintsymmetry_apply', text='Apply', icon='OUTLINER_DATA_ARMATURE')
         if vatproperties.target_armature:
-            if vatproperties.affected_side == 'OP1' and vatinfo.symmetry == 2 or vatproperties.affected_side == 'OP2' and vatinfo.symmetry == 1:
+            if vatproperties.affected_side == 'LTR' and vatinfo.symmetry == 2 or vatproperties.affected_side == 'RTL' and vatinfo.symmetry == 1:
                 col.label(text="Already applied on the opposite side")
         
         col = layout.column()
@@ -163,14 +182,13 @@ class VAT_PT_rigifyretarget(bpy.types.Panel): #Rigify Retargetting panel
             if vatproperties.target_armature:
                 if vatinfo.animation_armature:
                     if vatinfo.animation_armature_setup:
-                        if bpy.context.object.name != 'rig':
+                        if bpy.context.object.name != vatproperties.target_armature.name + '.anim':
+                            col.operator('vat.rigifyretarget_generate', text="Generate rig", icon='OUTLINER_DATA_ARMATURE')
                             if vatproperties.target_object:
                                 col.label(text="Reposition facial drivers correctly", icon='INFO')
                                 col.label(text="and edit bone parameters to your need")
                             else:
                                 col.label(text="Edit bone parameters to your need", icon='INFO')
-
-                            col.operator('pose.rigify_generate', text="Generate rig", icon='OUTLINER_DATA_ARMATURE')
 
                         else:
                             col.operator('vat.rigifyretarget_link', text="Link to generated armature", icon='OUTLINER_DATA_ARMATURE')
@@ -199,39 +217,27 @@ class VAT_PT_rigifyretargetexport(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         col = layout.column()
+        vatproperties = bpy.context.scene.vatproperties
+
 
         col.label(text="Action bake:")
         row = layout.row()
         row.operator('vat.rigifyretarget_bake_single', text='Single', icon='ACTION')
         row.operator('vat.rigifyretarget_bake_all', text='All', icon='ACTION')
+        col = layout.column()
+        col.prop(vatproperties, 'bake_helper_bones')
+        if not vatproperties.retarget_constraints:
+            col.label(text="Retarget constraints are disabled...")
 
         col = layout.column()
 
+        #If Blender Source Tools is enabled
         if bpy.context.preferences.addons.get('io_scene_valvesource'):
-            col.label(text="Export:")
+            col.label(text="Export: (Only for Source 1)")
             col.operator('vat.rigifyretarget_export_all', text="Export All", icon='ACTION')
+            if vatproperties.retarget_constraints == True:
+                col = layout.column()
+                col.label(text="Retarget constraints are enabled...")
         else:
             col.label(text="Blender Source Tools is not installed", icon='CANCEL')
             col.label(text="Please install if you want to use this feature")
-
-class VAT_PT_rigifyretargetparameters(bpy.types.Panel):
-    bl_label = "Parameters"
-    bl_parent_id = 'VAT_PT_rigifyretarget'
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_context = 'data'
-
-    def draw(self, context):
-        layout = self.layout
-        if bpy.context.object.type == 'ARMATURE' and bpy.context.active_pose_bone and bpy.context.active_object.data.get("rig_id") is None:
-            col = layout.column()
-            id_store = bpy.context.window_manager
-            bone = bpy.context.active_pose_bone
-            col.prop_search(bone, "rigify_type", id_store, "rigify_types", text="Rig type")
-
-        bone = bpy.context.selected_bones
-        if bone:
-            bone = bone[0]
-            col = layout.column()
-            col.active = (bone.parent is not None)
-            col.prop(bone, "use_connect")
