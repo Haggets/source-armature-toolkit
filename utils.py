@@ -186,7 +186,7 @@ class Armature: #Armature base
                             continue
                         
                     ##S&Box##
-                    elif vatinfo.sbox or self.full_bonelist.count('root_IK'):
+                    elif vatinfo.sbox or self.full_bonelist.count('root_IK') or bone.title().count('Meta'):
                         vatinfo.sbox = True
                         vatinfo.prefix = ''
                         self.side = ['L_', 'R_', '_L', '_R']
@@ -1460,7 +1460,8 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                             else:
                                 parent.tail = pbone.head
                         else:
-                            parent.tail = pbone.head
+                            if parent:
+                                parent.tail = pbone.head
                         
                         #Filters out bones whose parent should not be connected to them
                         if container == 'thigh' or container == 'clavicle' or container == 'finger0' or container == 'finger1' or container == 'finger2' or container == 'finger3' or container == 'finger4' or container == 'fingercarpal' or container == 'indexmeta' or container == 'middlemeta' or container == 'ringmeta':
