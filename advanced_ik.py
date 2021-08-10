@@ -1305,6 +1305,7 @@ def anim_armature(action):
         collection.objects.link(parent)
 
         armature = bpy.data.objects[utils.arm.armature.name + '.anim']
+        armature.data.name = utils.arm.armature_real.name + '.anim'
 
         utils.update(1, armature)
 

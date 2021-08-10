@@ -5,7 +5,7 @@ from . import utils
 from .addon_updater_ops import get_user_preferences
 
 class SAT_PT_mainpanel(bpy.types.Panel): #Main panel that subpanels will use
-    bl_label = "Valve Armature Toolkit"
+    bl_label = "Source Armature Toolkit"
     bl_idname = 'SAT_PT_mainpanel'
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
