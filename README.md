@@ -5,7 +5,7 @@ Flexible multi-purpose Blender plugin focused on fastening the workflow of worki
 
 # How to Install
 
-The plugin is installed like any other; In n the Blender preferences > Addons, install, and select the plugin in whatever folder you have it in.
+The plugin is installed like any other; In the Blender preferences > Addons, install, and select the plugin in whatever folder you have it in.
 
 ![Addons page](/img/Install1.png)
 
