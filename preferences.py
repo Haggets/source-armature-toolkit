@@ -2,7 +2,7 @@ import bpy
 from . import addon_updater_ops
 
 @addon_updater_ops.make_annotations
-class VAT_preferences(bpy.types.AddonPreferences):
+class SAT_preferences(bpy.types.AddonPreferences):
 	"""Valve Armature Toolkit updater preferences"""
 	bl_idname = __package__
 

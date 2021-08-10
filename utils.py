@@ -25,35 +25,35 @@ class Prefixes: #Container for other prefixes
 
 @persistent
 def create_armature(self, context): #Creates new armature class
-    vatproperties = bpy.context.scene.vatproperties
-    vatinfo = bpy.context.scene.vatinfo
+    satproperties = bpy.context.scene.satproperties
+    satinfo = bpy.context.scene.satinfo
 
-    if vatinfo.creating_armature:
-        vatinfo.creating_armature = False
+    if satinfo.creating_armature:
+        satinfo.creating_armature = False
 
-    if vatproperties.target_armature:
-        if vatinfo.armature_name != vatproperties.target_armature.name:
-            vatinfo.armature_name = ''
-            vatinfo.unit = 0
+    if satproperties.target_armature:
+        if satinfo.armature_name != satproperties.target_armature.name:
+            satinfo.armature_name = ''
+            satinfo.unit = 0
 
         global arm
-        arm = Armature(vatproperties.target_armature)
-        vatinfo.armature_name = vatproperties.target_armature.name
+        arm = Armature(satproperties.target_armature)
+        satinfo.armature_name = satproperties.target_armature.name
     else:
-        vatinfo.armature_name = ''
+        satinfo.armature_name = ''
         
 @persistent
 def armatures_reset(*args):
-    vatproperties = bpy.context.scene.vatproperties
-    vatinfo = bpy.context.scene.vatinfo
+    satproperties = bpy.context.scene.satproperties
+    satinfo = bpy.context.scene.satinfo
 
-    if vatinfo.armature_name:
-        vatproperties.target_armature = bpy.data.objects[vatinfo.armature_name]
+    if satinfo.armature_name:
+        satproperties.target_armature = bpy.data.objects[satinfo.armature_name]
 
 class Armature: #Armature base
 
     def __init__(self, armature):
-        vatinfo = bpy.context.scene.vatinfo
+        satinfo = bpy.context.scene.satinfo
 
         #Basic armature information
         self.armature = armature
@@ -66,12 +66,12 @@ class Armature: #Armature base
         self.animation_armature_real = None
 
         #Functions executed to gather armature information
-        if vatinfo.armature_name:
+        if satinfo.armature_name:
             self.get_bones(False)
         else:
             self.get_bones(True)
             
-        if vatinfo.scheme != -1:
+        if satinfo.scheme != -1:
             self.get_unit()
             self.get_armatures()
             self.get_constraints()
@@ -82,8 +82,8 @@ class Armature: #Armature base
             print("Empty armature, cannot proceed")
             
     def get_bones(self, report): #Builds bone lists
-        vatproperties = bpy.context.scene.vatproperties
-        vatinfo = bpy.context.scene.vatinfo
+        satproperties = bpy.context.scene.satproperties
+        satinfo = bpy.context.scene.satinfo
         armature = self.armature
 
         if self.armature:
@@ -110,13 +110,13 @@ class Armature: #Armature base
                 helper_bones = []
                 central_bones = []
 
-                vatinfo.prefix = ''
-                vatinfo.sbox = False
-                vatinfo.goldsource = False
-                vatinfo.titanfall = False
-                vatinfo.sfm
-                vatinfo.viewmodel = False
-                vatinfo.special_viewmodel = False
+                satinfo.prefix = ''
+                satinfo.sbox = False
+                satinfo.goldsource = False
+                satinfo.titanfall = False
+                satinfo.sfm
+                satinfo.viewmodel = False
+                satinfo.special_viewmodel = False
 
                 for bone in self.full_bonelist:
                     marked = False
@@ -127,14 +127,14 @@ class Armature: #Armature base
 
                     ##Source##
                     elif bone.startswith('ValveBiped.'):
-                        if not vatinfo.special_viewmodel:
-                            vatinfo.prefix = 'ValveBiped.Bip01_'
+                        if not satinfo.special_viewmodel:
+                            satinfo.prefix = 'ValveBiped.Bip01_'
                         self.side = ['L_', 'R_', '_L', '_R']
                         helper_bones = ['ulna', 'wrist', 'elbow', 'knee', 'trapezius', 'quad', 'bicep', 'shoulder', 'thumbroot']
                         central_bones = []
 
                         #Dumb leftover bone with no purpose in some Titanfall armatures
-                        if vatinfo.titanfall:
+                        if satinfo.titanfall:
                             self.custom_bones['others'].append('p2.' + bone.replace('ValveBiped.', ''))
                             continue
 
@@ -153,42 +153,42 @@ class Armature: #Armature base
                             continue
 
                         elif bone == 'ValveBiped.ValveBiped':
-                            vatinfo.viewmodel = True
+                            satinfo.viewmodel = True
                             self.other_bones['root'].append(bone.replace(Prefixes.other, 'p2.'))
                             continue
 
                         elif bone == 'ValveBiped.bip_root' or bone == 'ValveBiped.bip_base':
-                            vatinfo.prefix = 'ValveBiped.bip_'
-                            vatinfo.viewmodel = True
-                            vatinfo.special_viewmodel = True
-                            self.other_bones['root'].append(bone.replace(vatinfo.prefix, 'p1.'))
+                            satinfo.prefix = 'ValveBiped.bip_'
+                            satinfo.viewmodel = True
+                            satinfo.special_viewmodel = True
+                            self.other_bones['root'].append(bone.replace(satinfo.prefix, 'p1.'))
                             continue
 
                     ##Source Filmmaker (Not supported currently)##
-                    elif bone.startswith('bip_') and not vatinfo.special_viewmodel:
-                        vatinfo.sfm = True
-                        vatinfo.prefix = 'bip_'
+                    elif bone.startswith('bip_') and not satinfo.special_viewmodel:
+                        satinfo.sfm = True
+                        satinfo.prefix = 'bip_'
 
                     ##Gold Source##
                     elif bone.title().startswith('Bip0') or bone.count('Bone') or bone.count('Dummy'):
-                        vatinfo.goldsource = True
+                        satinfo.goldsource = True
                         self.side = [' L ', ' R ', '_L', '_R']
                         helper_bones = []
                         central_bones = []
 
                         if bone.title().startswith('Bip01'):
-                            vatinfo.prefix = 'Bip01'
+                            satinfo.prefix = 'Bip01'
                         elif bone.title().startswith('Bip02'):
-                            vatinfo.prefix = 'Bip02'
+                            satinfo.prefix = 'Bip02'
                         
-                        if bone == vatinfo.prefix:
+                        if bone == satinfo.prefix:
                             self.other_bones['root'].append(bone)
                             continue
                         
                     ##S&Box##
-                    elif vatinfo.sbox or self.full_bonelist.count('root_IK') or bone.title().count('Meta'):
-                        vatinfo.sbox = True
-                        vatinfo.prefix = ''
+                    elif satinfo.sbox or self.full_bonelist.count('root_IK') or bone.title().count('Meta'):
+                        satinfo.sbox = True
+                        satinfo.prefix = ''
                         self.side = ['L_', 'R_', '_L', '_R']
                         helper_bones = ['twist', 'helper']
                         central_bones = ['pelvis', 'spine_0', 'spine_1', 'spine_2', 'neck_0', 'head']
@@ -203,8 +203,8 @@ class Armature: #Armature base
                         
                     ##Titanfall##
                     elif bone.startswith('def') or bone.startswith('ja') or bone.startswith('jx'):
-                        vatinfo.titanfall = True
-                        vatinfo.prefix = 'def_'
+                        satinfo.titanfall = True
+                        satinfo.prefix = 'def_'
                         self.side = ['L_', 'R_', '_L', '_R']
                         helper_bones = ['forearm', 'elbowb', 'kneeb', 'shouldermid', 'shouldertwist']
                         central_bones = []
@@ -225,8 +225,8 @@ class Armature: #Armature base
                     if central_bones:
                         for central in central_bones:
                             if bone.casefold().count(central):
-                                if vatinfo.prefix:
-                                    central_bones_raw.append(bone.replace(vatinfo.prefix, 'p1.'))
+                                if satinfo.prefix:
+                                    central_bones_raw.append(bone.replace(satinfo.prefix, 'p1.'))
                                 else:
                                     central_bones_raw.append(bone)
                                 marked = True
@@ -236,8 +236,8 @@ class Armature: #Armature base
                     if helper_bones:
                         for helper in helper_bones:
                             if bone.casefold().count(helper):
-                                if vatinfo.prefix:
-                                    helper_bones_raw.append(bone.replace(vatinfo.prefix, 'p1.'))
+                                if satinfo.prefix:
+                                    helper_bones_raw.append(bone.replace(satinfo.prefix, 'p1.'))
                                 else:
                                     helper_bones_raw.append(bone)
                                 marked = True
@@ -246,36 +246,36 @@ class Armature: #Armature base
                     if marked:
                         continue
 
-                    if bone.startswith(vatinfo.prefix) or vatinfo.special_viewmodel:
-                        bone2 = bone.replace(vatinfo.prefix, '').title()
+                    if bone.startswith(satinfo.prefix) or satinfo.special_viewmodel:
+                        bone2 = bone.replace(satinfo.prefix, '').title()
 
                         if bone.casefold().count('weapon') or bone.casefold().count('gun') or bone.casefold().count('missile'):
-                            if vatinfo.prefix:
-                                other_bones_raw.append(bone.replace(vatinfo.prefix, 'p1.'))
+                            if satinfo.prefix:
+                                other_bones_raw.append(bone.replace(satinfo.prefix, 'p1.'))
                             else:
                                 other_bones_raw.append(bone)
                             continue
 
                         #Default prefix
                         elif bone2.startswith(self.side[0]) or bone2.startswith(self.side[1]): #Symmetrical
-                            vatinfo.scheme = 0
-                            if vatinfo.prefix:
-                                symmetrical_bones_raw.append(bone.replace(vatinfo.prefix, 'p1.'))
+                            satinfo.scheme = 0
+                            if satinfo.prefix:
+                                symmetrical_bones_raw.append(bone.replace(satinfo.prefix, 'p1.'))
                             else:
                                 symmetrical_bones_raw.append(bone)
                             continue
 
                         #Blender Friendly prefix
                         elif bone2.endswith(self.side[2]) or bone2.endswith(self.side[3]):
-                            vatinfo.scheme = 1
-                            if vatinfo.prefix:
-                                symmetrical_bones_raw.append(bone.replace(vatinfo.prefix, 'p1.'))
+                            satinfo.scheme = 1
+                            if satinfo.prefix:
+                                symmetrical_bones_raw.append(bone.replace(satinfo.prefix, 'p1.'))
                             else:
                                 symmetrical_bones_raw.append(bone)
                             continue
 
-                        elif vatinfo.prefix:
-                            central_bones_raw.append(bone.replace(vatinfo.prefix, 'p1.'))
+                        elif satinfo.prefix:
+                            central_bones_raw.append(bone.replace(satinfo.prefix, 'p1.'))
                             continue
 
                     if bone.startswith(Prefixes.other):
@@ -287,7 +287,7 @@ class Armature: #Armature base
 
                 #Empty armature
                 if not symmetrical_bones_raw and not central_bones_raw and not self.other_bones:
-                    vatinfo.scheme = -1
+                    satinfo.scheme = -1
 
                 ###Organizes dictionary from raw lists###
 
@@ -300,13 +300,13 @@ class Armature: #Armature base
 
                     for bone in symmetrical_bones_raw:
                         #L4D special infected viewmodel
-                        if vatinfo.special_viewmodel:
+                        if satinfo.special_viewmodel:
                             arms = ['Collar', 'Upperarm', 'Lowerarm', 'Hand']
                             legs = []
                             fingers = ['thumb_0', 'thumb_1', 'thumb_2', 'index_0', 'index_1', 'index_2', 'middle_0', 'middle_1', 'middle_2', 'ring_0', 'ring_1', 'ring_2', 'pinky_0', 'pinky_1', 'pinky_2']
 
                         #Gold Source
-                        elif vatinfo.goldsource:
+                        elif satinfo.goldsource:
                             arms = ['Arm', 'Arm1', 'Arm2', 'Hand']
                             legs = ['Leg', 'Leg1', 'Foot', None]
                             fingers = ['Finger0', 'Finger01', 'Finger02', 'Finger1', 'Finger11', 'Finger12', 'Finger2', 'Finger21', 'Finger22', 'Finger3', 'Finger31', 'Finger32', 'Finger4', 'Finger41', 'Finger42']
@@ -339,7 +339,7 @@ class Armature: #Armature base
                                     continue
 
                         #Titanfall
-                        elif vatinfo.titanfall:
+                        elif satinfo.titanfall:
                             arms = ['Clav', 'Shoulder', 'Elbow', 'Wrist']
                             legs = ['Thigh', 'Knee', 'Ankle', 'Ball']
                             fingers = ['finThumbA', 'finThumbB', 'finThumbC', 'finIndexA', 'finIndexB', 'finIndexC', 'finMidA', 'finMidB', 'finMidC', 'finRingA', 'finRingB', 'finRingC', 'finPinkyA', 'finPinkyB', 'finPinkyC']
@@ -363,7 +363,7 @@ class Armature: #Armature base
                                 continue
 
                         #Sbox
-                        elif vatinfo.sbox:
+                        elif satinfo.sbox:
                             arms = ['Clavicle', 'Arm_Upper', 'Arm_Lower', 'Hand']
                             legs = ['Leg_Upper', 'Leg_Lower', 'Ankle', 'Ball']
                             fingers = ['thumb_0', 'thumb_1', 'thumb_2', 'finger_index_0', 'finger_index_1', 'finger_index_2', 'finger_middle_0', 'finger_middle_1', 'finger_middle_2', 'finger_ring_0', 'finger_ring_1', 'finger_ring_2', None, None, None,]
@@ -537,14 +537,14 @@ class Armature: #Armature base
                     #head = neck, head
 
                     for bone in central_bones_raw:
-                        if vatinfo.special_viewmodel:
+                        if satinfo.special_viewmodel:
                             spines = [None, None, None, None, 'Spine_2', 'Spine_3']
                             head = []
-                        elif vatinfo.goldsource:
+                        elif satinfo.goldsource:
                             spines = ['Pelvis', 'Spine', 'Spine1', 'Spine2', 'Spine3', 'Spine4']
                             head = ['Neck', 'Head']
 
-                        elif vatinfo.titanfall:
+                        elif satinfo.titanfall:
                             spines = ['Hip', 'Spinea', 'Spineb', 'Spinec', None, None]
                             head = ['Neck', 'Head']
 
@@ -554,7 +554,7 @@ class Armature: #Armature base
                                 self.central_bones['neck2'].sort()
                                 continue
 
-                        elif vatinfo.sbox:
+                        elif satinfo.sbox:
                             spines = ['Pelvis', 'Spine_0', 'Spine_1', 'Spine_2', None, None]
                             head = ['Neck_0', 'Head']
 
@@ -619,7 +619,7 @@ class Armature: #Armature base
                         #legs = Quadricep, Knee
 
                         #Additional bone set only in viewmodels that need a separate container to avoid messing with wrist generation
-                        if vatinfo.viewmodel:
+                        if satinfo.viewmodel:
                             if bone.title().count('Ulna01'):
                                 self.helper_bones['viewmodel']['ulna_extra1'].append(bone)
                                 self.helper_bones['viewmodel']['ulna_extra1'].sort()
@@ -651,10 +651,10 @@ class Armature: #Armature base
                                 self.helper_bones['viewmodel']['thumbfix'].sort()
                                 continue
 
-                        if vatinfo.titanfall:
+                        if satinfo.titanfall:
                             arms = [None, 'Shouldertwist', 'Shouldermid', 'Elbowb', None, 'Forearm']
                             legs = [None, 'Kneeb']
-                        elif vatinfo.sbox:
+                        elif satinfo.sbox:
                             arms = [None, None, 'Arm_Upper', 'Arm_Elbow_Helper', None, 'Arm_Lower']
                             legs = ['Leg_Upper', 'Leg_Knee_Helper']
 
@@ -760,7 +760,7 @@ class Armature: #Armature base
                 if other_bones_raw:
                     for bone in other_bones_raw:
                         #Titanfall
-                        if vatinfo.titanfall:
+                        if satinfo.titanfall:
                             if bone.count('ja'):
                                 self.other_bones['attachment'].append(bone)
                                 self.other_bones['attachment'].sort()
@@ -770,7 +770,7 @@ class Armature: #Armature base
                                 self.other_bones['others'].sort()
                             else:
                                 custom_bones_raw.append(bone)
-                        elif vatinfo.sbox:
+                        elif satinfo.sbox:
                             if bone.casefold().count('ik'):
                                 self.other_bones.setdefault('ik', [])
                                 self.other_bones['ik'].append(bone)
@@ -882,7 +882,7 @@ class Armature: #Armature base
                 for bone in self.full_bonelist:
                     bone = armature.pose.bones[bone]
                     if bone.bone.use_connect:
-                        vatinfo.unconverted_armature = True
+                        satinfo.unconverted_armature = True
                         break
 
                 #Final bone report
@@ -894,7 +894,7 @@ class Armature: #Armature base
                     print("Custom bones:", self.custom_bones)
                 
             else:
-                vatinfo.scheme = -1
+                satinfo.scheme = -1
 
             #print(symmetrical_bones_raw)
             #print(central_bones_raw)
@@ -904,119 +904,119 @@ class Armature: #Armature base
 
     ##Relative unit##
     def get_unit(self):
-        vatinfo = bpy.context.scene.vatinfo 
+        satinfo = bpy.context.scene.satinfo 
 
         #Equivalent to 1 meter relative to the first bone's length in order to maintain consistency between different scales
-        if not vatinfo.unit:
+        if not satinfo.unit:
             armature = self.armature
             unit_bone = armature.pose.bones[0].length
 
-            #if vatinfo.goldsource:
-            #    vatinfo.unit = unit_bone*209.97500305553845
-            if vatinfo.goldsource:
-                vatinfo.unit = unit_bone*4.36085145847641
-            elif vatinfo.sbox:
-                vatinfo.unit = unit_bone*0.09201296705261927
+            #if satinfo.goldsource:
+            #    satinfo.unit = unit_bone*209.97500305553845
+            if satinfo.goldsource:
+                satinfo.unit = unit_bone*4.36085145847641
+            elif satinfo.sbox:
+                satinfo.unit = unit_bone*0.09201296705261927
             else:
-                vatinfo.unit = unit_bone*5.356327005986801
+                satinfo.unit = unit_bone*5.356327005986801
 
-            print('Relative unit:', vatinfo.unit)
+            print('Relative unit:', satinfo.unit)
 
         #Unit relative to the size it would be if imported from Blender Source Tools for Source armatures (For the sake of readability)
 
     def get_armatures(self): #Gets generated armatures for selected armature
-        vatinfo = bpy.context.scene.vatinfo
+        satinfo = bpy.context.scene.satinfo
 
         def get_weight_armature():
             try:
                 self.weight_armature = bpy.data.objects[self.armature.name + '.weight']
-                vatinfo.weight_armature = True
+                satinfo.weight_armature = True
             except:
-                vatinfo.weight_armature = False
+                satinfo.weight_armature = False
         
             try:
                 self.weight_armature_real = bpy.data.armatures[self.armature_real.name + '.weight']
-                vatinfo.weight_armature = True
+                satinfo.weight_armature = True
             except:
-                vatinfo.weight_armature = False
+                satinfo.weight_armature = False
                 
         def get_anim_armature():
             #Checks if it's a setup armature or a proper armature
             try:
                 try:
                     self.animation_armature = bpy.data.objects[self.armature.name + '.anim_setup']
-                    vatinfo.animation_armature_setup = True
+                    satinfo.animation_armature_setup = True
                 except:
                     self.animation_armature = bpy.data.objects[self.armature.name + '.anim']
-                    vatinfo.animation_armature_setup = False
+                    satinfo.animation_armature_setup = False
 
                 try:
                     self.animation_armature_real = bpy.data.armatures[self.armature_real.name + '.anim_setup']
-                    vatinfo.animation_armature_setup = True
+                    satinfo.animation_armature_setup = True
                 except:
                     self.animation_armature_real = bpy.data.armatures[self.armature_real.name + '.anim']
-                    vatinfo.animation_armature_setup = False
+                    satinfo.animation_armature_setup = False
 
-                vatinfo.animation_armature = True
+                satinfo.animation_armature = True
 
             except:
-                vatinfo.animation_armature = False
+                satinfo.animation_armature = False
 
         get_weight_armature()
         get_anim_armature()
 
     def get_constraints(self): #Gets previously added constraints that have not been removed
 
-        vatinfo = bpy.context.scene.vatinfo
+        satinfo = bpy.context.scene.satinfo
         armature = self.armature
 
         for cat in self.symmetrical_bones.keys():
             for bone in self.symmetrical_bones[cat].values():
                 for bone in bone:
                     if bone:
-                        if vatinfo.symmetry:
+                        if satinfo.symmetry:
                             break
                         else:
                             prefix, bone = bone_convert(bone)
                             if bone.startswith(self.side[0]) or bone.endswith(self.side[2]):
                                 for constraint in armature.pose.bones[prefix + bone].constraints:
                                     if constraint.name == 'Constraint Symmetry Location' or constraint.name == 'Constraint Symmetry Rotation':
-                                        vatinfo.symmetry = 1
+                                        satinfo.symmetry = 1
                                         break
                                     else:
-                                        vatinfo.symmetry = 0
+                                        satinfo.symmetry = 0
 
                             elif bone.startswith(self.side[1]) or bone.endswith(self.side[3]):
                                 for constraint in armature.pose.bones[prefix + bone].constraints:
                                     if constraint.name == 'Constraint Symmetry Location' or constraint.name == 'Constraint Symmetry Rotation':
-                                        vatinfo.symmetry = 2
+                                        satinfo.symmetry = 2
                                         break
                                     else:
-                                        vatinfo.symmetry = 0
+                                        satinfo.symmetry = 0
         
         for cat in self.helper_bones.keys():
             for bone in self.helper_bones[cat].values():
                 for bone in bone:
                     if bone:
-                        if vatinfo.symmetry:
+                        if satinfo.symmetry:
                             break
                         else:
                             prefix, bone = bone_convert(bone)
                             if bone.startswith(self.side[0]) or bone.endswith(self.side[2]):
                                 for constraint in armature.pose.bones[prefix + bone].constraints:
                                     if constraint.name == 'Constraint Symmetry Location' or constraint.name == 'Constraint Symmetry Rotation':
-                                        vatinfo.symmetry = 1
+                                        satinfo.symmetry = 1
                                         break
                                     else:
-                                        vatinfo.symmetry = 0
+                                        satinfo.symmetry = 0
 
                             elif bone.startswith(self.side[1]) or bone.endswith(self.side[3]):
                                 for constraint in armature.pose.bones[prefix + bone].constraints:
                                     if constraint.name == 'Constraint Symmetry Location' or constraint.name == 'Constraint Symmetry Rotation':
-                                        vatinfo.symmetry = 2
+                                        satinfo.symmetry = 2
                                         break
                                     else:
-                                        vatinfo.symmetry = 0
+                                        satinfo.symmetry = 0
             
     def set_groups(self): #Organizes bones by bone group and bone layers
         armature = self.armature
@@ -1117,8 +1117,8 @@ class Armature: #Armature base
             print("Bone groups set!")
             
     def set_helper_bones(self):
-        vatproperties = bpy.context.scene.vatproperties
-        vatinfo = bpy.context.scene.vatinfo
+        satproperties = bpy.context.scene.satproperties
+        satinfo = bpy.context.scene.satinfo
         armature = self.armature
         new = False
 
@@ -1148,7 +1148,7 @@ class Armature: #Armature base
                             
                                 #Hand rotation
                                 if container == 'wrist' or container == 'ulna' or container == 'forearm_driven':
-                                    if vatinfo.special_viewmodel:
+                                    if satinfo.special_viewmodel:
                                         transform.from_min_y_rot = radians(-90)
                                         transform.from_max_y_rot = radians(90)
                                     else:
@@ -1163,7 +1163,7 @@ class Armature: #Armature base
                                         transform.to_max_x_rot = radians(75)
 
                                     elif container == 'ulna':
-                                        if vatinfo.special_viewmodel:
+                                        if satinfo.special_viewmodel:
                                             transform.to_min_y_rot = radians(-50)
                                             transform.to_max_y_rot = radians(50)
                                         else:
@@ -1176,7 +1176,7 @@ class Armature: #Armature base
 
                                 #Forearm and thigh rotation
                                 elif container == 'elbow' or container == 'knee' or container == 'quadricep':
-                                    if vatinfo.titanfall and container == 'elbow':
+                                    if satinfo.titanfall and container == 'elbow':
                                         transform.from_min_y_rot = radians(-90)
                                         transform.from_max_y_rot = radians(90)
 
@@ -1198,13 +1198,13 @@ class Armature: #Armature base
                                         transform.subtarget = prefix + bone
 
                                     elif container == 'quadricep':
-                                        if not vatinfo.sbox:
+                                        if not satinfo.sbox:
                                             prefix, bone = bone_convert(self.symmetrical_bones['legs']['thigh'][index])
                                             transform.subtarget = prefix + bone
 
                                 elif container == 'shoulder':
                                     #Not for Titanfall characters
-                                    if not vatinfo.titanfall:
+                                    if not satinfo.titanfall:
                                         transform.from_min_y_rot = radians(-45)
                                         transform.from_max_y_rot = radians(45)
 
@@ -1241,10 +1241,10 @@ class Armature: #Armature base
         if new:
             print("Procedural bones configured!")
 
-        if vatinfo.viewmodel:
-            vatproperties.bake_helper_bones = True
+        if satinfo.viewmodel:
+            satproperties.bake_helper_bones = True
         else:
-            vatproperties.bake_helper_bones = False
+            satproperties.bake_helper_bones = False
 
 #Some functions (Namely creating new bones) do not add the newly created info to the object data until a mode change occurs at least once
 def update(type, object=None):
@@ -1259,15 +1259,15 @@ def update(type, object=None):
         bpy.ops.object.mode_set(mode='EDIT')
 
 def convert_armature_to_source():
-    vatproperties = bpy.context.scene.vatproperties
+    satproperties = bpy.context.scene.satproperties
     pass
 
 def generate_armature(type, action): #Creates or deletes the weight armature
-    vatinfo = bpy.context.scene.vatinfo
+    satinfo = bpy.context.scene.satinfo
     
     real_armature = bpy.data.armatures[arm.armature_real.name]
     
-    unit = vatinfo.unit
+    unit = satinfo.unit
 
     #Creation
     if action == 0:
@@ -1279,7 +1279,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
 
             #Creation and link to current scene
             arm.weight_armature = bpy.data.objects.new(arm.armature.name + '.weight', arm.weight_armature_real)
-            vatinfo.weight_armature = True
+            satinfo.weight_armature = True
 
             collection = arm.armature.users_collection[0]
             collection.objects.link(arm.weight_armature)
@@ -1293,7 +1293,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
 
             #Creation and link to current scene
             arm.animation_armature = bpy.data.objects.new(arm.armature.name + '.anim_setup', arm.animation_armature_real)
-            vatinfo.animation_armature = True
+            satinfo.animation_armature = True
 
             collection = arm.armature.users_collection[0]
             collection.objects.link(arm.animation_armature)
@@ -1436,7 +1436,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                         prefix, bone = bone_convert(bone)
                         if type == 'anim':
                             #Creates copy of bone that retains the original rotation for the retarget empties
-                            if vatinfo.scheme == 0 and not vatinfo.sbox:
+                            if satinfo.scheme == 0 and not satinfo.sbox:
                                 bone2 = armature_rename.bone_rename(1, bone, index)
                                 isolatedbone = armature.data.edit_bones.new(prefix + bone2 + ".isolated")
                             else:
@@ -1470,7 +1470,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                             if type == 'weight':
                                 if container == 'calf' or container == 'upperarm' or container == 'forearm' or container == 'hand':
                                     continue
-                                elif vatinfo.sbox and container == 'foot':
+                                elif satinfo.sbox and container == 'foot':
                                     continue
                                 
                         ebone.use_connect = True
@@ -1540,9 +1540,9 @@ def generate_armature(type, action): #Creates or deletes the weight armature
 
                     #Extends head's length to be on par with actual head height
                     if container == 'head':
-                        if vatinfo.goldsource: #Update the remaining 2 to *unit
+                        if satinfo.goldsource: #Update the remaining 2 to *unit
                             ebone.tail.xyz = pbone.head.x, pbone.head.y, pbone.head.z + 10*unit
-                        elif vatinfo.sbox:
+                        elif satinfo.sbox:
                             ebone.tail.xyz = pbone.head.x, pbone.head.y, pbone.head.z + 35*unit
                         else:
                             ebone.tail.xyz = pbone.head.x, pbone.head.y, pbone.head.z + 6*unit
@@ -1597,7 +1597,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
 
                         etoe.length = length
                 else:
-                    if vatinfo.sbox:
+                    if satinfo.sbox:
                         armature.data.edit_bones[prefix + bone].tail.xyz = ptoe.head.x, -8*unit, ptoe.head.z
                     elif arm.symmetrical_bones['legs'].get('thighlow'):
                         armature.data.edit_bones[prefix + bone].tail.xyz = ptoe.head.x*1.1, -2*unit, ptoe.head.z
@@ -1615,7 +1615,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                     eforearm = armature.data.edit_bones[prefix + bone]
                     length = eforearm.length
 
-                    if vatinfo.sbox:
+                    if satinfo.sbox:
                         eforearm.length = eforearm.length*1.5
                     elif arm.symmetrical_bones['legs'].get('thighlow'):
                         eforearm.length = eforearm.length*1.75
@@ -1949,7 +1949,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
 
                             ethumbroot.tail = pfinger0.head
 
-            if vatinfo.sbox:
+            if satinfo.sbox:
                 for index, bone in enumerate(arm.symmetrical_bones['legs']['thigh']):
                     if bone:
                         prefix, bone = bone_convert(bone)
@@ -1995,7 +1995,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                             ewrist.length = ewrist.length/1.5
                             ehand.head = ewrist.tail
 
-        if vatinfo.titanfall:
+        if satinfo.titanfall:
             #Changes pelvis position to avoid deletion
             if arm.central_bones['pelvis'] and arm.central_bones['spine1']:
                 prefix, bone = bone_convert(arm.central_bones['pelvis'][0])
@@ -2048,7 +2048,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
             for container, bone in arm.central_bones.items():
                 for bone in bone:
                     if bone:
-                        if vatinfo.titanfall and bone.title().count('Head'):
+                        if satinfo.titanfall and bone.title().count('Head'):
                             continue
                         prefix, bone = bone_convert(bone)
                         ebone = armature.data.edit_bones[prefix + bone]
@@ -2182,12 +2182,12 @@ def generate_armature(type, action): #Creates or deletes the weight armature
             except:
                 pass
                     
-            vatinfo.weight_armature = False
+            satinfo.weight_armature = False
             arm.weight_armature = None
             arm.weight_armature_real = None
             
         elif type == 'anim':
-            if not vatinfo.animation_armature_setup:
+            if not satinfo.animation_armature_setup:
                 try:
                     animation_data = bpy.data.objects[arm.animation_armature_real['target_object']].data
                     bpy.data.objects[arm.animation_armature_real['target_object']].data = bpy.data.meshes[arm.animation_armature_real['target_object_data']]
@@ -2202,7 +2202,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
 
             bpy.data.armatures.remove(arm.animation_armature_real)
 
-            if action == 1 and vatinfo.animation_armature_setup:
+            if action == 1 and satinfo.animation_armature_setup:
                 try:
                     object = bpy.data.objects[arm.armature.name + '.anim']
                     bpy.data.objects.remove(object)
@@ -2329,7 +2329,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
 
                 arm.animation_armature = None
                 arm.animation_armature_real = None
-                vatinfo.animation_armature = False
+                satinfo.animation_armature = False
             
         #Reselects original armature for the sake of convenience
         armature = arm.armature
@@ -2344,7 +2344,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
 
 #Thanku Orin for the enhanced code snippet
 def bone_convert(bone):
-    vatinfo = bpy.context.scene.vatinfo
+    satinfo = bpy.context.scene.satinfo
     prefix = ''
 
     # 'h' = Helper
@@ -2362,7 +2362,7 @@ def bone_convert(bone):
         elif bone[0] == 'a2':
             prefix = Prefixes.attachment2
         elif bone[0] == 'p1':
-            prefix = vatinfo.prefix
+            prefix = satinfo.prefix
         elif bone[0] == 'p2':
             prefix = Prefixes.other
 

@@ -4,7 +4,7 @@ from . import advanced_ik
 from . import constraint_symmetry
 from . import armature_creation
 
-class VAT_properties(bpy.types.PropertyGroup): #Defines global properties the plugin will use
+class SAT_properties(bpy.types.PropertyGroup): #Defines global properties the plugin will use
 
     #Thanks to Jeacom for this
     def armature_poll(self, object):
@@ -108,7 +108,7 @@ class VAT_properties(bpy.types.PropertyGroup): #Defines global properties the pl
         update=utils.update_armature
     )
 
-class VAT_info(bpy.types.PropertyGroup):
+class SAT_info(bpy.types.PropertyGroup):
 
     unit : bpy.props.FloatProperty(
         default=0

@@ -4,7 +4,7 @@ from .utils import bone_convert
 from .utils import update
 
 def armature_rename(scheme, armature=None): #Bone prefix/suffix repositioning
-    vatinfo = bpy.context.scene.vatinfo
+    satinfo = bpy.context.scene.satinfo
 
     def rename(prefix, bone, index):
         bpy.ops.object.mode_set(mode='OBJECT') #Forces object mode to avoid context errors
@@ -34,7 +34,7 @@ def armature_rename(scheme, armature=None): #Bone prefix/suffix repositioning
             armature.pose.bones[prefix + bone].name = prefix + old + bone.replace(new, '')
 
     def convert(single):
-        prefix = vatinfo.prefix
+        prefix = satinfo.prefix
         #Symmetrical
         for cat in utils.arm.symmetrical_bones.keys():
             for bone in utils.arm.symmetrical_bones[cat].values():
@@ -67,7 +67,7 @@ def armature_rename(scheme, armature=None): #Bone prefix/suffix repositioning
     if not armature:
         armature = utils.arm.armature
         convert(False)
-        if vatinfo.weight_armature:
+        if satinfo.weight_armature:
             armature = utils.arm.weight_armature
             convert(False)
 
@@ -93,9 +93,9 @@ def armature_rename(scheme, armature=None): #Bone prefix/suffix repositioning
         utils.arm.get_bones(False)
 
 def bone_rename(scheme, bone, index):
-    vatinfo = bpy.context.scene.vatinfo
+    satinfo = bpy.context.scene.satinfo
 
-    if vatinfo.goldsource:
+    if satinfo.goldsource:
         if index == 0:
             old = ' L '
             new = ' L'
