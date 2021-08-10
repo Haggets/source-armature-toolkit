@@ -14,7 +14,7 @@ from . import ops
 from . import ui
 
 bl_info = {
-    "name": "Valve Armature Toolkit",
+    "name": "Source Armature Toolkit",
     "author": "Haggets",
     "version": (0, 9, 0),
     "blender": (2, 83, 10),
@@ -25,7 +25,7 @@ bl_info = {
     "tracker_url": "https://github.com/Haggets/valve-armature-toolkit/issues",
     "category": "Armature"}
             
-classes = [props.VAT_properties, props.VAT_info, preferences.VAT_preferences, ui.VAT_PT_mainpanel, ui.VAT_PT_armaturerename, ui.VAT_PT_constraintsymmetry, ui.VAT_PT_weightarmature, ui.VAT_PT_rigifyretarget, ui.VAT_PT_rigifyretargetexport, ops.VAT_OT_create_armature, ops.VAT_OT_convert_armature, ops.VAT_OT_armaturerename_blender, ops.VAT_OT_armaturerename_source, ops.VAT_OT_constraintsymmetry_create, ops.VAT_OT_constraintsymmetry_delete, ops.VAT_OT_constraintsymmetry_apply, ops.VAT_OT_weightarmature_create, ops.VAT_OT_weightarmature_delete, ops.VAT_OT_rigifyretarget_create, ops.VAT_OT_rigifyretarget_delete, ops.VAT_OT_rigifyretarget_generate, ops.VAT_OT_rigifyretarget_link, ops.VAT_OT_rigifyretarget_bake_single, ops.VAT_OT_rigifyretarget_bake_all, ops.VAT_OT_rigifyretarget_export_all]
+classes = [props.SAT_properties, props.SAT_info, preferences.SAT_preferences, ui.SAT_PT_mainpanel, ui.SAT_PT_armaturerename, ui.SAT_PT_constraintsymmetry, ui.SAT_PT_weightarmature, ui.SAT_PT_rigifyretarget, ui.SAT_PT_rigifyretargetexport, ops.SAT_OT_create_armature, ops.SAT_OT_convert_armature, ops.SAT_OT_armaturerename_blender, ops.SAT_OT_armaturerename_source, ops.SAT_OT_constraintsymmetry_create, ops.SAT_OT_constraintsymmetry_delete, ops.SAT_OT_constraintsymmetry_apply, ops.SAT_OT_weightarmature_create, ops.SAT_OT_weightarmature_delete, ops.SAT_OT_rigifyretarget_create, ops.SAT_OT_rigifyretarget_delete, ops.SAT_OT_rigifyretarget_generate, ops.SAT_OT_rigifyretarget_link, ops.SAT_OT_rigifyretarget_bake_single, ops.SAT_OT_rigifyretarget_bake_all, ops.SAT_OT_rigifyretarget_export_all]
 
 def register():
 
@@ -36,8 +36,8 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
         
-    bpy.types.Scene.vatproperties = bpy.props.PointerProperty(type=props.VAT_properties)
-    bpy.types.Scene.vatinfo = bpy.props.PointerProperty(type=props.VAT_info)
+    bpy.types.Scene.satproperties = bpy.props.PointerProperty(type=props.SAT_properties)
+    bpy.types.Scene.satinfo = bpy.props.PointerProperty(type=props.SAT_info)
 
     bpy.app.handlers.load_post.append(utils.create_armature)
     bpy.app.handlers.undo_post.append(utils.armatures_reset)
@@ -54,8 +54,8 @@ def unregister():
     bpy.app.handlers.undo_post.remove(utils.armatures_reset)
     bpy.app.handlers.redo_post.remove(utils.armatures_reset)
         
-    del bpy.types.Scene.vatproperties
-    del bpy.types.Scene.vatinfo
+    del bpy.types.Scene.satproperties
+    del bpy.types.Scene.satinfo
 
 if __name__ == "__main__":
     register()

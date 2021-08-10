@@ -3,7 +3,7 @@ from . import utils
 from .utils import bone_convert
 
 def constraint_symmetry(action, side): #Creates symmetry by using constraints, keeping corrected roll value
-    vatinfo = bpy.context.scene.vatinfo
+    satinfo = bpy.context.scene.satinfo
 
     #Checks if the constraint for a bone already exists
     def getconstraint(bone):
@@ -19,7 +19,7 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
         return loc, rot
 
     def constraint(bone, bone2, type=''):
-        vatinfo = bpy.context.scene.vatinfo
+        satinfo = bpy.context.scene.satinfo
 
         loc, rot = getconstraint(bone)
 
@@ -51,7 +51,7 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
                 if type == 'weapon':
                     contraint.invert_y = True
                     contraint.invert_x = False
-                elif vatinfo.titanfall or vatinfo.special_viewmodel:
+                elif satinfo.titanfall or satinfo.special_viewmodel:
                     contraint.invert_y = False
                     contraint.invert_x = False
                 else:
@@ -61,11 +61,11 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
             else:
                 final_report_rot.append(bone)
             
-            if not vatinfo.symmetry:
+            if not satinfo.symmetry:
                 if side == 'LTR':
-                    vatinfo.symmetry = 1
+                    satinfo.symmetry = 1
                 elif side == 'RTL':
-                    vatinfo.symmetry = 2
+                    satinfo.symmetry = 2
 
         #Deletion
         elif action == 1:
@@ -85,13 +85,13 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
             else:
                 final_report_rot.append(bone)
 
-            vatinfo.symmetry = 0
+            satinfo.symmetry = 0
 
     #Updates bone list in case it was modified
     utils.arm.get_bones(False)
 
     armature = utils.arm.armature
-    prefix = vatinfo.prefix
+    prefix = satinfo.prefix
 
     loc = {}
     rot = {}
@@ -181,14 +181,14 @@ def update_constraint(self, context):
     constraint_update()
 
 def constraint_update(prefix=None, bone=None):
-    vatproperties = bpy.context.scene.vatproperties
-    vatinfo = bpy.context.scene.vatinfo
+    satproperties = bpy.context.scene.satproperties
+    satinfo = bpy.context.scene.satinfo
     armature = utils.arm.armature
 
     def update(prefix, bone):
         for constraint in armature.pose.bones[prefix + bone].constraints:
             if constraint.name == 'Constraint Symmetry Location':
-                if vatproperties.symmetry_offset:
+                if satproperties.symmetry_offset:
                     constraint.target_space = 'LOCAL'
                     constraint.owner_space = 'LOCAL'
                     constraint.invert_x = False
@@ -220,7 +220,7 @@ def constraint_update(prefix=None, bone=None):
                             update(prefix, bone)
 
     #Upperarm rotation fix
-    if vatproperties.symmetry_upperarm_rotation_fix:
+    if satproperties.symmetry_upperarm_rotation_fix:
         for bone in utils.arm.symmetrical_bones['arms']['upperarm']:
             prefix, bone = bone_convert(bone)
             for constraint in armature.pose.bones[prefix + bone].constraints:
@@ -232,7 +232,7 @@ def constraint_update(prefix=None, bone=None):
             prefix, bone = bone_convert(bone)
             for constraint in armature.pose.bones[prefix + bone].constraints:
                 if constraint.name == 'Constraint Symmetry Rotation':
-                    if vatinfo.titanfall or vatinfo.special_viewmodel:
+                    if satinfo.titanfall or satinfo.special_viewmodel:
                         constraint.invert_y = False
                     else:
                         constraint.invert_y = True

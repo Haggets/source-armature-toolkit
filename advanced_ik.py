@@ -11,15 +11,15 @@ from .armature_rename import bone_rename
 
 def anim_armature(action):
 
-    vatproperties = bpy.context.scene.vatproperties
-    vatinfo = bpy.context.scene.vatinfo
+    satproperties = bpy.context.scene.satproperties
+    satinfo = bpy.context.scene.satinfo
 
     def generate_rigify(action): #Creates Rigify armature and fills in all the Rigify parameters
 
         #Armature creation
         generate_armature('anim', action)
 
-        unit = vatinfo.unit
+        unit = satinfo.unit
 
         utils.arm.shapekeys = {}
         utils.arm.facial_bones = []
@@ -38,12 +38,12 @@ def anim_armature(action):
                 armature.data.layers[i] = False
 
             #Rigify portion
-            prefix = vatinfo.prefix
+            prefix = satinfo.prefix
 
             #Checks if there are shapekeys, if so, create driver bones for them
-            if vatproperties.target_object:
+            if satproperties.target_object:
                 try:
-                    shapekeys_raw = vatproperties.target_object.data.shape_keys.key_blocks.keys()
+                    shapekeys_raw = satproperties.target_object.data.shape_keys.key_blocks.keys()
                 except:
                     shapekeys_raw = None
                     print("No shape keys detected")
@@ -53,9 +53,9 @@ def anim_armature(action):
                 utils.arm.shapekeys = {'basis': {'basis': ''}, 'eyebrows': {'AU1': '', 'AU2': '', 'AU4': '', 'AU1AU2': '', 'AU1AU4': '', 'AU2AU4': ''}, 'eyes': {'f01': '', 'f02': '', 'f03': '', 'f04': '', 'AU42': ''}, 'cheek': {'AU6Z': '', 'AU13': ''}, 'nose': {'AU9': '', 'AU38': ''}, 'mouth': {'AU12': '', 'AU15': '', 'AU10': '', 'AU17D': '', 'AU16': '', 'AU32': '', 'AU24': '', 'AU18Z': '', 'AU22Z': '', 'AD96L': '', 'AD96R': ''}, 'chin': {'AU31': '', 'AU26': '', 'AU27': '', 'AU27Z': '', 'AD30L': '', 'AD30R': '', 'AU17': ''}}
 
                 if shapekeys_raw:
-                    object_data = vatproperties.target_object.data.copy()
-                    object_data.name = vatproperties.target_object.data.name + '.anim'
-                    vatproperties.target_object.data = object_data
+                    object_data = satproperties.target_object.data.copy()
+                    object_data.name = satproperties.target_object.data.name + '.anim'
+                    satproperties.target_object.data = object_data
 
                     utils.arm.shapekeys = generate_shapekey_dict(utils.arm.shapekeys, shapekeys_raw)
                     
@@ -248,7 +248,7 @@ def anim_armature(action):
                                             ebone.length = 0.5*unit
 
                 #Material eyes bone setup
-                for material in vatproperties.target_object.data.materials:
+                for material in satproperties.target_object.data.materials:
                     if material.name.title().count('Eyeball'):
                         material_eyes = True
                         name = material.name
@@ -289,7 +289,7 @@ def anim_armature(action):
                         pdriver.rigify_type = 'basic.raw_copy'
 
             #Drivers for eyelid bones in S&Box playermodels
-            if vatinfo.sbox:
+            if satinfo.sbox:
                 create_widgets(['UpDown'])
                 for container, bone in utils.arm.custom_bones.items():
                     for bone in bone:
@@ -367,7 +367,7 @@ def anim_armature(action):
                                     ebone = armature.data.edit_bones[prefix + bone]
                                     edriver = armature.data.edit_bones.new('driver_' + bone)
                                     
-                                    if vatinfo.sbox:
+                                    if satinfo.sbox:
                                         edriver.head.xyz = ebone.head.x, -50*unit, ebone.head.z
                                         edriver.tail.xyz = edriver.head.x, edriver.head.y - 5*unit, edriver.head.z
                                     else:
@@ -376,7 +376,7 @@ def anim_armature(action):
 
                                     edriver.layers[0] = True
 
-                                    if vatinfo.titanfall:
+                                    if satinfo.titanfall:
                                         if utils.arm.central_bones['neck2']:
                                             prefix2, bone2 = bone_convert(utils.arm.central_bones['neck2'][0])
                                             ebone.parent = armature.data.edit_bones[prefix2+ bone2]
@@ -431,18 +431,18 @@ def anim_armature(action):
                         ebone.layers[9] = False
 
                         #New pelvis bone positioning
-                        if vatinfo.sbox:
+                        if satinfo.sbox:
                             ebone.tail.yz = ppelvis.head.y-10*unit, ppelvis.head.z+12*unit
                         else:
                             ebone.tail.yz = ppelvis.head.y-4*unit, ppelvis.head.z+5*unit
 
                         if index == 0:
-                            if vatinfo.sbox:
+                            if satinfo.sbox:
                                 ebone.tail.x = ppelvis.head.x+10*unit
                             else:
                                 ebone.tail.x = ppelvis.head.x+3.83177*unit
                         elif index == 1:
-                            if vatinfo.sbox:
+                            if satinfo.sbox:
                                 ebone.tail.x = ppelvis.head.x-10*unit
                             else:
                                 ebone.tail.x = ppelvis.head.x-3.83177*unit
@@ -490,7 +490,7 @@ def anim_armature(action):
                             for index, bone in enumerate(bone):
                                 if bone:
                                     prefix, bone = bone_convert(bone)
-                                    if vatinfo.scheme == 0 and not vatinfo.sbox:
+                                    if satinfo.scheme == 0 and not satinfo.sbox:
                                         bone2 = bone_rename(1, bone, index)
                                         palm = 'Palm_' + bone2
                                     else:
@@ -528,20 +528,20 @@ def anim_armature(action):
 
                     ebone = armature.data.edit_bones.new(rigify_heel[index])
                     if index == 0:
-                        if vatinfo.goldsource:
+                        if satinfo.goldsource:
                             ebone.head.xyz = efoot.head.x - 2*unit, efoot.head.y + 3*unit, 0
                             ebone.tail.xyz = efoot.head.x + 2*unit, efoot.head.y + 3*unit, 0
-                        elif vatinfo.sbox:
+                        elif satinfo.sbox:
                             ebone.head.xyz = efoot.head.x - 2*unit, efoot.head.y + 5*unit, 0
                             ebone.tail.xyz = efoot.head.x + 2*unit, efoot.head.y + 5*unit, 0
                         else:
                             ebone.head.xyz = efoot.head.x - 2*unit, efoot.head.y + 4*unit, 0
                             ebone.tail.xyz = efoot.head.x + 2*unit, efoot.head.y + 4*unit, 0
                     elif index == 1:
-                        if vatinfo.goldsource:
+                        if satinfo.goldsource:
                             ebone.head.xyz = efoot.head.x + 2*unit, efoot.head.y + 3*unit, 0
                             ebone.tail.xyz = efoot.head.x - 2*unit, efoot.head.y + 3*unit, 0
-                        elif vatinfo.sbox:
+                        elif satinfo.sbox:
                             ebone.head.xyz = efoot.head.x + 2*unit, efoot.head.y + 5*unit, 0
                             ebone.tail.xyz = efoot.head.x - 2*unit, efoot.head.y + 5*unit, 0
                         else:
@@ -600,7 +600,7 @@ def anim_armature(action):
                         ebone.use_connect = True
             
             #Creates camera target if armature is a viewmodel
-            if vatinfo.viewmodel:
+            if satinfo.viewmodel:
                 if utils.arm.other_bones['viewmodel']:
                     for bone in utils.arm.other_bones['viewmodel']:
                         if bone.count('Camera'):
@@ -620,7 +620,7 @@ def anim_armature(action):
             #Parent and rigify parameters
 
             #Facial drivers
-            if vatproperties.target_object:
+            if satproperties.target_object:
                 for bone in utils.arm.facial_bones:
                     pbone = armature.pose.bones[bone]
                     ebone = armature.data.edit_bones[bone]
@@ -865,7 +865,7 @@ def anim_armature(action):
                                                 param.primary_rotation_axis = 'Z'
                                             else:
                                                 param.primary_rotation_axis = '-X'
-                                        elif vatinfo.viewmodel and not vatinfo.special_viewmodel:
+                                        elif satinfo.viewmodel and not satinfo.special_viewmodel:
                                             if container == 'finger0':
                                                 param.primary_rotation_axis = '-Z'
                                     else:
@@ -900,7 +900,7 @@ def anim_armature(action):
                                 if container == 'clavicle':
                                     pbone.rigify_type = 'basic.super_copy'
                                     param.make_widget = False
-                                    if not vatinfo.viewmodel:
+                                    if not satinfo.viewmodel:
                                         ebone.layers[3] = True
                                 elif container == 'upperarm':
                                     pbone.rigify_type = 'limbs.super_limb'
@@ -964,7 +964,7 @@ def anim_armature(action):
             for container, bone in utils.arm.central_bones.items():
                 for bone in bone:
                     if bone:
-                        if vatinfo.titanfall and container == 'head':
+                        if satinfo.titanfall and container == 'head':
                             pass
                         else:
                             prefix, bone = bone_convert(bone)
@@ -975,7 +975,7 @@ def anim_armature(action):
                             ebone.layers[3] = True
 
                             if container == 'pelvis':
-                                if not vatinfo.viewmodel:
+                                if not satinfo.viewmodel:
                                     if spines > 2 :
                                         pbone.rigify_type = 'spines.basic_spine'
                                         param.pivot_pos = 2
@@ -1032,7 +1032,7 @@ def anim_armature(action):
                                 pbone.rigify_type = 'basic.super_copy'
                                 param.super_copy_widget_type = 'bone'
                             
-            if vatinfo.viewmodel:
+            if satinfo.viewmodel:
                 if utils.arm.other_bones['viewmodel']:
                     for bone in utils.arm.other_bones['viewmodel']:
                         if bone.count('attach_camera'):
@@ -1143,19 +1143,19 @@ def anim_armature(action):
             bpy.ops.object.mode_set(mode='OBJECT')
 
             #Renames armature to allow it being compatible with pose symmetry
-            if vatinfo.scheme == 0 and not vatinfo.sbox:
+            if satinfo.scheme == 0 and not satinfo.sbox:
                 armature_rename(1, utils.arm.animation_armature)
 
             print("Animation armature created!")
 
         elif action == 1:
             #Deletes Left/Right vertex groups if present
-            if vatproperties.target_object:
-                #print(vatproperties.target_object.data.name)
-                data = vatproperties.target_object.data.name.replace('.anim', '')
+            if satproperties.target_object:
+                #print(satproperties.target_object.data.name)
+                data = satproperties.target_object.data.name.replace('.anim', '')
                 #print(data)
                 data = bpy.data.meshes[data]
-                vatproperties.target_object.data = data
+                satproperties.target_object.data = data
 
             print("Animation armature deleted")
                 
@@ -1249,7 +1249,7 @@ def anim_armature(action):
             rot.subtarget = prefix + bone
             rot.mute = True'''
 
-        unit = vatinfo.unit
+        unit = satinfo.unit
 
         #Creates parent for all bases for easier storage/manipulation
         parent = bpy.data.objects.new('parent_' + utils.arm.armature.name, None)
@@ -1322,7 +1322,7 @@ def anim_armature(action):
         armature = utils.arm.animation_armature
 
         #Creates camera at camera bone if armature is a viewmodel
-        if vatinfo.viewmodel:
+        if satinfo.viewmodel:
             if utils.arm.other_bones['viewmodel']:
                 for bone in utils.arm.other_bones['viewmodel']:
                     if bone.count('Camera'):
@@ -1382,8 +1382,8 @@ def anim_armature(action):
         material_eyes = False
 
         #Recheck in case user undoes after linking and then trying to relink
-        if vatproperties.target_object:
-            for material in vatproperties.target_object.data.materials:
+        if satproperties.target_object:
+            for material in satproperties.target_object.data.materials:
                 if material.name.title().count('Eyeball'):
                     material_eyes = True
                     break
@@ -1403,27 +1403,27 @@ def anim_armature(action):
                                 trackto = pbone.constraints.new('TRACK_TO')
                                 trackto.target = armature
                                 trackto.subtarget = 'driver_' + bone
-                                if vatinfo.sbox:
+                                if satinfo.sbox:
                                     trackto.track_axis = 'TRACK_X'
 
                             ebone.layers[27] = True
                             ebone.layers[0] = False
 
-        if vatproperties.target_object:
-            utils.arm.animation_armature_real['target_object'] = vatproperties.target_object.name
-            utils.arm.animation_armature_real['target_object_data'] = vatproperties.target_object.data.name.replace('.anim', '')
+        if satproperties.target_object:
+            utils.arm.animation_armature_real['target_object'] = satproperties.target_object.name
+            utils.arm.animation_armature_real['target_object_data'] = satproperties.target_object.data.name.replace('.anim', '')
 
         utils.arm.animation_armature_real.layers[21] = False
 
 
     def face_flex_setup(): #Sets up drivers for face flexes that will be controlled by face bones
-        unit = vatinfo.unit
+        unit = satinfo.unit
         
         eye_left = ''
         eye_right = ''
 
         #Recheck in case user undoes after linking and then trying to relink
-        for material in vatproperties.target_object.data.materials:
+        for material in satproperties.target_object.data.materials:
             if material.name.title().count('Eyeball'):
                 eye_texture = False
 
@@ -1445,10 +1445,10 @@ def anim_armature(action):
 
                 #Checks if mapping node already exists
                 try:
-                    mapping = node['VAT Eye Movement']
+                    mapping = node['SAT Eye Movement']
                 except:
                     mapping = node.new('ShaderNodeMapping')
-                    mapping.name = "VAT Eye Movement"
+                    mapping.name = "SAT Eye Movement"
                     mapping.width = 315 #So all the label is visible
                     if eye_texture:
                         mapping.location = output_loc[0] - 400, output_loc[1]
@@ -1458,10 +1458,10 @@ def anim_armature(action):
 
                 #Checks if texture coordinates node already exists
                 try:
-                    texcoord = node['VAT Eye Movement Origin']
+                    texcoord = node['SAT Eye Movement Origin']
                 except:
                     texcoord = node.new('ShaderNodeTexCoord')
-                    texcoord.name = "VAT Eye Movement Origin"
+                    texcoord.name = "SAT Eye Movement Origin"
                     texcoord.location = mapping.location[0] - 200, mapping.location[1]
                 
                 if not texcoord.outputs['UV'].links:
@@ -1520,22 +1520,22 @@ def anim_armature(action):
         utils.arm.shapekeys = {'basis': {'basis': ''}, 'eyebrows': {'AU1': '', 'AU2': '', 'AU4': '', 'AU1AU2': '', 'AU1AU4': '', 'AU2AU4': ''}, 'eyes': {'f01': '', 'f02': '', 'f03': '', 'f04': '', 'AU42': ''}, 'cheek': {'AU6Z': '', 'AU13': ''}, 'nose': {'AU9': '', 'AU38': ''}, 'mouth': {'AU12': '', 'AU15': '', 'AU10': '', 'AU17D': '', 'AU16': '', 'AU32': '', 'AU24': '', 'AU18Z': '', 'AU22Z': '', 'AD96L': '', 'AD96R': ''}, 'chin': {'AU31': '', 'AU26': '', 'AU27': '', 'AU27Z': '', 'AD30L': '', 'AD30R': '', 'AU17': ''}}
 
         try:
-            shapekeys_raw = vatproperties.target_object.data.shape_keys.key_blocks.keys()
+            shapekeys_raw = satproperties.target_object.data.shape_keys.key_blocks.keys()
             utils.arm.shapekeys = generate_shapekey_dict(utils.arm.shapekeys, shapekeys_raw)
         except:
             shapekeys_raw = None
 
         if shapekeys_raw:
-            keyblocks = vatproperties.target_object.data.shape_keys.key_blocks
+            keyblocks = satproperties.target_object.data.shape_keys.key_blocks
 
             #Vertex group creation
 
             #Creates vertex groups
-            left_group = vatproperties.target_object.vertex_groups.new(name='Left')
-            right_group = vatproperties.target_object.vertex_groups.new(name='Right')
+            left_group = satproperties.target_object.vertex_groups.new(name='Left')
+            right_group = satproperties.target_object.vertex_groups.new(name='Right')
 
             #Left side
-            for vertex in vatproperties.target_object.data.vertices:
+            for vertex in satproperties.target_object.data.vertices:
                 #Left side
                 if vertex.co[0] > 0.005:
                     left_group.add([vertex.index], 1, 'REPLACE')
@@ -1556,8 +1556,8 @@ def anim_armature(action):
             utils.arm.rigify_shapekeys = {'basis': {'basis': ''}, 'eyebrows': {'AU1': [], 'AU2': [], 'AU4': [], 'AU1AU2': [], 'AU1AU4': [], 'AU2AU4': []}, 'eyes': {'f01': [], 'f02': [], 'f03': [], 'f04': [], 'AU42': []}, 'cheek': {'AU6Z': [], 'AU13': []}, 'nose': {'AU9': [], 'AU38': []}, 'mouth': {'AU12': [], 'AU15': [], 'AU10': [], 'AU17D': [], 'AU16': [], 'AU32': [], 'AU24': [], 'AU18Z': [], 'AU22Z': [], 'AD96L': [], 'AD96R': []}, 'chin': {'AU31': [], 'AU26': [], 'AU27': [], 'AU27Z': [], 'AD30L': [], 'AD30R': [], 'AU17': []}}
 
             #Divides old shapekeys from generated ones
-            vatproperties.target_object.shape_key_add(name='----------', from_mix=False)
-            vatproperties.target_object.show_only_shape_key = False
+            satproperties.target_object.shape_key_add(name='----------', from_mix=False)
+            satproperties.target_object.show_only_shape_key = False
 
             for cat in utils.arm.shapekeys.keys():
                 for container, shapekey in utils.arm.shapekeys[cat].items():
@@ -1573,8 +1573,8 @@ def anim_armature(action):
 
                         if container != 'basis':
                             keyblocks[shapekey].value = 1
-                            left_shapekey = vatproperties.target_object.shape_key_add(name=shapekey + '_L', from_mix=True)
-                            right_shapekey = vatproperties.target_object.shape_key_add(name=shapekey + '_R', from_mix=True)
+                            left_shapekey = satproperties.target_object.shape_key_add(name=shapekey + '_L', from_mix=True)
+                            right_shapekey = satproperties.target_object.shape_key_add(name=shapekey + '_R', from_mix=True)
 
                             utils.arm.rigify_shapekeys[cat][container].append(left_shapekey.name)
                             utils.arm.rigify_shapekeys[cat][container].append(right_shapekey.name)
@@ -1591,13 +1591,13 @@ def anim_armature(action):
                         if container == 'basis' or container == 'AU17' or container == 'AU26' or container == 'AU27' or container == 'AU27Z' or container == 'AD30L' or container == 'AD30R' or container == 'AU22Z' or container == 'AD96L' or container == 'AD96R':
                             continue
                         else:
-                            shapekey = vatproperties.target_object.data.shape_keys.key_blocks[shapekey]
-                            vatproperties.target_object.shape_key_remove(shapekey)
+                            shapekey = satproperties.target_object.data.shape_keys.key_blocks[shapekey]
+                            satproperties.target_object.shape_key_remove(shapekey)
 
             for shapekey in utils.arm.unused_shapekeys:
                 try:
-                    shapekey = vatproperties.target_object.data.shape_keys.key_blocks[shapekey]
-                    vatproperties.target_object.shape_key_remove(shapekey)
+                    shapekey = satproperties.target_object.data.shape_keys.key_blocks[shapekey]
+                    satproperties.target_object.shape_key_remove(shapekey)
                 except:
                     pass
 
@@ -2087,20 +2087,20 @@ def anim_armature(action):
         generate_rigify(action)
 
     elif action == 2: #Creates empties and links it to Source armature, also creates widgets and setups facial flexes
-        if vatinfo.scheme == 0 and not vatinfo.sbox:
+        if satinfo.scheme == 0 and not satinfo.sbox:
             armature_rename(1, utils.arm.armature)
             link()
-            if vatproperties.target_object:
+            if satproperties.target_object:
                 face_flex_setup()
             armature_rename(0, utils.arm.armature)
         else:
             link()
-            if vatproperties.target_object:
+            if satproperties.target_object:
                 face_flex_setup()
 
-        vatproperties.retarget_constraints = True
+        satproperties.retarget_constraints = True
 
-        vatproperties.target_object = None
+        satproperties.target_object = None
 
         if utils.arm.armature.visible_get() == True:
             utils.arm.armature.hide_set(True)
@@ -2123,7 +2123,7 @@ def bake(mode):
     #mode 1 = all
 
     def bake_strip(nla_track):
-        vatproperties = bpy.context.scene.vatproperties
+        satproperties = bpy.context.scene.satproperties
 
         if not armature.animation_data.action or armature.animation_data.action and armature.animation_data.nla_tracks.active:
             strip = nla_track.strips[0]
@@ -2177,9 +2177,9 @@ def bake(mode):
         bake_strip.select = True
         armature2.animation_data.use_tweak_mode = True
         
-        if not vatproperties.bake_helper_bones or utils.arm.other_bones.get('ik'):
+        if not satproperties.bake_helper_bones or utils.arm.other_bones.get('ik'):
             bpy.ops.pose.select_all(action='SELECT')
-            if not vatproperties.bake_helper_bones:
+            if not satproperties.bake_helper_bones:
                 for cat in utils.arm.helper_bones.keys():
                     for container, bone in utils.arm.helper_bones[cat].items():
                         for bone in bone:
@@ -2326,16 +2326,16 @@ def export():
     bpy.ops.object.mode_set(mode=current_mode)
 
 def retarget_constraints(self, context):
-    vatproperties = bpy.context.scene.vatproperties
-    vatinfo = bpy.context.scene.vatinfo
+    satproperties = bpy.context.scene.satproperties
+    satinfo = bpy.context.scene.satinfo
     armature = utils.arm.armature
 
-    if vatproperties.retarget_constraints:
+    if satproperties.retarget_constraints:
         value = False
     else:
         value = True
 
-    if vatinfo.animation_armature and not vatinfo.animation_armature_setup:
+    if satinfo.animation_armature and not satinfo.animation_armature_setup:
         for cat in utils.arm.symmetrical_bones.keys():
             for container, bone in utils.arm.symmetrical_bones[cat].items():
                 for bone in bone:
@@ -2370,7 +2370,7 @@ def retarget_constraints(self, context):
                 for bone in bone:
                     if bone:
                         prefix, bone = bone_convert(bone)
-                        if vatinfo.viewmodel:
+                        if satinfo.viewmodel:
                             try:
                                 armature.pose.bones[prefix + bone].constraints['Procedural Bone'].mute = value
                             except:
@@ -2413,7 +2413,7 @@ def retarget_constraints(self, context):
         
         if armature.animation_data:
             for track in armature.animation_data.nla_tracks:
-                if vatproperties.retarget_constraints:
+                if satproperties.retarget_constraints:
                     if track.mute == False:
                         track.mute = True
                 else:
