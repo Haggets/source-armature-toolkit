@@ -60,7 +60,7 @@ except Exception as e:
 # Must declare this before classes are loaded
 # otherwise the bl_idname's will not match and have errors.
 # Must be all lowercase and no spaces
-updater.addon = "valve_armature_toolkit"
+updater.addon = "source_armature_toolkit"
 
 
 # -----------------------------------------------------------------------------
@@ -1342,12 +1342,12 @@ def register(bl_info):
 
 	# choose your own repository, must match git name for GitHUb and Bitbucket,
 	# for GitLab use project ID (numbers only)
-	updater.repo = "valve-armature-toolkit"
+	updater.repo = "source-armature-toolkit"
 
 	#updater.addon = # define at top of module, MUST be done first
 
 	# Website for manual addon download, optional but recommended to set
-	updater.website = "https://github.com/Haggets/valve-armature-toolkit"
+	updater.website = "https://github.com/Haggets/source-armature-toolkit"
 
 	# Addon subfolder path
 	# "sample/path/to/addon"
