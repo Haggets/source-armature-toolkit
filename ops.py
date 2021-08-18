@@ -296,9 +296,14 @@ class SAT_OT_rigifyretarget_link(bpy.types.Operator):
             return (context.object.name == satproperties.target_armature.name + '.anim')
 
     def execute(self, context):
+        satproperties = bpy.context.scene.satproperties
         satinfo = bpy.context.scene.satinfo
-        anim_armature(2)
-        satinfo.animation_armature_setup = False
+
+        if not satproperties.target_armature.hide_get() and not satproperties.target_armature.visible_get() or not utils.arm.animation_armature.hide_get() and not utils.arm.animation_armature.visible_get():
+            self.report({'ERROR'}, "Selected armature is in an excluded collection, enable said collection.")
+        else:
+            anim_armature(2)
+            satinfo.animation_armature_setup = False
 
         return{'FINISHED'}
 
@@ -321,7 +326,7 @@ class SAT_OT_rigifyretarget_bake_single(bpy.types.Operator):
     def execute(self, context):
         satproperties = bpy.context.scene.satproperties
 
-        if not satproperties.target_armature.hide_get() and not satproperties.target_armature.visible_get() and not utils.arm.animation_armature.hide_get() and not utils.arm.animation_armature.visible_get():
+        if not satproperties.target_armature.hide_get() and not satproperties.target_armature.visible_get() or not utils.arm.animation_armature.hide_get() and not utils.arm.animation_armature.visible_get():
             self.report({'ERROR'}, "Selected armature is in an excluded collection, enable said collection.")
         else:
             bake(0)
@@ -347,7 +352,7 @@ class SAT_OT_rigifyretarget_bake_all(bpy.types.Operator):
     def execute(self, context):
         satproperties = bpy.context.scene.satproperties
 
-        if not satproperties.target_armature.hide_get() and not satproperties.target_armature.visible_get() and not utils.arm.animation_armature.hide_get() and not utils.arm.animation_armature.visible_get():
+        if not satproperties.target_armature.hide_get() and not satproperties.target_armature.visible_get() or not utils.arm.animation_armature.hide_get() and not utils.arm.animation_armature.visible_get():
             self.report({'ERROR'}, "Selected armature is in an excluded collection, enable said collection.")
         else:
             bake(1)

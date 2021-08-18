@@ -1,13 +1,11 @@
 import bpy
 from math import radians 
 from . import utils
-from .utils import Prefixes
 from .utils import update
 from .utils import generate_armature
 from .utils import generate_shapekey_dict
 from .utils import bone_convert
 from .armature_rename import armature_rename
-from .armature_rename import bone_rename
 
 def anim_armature(action):
 
@@ -354,54 +352,55 @@ def anim_armature(action):
                                 pdriver.custom_shape = bpy.data.objects['UpDown']
                                 pdriver.custom_shape_scale = 0.1
 
-            #Eye driver
-            for container, bone in utils.arm.custom_bones.items():
-                for bone in bone:
-                    if bone:
-                        if not material_eyes:
-                            if bone.count('eye'):
-                                if bone.count('eyebrow') or bone.count('eyelid'):
-                                    pass
-                                else:
-                                    prefix, bone = bone_convert(bone)
-                                    ebone = armature.data.edit_bones[prefix + bone]
-                                    edriver = armature.data.edit_bones.new('driver_' + bone)
-                                    
-                                    if satinfo.sbox:
-                                        edriver.head.xyz = ebone.head.x, -50*unit, ebone.head.z
-                                        edriver.tail.xyz = edriver.head.x, edriver.head.y - 5*unit, edriver.head.z
+            #Eye driver. Titans should not have these
+            if not satinfo.titanfall and not utils.arm.symmetrical_bones['legs'].get('thighlow'):
+                for container, bone in utils.arm.custom_bones.items():
+                    for bone in bone:
+                        if bone:
+                            if not material_eyes:
+                                if bone.count('eye'):
+                                    if bone.count('eyebrow') or bone.count('eyelid'):
+                                        pass
                                     else:
-                                        edriver.head.xyz = ebone.head.x, -50*unit, ebone.head.z
-                                        edriver.tail.xyz = edriver.head.x, edriver.head.y - 5*unit, edriver.head.z
+                                        prefix, bone = bone_convert(bone)
+                                        ebone = armature.data.edit_bones[prefix + bone]
+                                        edriver = armature.data.edit_bones.new('driver_' + bone)
+                                        
+                                        if satinfo.sbox:
+                                            edriver.head.xyz = ebone.head.x, -50*unit, ebone.head.z
+                                            edriver.tail.xyz = edriver.head.x, edriver.head.y - 5*unit, edriver.head.z
+                                        else:
+                                            edriver.head.xyz = ebone.head.x, -50*unit, ebone.head.z
+                                            edriver.tail.xyz = edriver.head.x, edriver.head.y - 5*unit, edriver.head.z
 
-                                    edriver.layers[0] = True
+                                        edriver.layers[0] = True
 
-                                    if satinfo.titanfall:
-                                        if utils.arm.central_bones['neck2']:
-                                            prefix2, bone2 = bone_convert(utils.arm.central_bones['neck2'][0])
-                                            ebone.parent = armature.data.edit_bones[prefix2+ bone2]
-                                    else:
-                                        if utils.arm.central_bones['head']:
-                                            prefix2, bone2 = bone_convert(utils.arm.central_bones['head'][0])
-                                            edriver.parent = armature.data.edit_bones[prefix2 + bone2]
+                                        if satinfo.titanfall:
+                                            if utils.arm.central_bones['neck2']:
+                                                prefix2, bone2 = bone_convert(utils.arm.central_bones['neck2'][0])
+                                                ebone.parent = armature.data.edit_bones[prefix2+ bone2]
+                                        else:
+                                            if utils.arm.central_bones['head']:
+                                                prefix2, bone2 = bone_convert(utils.arm.central_bones['head'][0])
+                                                edriver.parent = armature.data.edit_bones[prefix2 + bone2]
 
-                                    update(0)
+                                        update(0)
 
-                                    pbone = armature.pose.bones[prefix + bone]
-                                    pdriver = armature.pose.bones['driver_' + bone]
-                                    param = pdriver.rigify_parameters
-                                    
-                                    #Locks rotation and scale since they aren't meant to be used
-                                    pdriver.lock_location = False, True, False
-                                    pdriver.lock_rotation_w = True
-                                    pdriver.lock_rotation = True, True, True
-                                    pdriver.lock_scale = True, True, True
+                                        pbone = armature.pose.bones[prefix + bone]
+                                        pdriver = armature.pose.bones['driver_' + bone]
+                                        param = pdriver.rigify_parameters
+                                        
+                                        #Locks rotation and scale since they aren't meant to be used
+                                        pdriver.lock_location = False, True, False
+                                        pdriver.lock_rotation_w = True
+                                        pdriver.lock_rotation = True, True, True
+                                        pdriver.lock_scale = True, True, True
 
-                                    pdriver.custom_shape_scale = 1
-                                    param.optional_widget_type = 'circle'
+                                        pdriver.custom_shape_scale = 1
+                                        param.optional_widget_type = 'circle'
 
-                                    pbone.rigify_type = ''
-                                    pdriver.rigify_type = 'basic.raw_copy'
+                                        pbone.rigify_type = ''
+                                        pdriver.rigify_type = 'basic.raw_copy'
 
             #Checks how many spine bones there are for the spines.basic_spine Rigify parameter (At least 3 are required)
             spines = 0
@@ -434,18 +433,18 @@ def anim_armature(action):
                         if satinfo.sbox:
                             ebone.tail.yz = ppelvis.head.y-10*unit, ppelvis.head.z+12*unit
                         else:
-                            ebone.tail.yz = ppelvis.head.y-4*unit, ppelvis.head.z+5*unit
+                            ebone.tail.yz = ppelvis.head.y-3*unit, ppelvis.head.z+4*unit
 
                         if index == 0:
                             if satinfo.sbox:
                                 ebone.tail.x = ppelvis.head.x+10*unit
                             else:
-                                ebone.tail.x = ppelvis.head.x+3.83177*unit
+                                ebone.tail.x = ppelvis.head.x+3.25*unit
                         elif index == 1:
                             if satinfo.sbox:
                                 ebone.tail.x = ppelvis.head.x-10*unit
                             else:
-                                ebone.tail.x = ppelvis.head.x-3.83177*unit
+                                ebone.tail.x = ppelvis.head.x-3.25*unit
             
             rigify_palm = {}
 
@@ -535,8 +534,8 @@ def anim_armature(action):
                             ebone.head.xyz = efoot.head.x - 2*unit, efoot.head.y + 5*unit, 0
                             ebone.tail.xyz = efoot.head.x + 2*unit, efoot.head.y + 5*unit, 0
                         else:
-                            ebone.head.xyz = efoot.head.x - 2*unit, efoot.head.y + 4*unit, 0
-                            ebone.tail.xyz = efoot.head.x + 2*unit, efoot.head.y + 4*unit, 0
+                            ebone.head.xyz = efoot.head.x - 2*unit, efoot.head.y + 2.4*unit, 0
+                            ebone.tail.xyz = efoot.head.x + 2*unit, efoot.head.y + 2.4*unit, 0
                     elif index == 1:
                         if satinfo.goldsource:
                             ebone.head.xyz = efoot.head.x + 2*unit, efoot.head.y + 3*unit, 0
@@ -545,8 +544,8 @@ def anim_armature(action):
                             ebone.head.xyz = efoot.head.x + 2*unit, efoot.head.y + 5*unit, 0
                             ebone.tail.xyz = efoot.head.x - 2*unit, efoot.head.y + 5*unit, 0
                         else:
-                            ebone.head.xyz = efoot.head.x + 2*unit, efoot.head.y + 4*unit, 0
-                            ebone.tail.xyz = efoot.head.x - 2*unit, efoot.head.y + 4*unit, 0
+                            ebone.head.xyz = efoot.head.x + 2*unit, efoot.head.y + 2.4*unit, 0
+                            ebone.tail.xyz = efoot.head.x - 2*unit, efoot.head.y + 2.4*unit, 0
 
                     ebone.parent = efoot
 
@@ -601,19 +600,25 @@ def anim_armature(action):
             
             #Creates camera target if armature is a viewmodel
             if satinfo.viewmodel:
-                if utils.arm.other_bones['viewmodel']:
-                    for bone in utils.arm.other_bones['viewmodel']:
-                        if bone.count('Camera'):
-                            prefix, bone = bone_convert(bone)
-                            pcamera = armature.pose.bones[prefix + bone]
-                            etarget = armature.data.edit_bones.new('Camera_Target')
-                            
-                            prefix, bone = bone_convert(utils.arm.central_bones['pelvis'][0])
-                            ppelvis = armature.pose.bones[prefix + bone]
-                            etarget.head.xyz = pcamera.head.x, -ppelvis.head.z, pcamera.head.z
-                            etarget.tail.xyz = etarget.head.x, etarget.head.y*0.5*unit, etarget.head.z
-                            etarget.length = 2*unit
-                            break
+                marked = False
+
+                if utils.arm.attachment_bones['viewmodel'].get('attach_camera'):
+                    bone = utils.arm.attachment_bones['viewmodel']['attach_camera'][0]
+                    marked = True
+                elif utils.arm.attachment_bones['viewmodel'].get('camera'):
+                    bone = utils.arm.attachment_bones['viewmodel']['camera'][0]
+                    marked = True
+
+                if marked:
+                    prefix, bone = bone_convert(bone)
+                    pcamera = armature.pose.bones[prefix + bone]
+                    etarget = armature.data.edit_bones.new('Camera_Target')
+                    
+                    prefix, bone = bone_convert(utils.arm.central_bones['pelvis'][0])
+                    ppelvis = armature.pose.bones[prefix + bone]
+                    etarget.head.xyz = pcamera.head.x, -ppelvis.head.z, pcamera.head.z
+                    etarget.tail.xyz = etarget.head.x, etarget.head.y*0.5*unit, etarget.head.z
+                    etarget.length = 2*unit
 
             update(0)
 
@@ -964,9 +969,7 @@ def anim_armature(action):
             for container, bone in utils.arm.central_bones.items():
                 for bone in bone:
                     if bone:
-                        if satinfo.titanfall and container == 'head':
-                            pass
-                        else:
+                        if container != 'head':
                             prefix, bone = bone_convert(bone)
                             ebone = armature.data.edit_bones[prefix + bone]
                             pbone = armature.pose.bones[prefix + bone]
@@ -974,9 +977,9 @@ def anim_armature(action):
 
                             ebone.layers[3] = True
 
-                            if container == 'pelvis':
-                                if not satinfo.viewmodel:
-                                    if spines > 2 :
+                            if not satinfo.viewmodel:
+                                if container == 'pelvis':
+                                    if spines > 2:
                                         pbone.rigify_type = 'spines.basic_spine'
                                         param.pivot_pos = 2
                                         param.tweak_layers[1] = False
@@ -986,7 +989,7 @@ def anim_armature(action):
                                     else:
                                         pbone.rigify_type = 'basic.copy_chain'
 
-                            elif container == 'neck':
+                            if container == 'neck':
                                 if utils.arm.central_bones['head']:
                                     pbone.rigify_type = 'spines.super_head'
                                     if utils.arm.central_bones['pelvis']:
@@ -998,73 +1001,68 @@ def anim_armature(action):
                         
                             ebone.layers[0] = False
 
-            for container, bone in utils.arm.other_bones.items():
-                for bone in bone:
-                    if bone:
-                        if container == 'forward'  or container == 'root' or container == 'ik' or bone.count('neckB'):
-                            continue
-                        else:
+            for cat in utils.arm.attachment_bones.keys():
+                for container, bone in utils.arm.attachment_bones[cat].items():
+                    for bone in bone:
+                        if bone:
                             prefix, bone = bone_convert(bone)
+                            ebone = armature.data.edit_bones[prefix + bone]
                             pbone = armature.pose.bones[prefix + bone]
                             param = pbone.rigify_parameters
-                            ebone = armature.data.edit_bones[prefix + bone]
 
-                            if container == 'weapon':
+                            if cat == 'weapon':
                                 ebone.layers[20] = True
                                 ebone.layers[0] = False
                                 ebone.layers[7] = False
                                 pbone.rigify_type = 'basic.super_copy'
                                 param.super_copy_widget_type = 'bone'
-
-                            elif container == 'attachment':
+                            elif cat == 'attachment':
                                 ebone.layers[19] = True
                                 ebone.layers[0] = False
                                 ebone.layers[6] = False
                                 ebone.layers[7] = False
-
-                                pbone.rigify_type = 'basic.super_copy'
-                                param.super_copy_widget_type = 'bone'
-                            else:
-                                ebone.layers[21] = True
-                                ebone.layers[0] = False
-                                ebone.layers[8] = False
-
                                 pbone.rigify_type = 'basic.super_copy'
                                 param.super_copy_widget_type = 'bone'
                             
+            marked = False
+
             if satinfo.viewmodel:
-                if utils.arm.other_bones['viewmodel']:
-                    for bone in utils.arm.other_bones['viewmodel']:
-                        if bone.count('attach_camera'):
-                            prefix, bone = bone_convert(bone)
-                            pbone = armature.pose.bones[prefix + bone]
-                            param = pbone.rigify_parameters
-                            ebone = armature.data.edit_bones[prefix + bone]
+                if utils.arm.attachment_bones['viewmodel'].get('attach_camera'):
+                    bone = utils.arm.attachment_bones['viewmodel']['attach_camera'][0]
+                    marked = True
+                elif utils.arm.attachment_bones['viewmodel'].get('camera'):
+                    bone = utils.arm.attachment_bones['viewmodel']['camera'][0]
+                    marked = True
 
-                            ebone.layers[21] = True
+                if marked:
+                    prefix, bone = bone_convert(bone)
+                    pbone = armature.pose.bones[prefix + bone]
+                    param = pbone.rigify_parameters
+                    ebone = armature.data.edit_bones[prefix + bone]
 
-                            ebone.layers[0] = False
-                            ebone.layers[8] = False
+                    ebone.layers[22] = True
 
-                            pbone.rigify_type = 'basic.super_copy'
-                            param.super_copy_widget_type = 'bone'
-                            break
+                    ebone.layers[0] = False
+                    ebone.layers[8] = False
 
-                    etarget = armature.data.edit_bones['Camera_Target']
-                    ptarget = armature.pose.bones['Camera_Target']
-                    param = ptarget.rigify_parameters
+                    pbone.rigify_type = 'basic.super_copy'
+                    param.super_copy_widget_type = 'bone'
 
-                    ptarget.rigify_type = 'basic.raw_copy'
-                    param.optional_widget_type = 'circle'
+                etarget = armature.data.edit_bones['Camera_Target']
+                ptarget = armature.pose.bones['Camera_Target']
+                param = ptarget.rigify_parameters
 
-                    ptarget.lock_location[1] = True
-                    ptarget.lock_rotation[0] = True
-                    ptarget.lock_rotation[2] = True
+                ptarget.rigify_type = 'basic.raw_copy'
+                param.optional_widget_type = 'circle'
 
-                    etarget.layers[21] = True
-                    etarget.layers[0] = False
-                    etarget.layers[7] = False
-                    etarget.layers[8] = False
+                ptarget.lock_location[1] = True
+                ptarget.lock_rotation[0] = True
+                ptarget.lock_rotation[2] = True
+
+                etarget.layers[22] = True
+                etarget.layers[0] = False
+                etarget.layers[7] = False
+                etarget.layers[8] = False
 
             #Custom bones
             for container, bone in utils.arm.custom_bones.items():
@@ -1072,13 +1070,13 @@ def anim_armature(action):
                     if bone:
                         if bone.count('eye') or bone.count('lid_upper') or bone.count('lid_lower'):
                             continue
-                        prefix, bone = bone_convert(bone)
+                        prefix, bone2 = bone_convert(bone)
 
-                        ebone = armature.data.edit_bones[prefix + bone]
-                        pbone = armature.pose.bones[prefix + bone]
+                        ebone = armature.data.edit_bones[prefix + bone2]
+                        pbone = armature.pose.bones[prefix + bone2]
                         param = pbone.rigify_parameters
 
-                        ebone.layers[22] = True
+                        ebone.layers[21] = True
                         
                         ebone.layers[0] = False
                         ebone.layers[9] = False
@@ -1119,13 +1117,13 @@ def anim_armature(action):
                 armature.rigify_layers.add()
 
             #Rigify layers
-            names = ['Face', 'Face (Primary)','Face (Secondary)','Torso', 'Torso (Tweak)', 'Fingers', 'Fingers (Detail)', 'Arm.L (IK)', 'Arm.L (FK)', 'Arm.L (Tweak)', 'Arm.R (IK)', 'Arm.R (FK)', 'Arm.R (Tweak)', 'Leg.L (IK)', 'Leg.L (FK)', 'Leg.L (Tweak)', 'Leg.R (IK)', 'Leg.R (FK)', 'Leg.R (Tweak)', 'Attachments', 'Weapon', 'Others', 'Custom Bones']
+            names = ['Face', 'Face (Primary)','Face (Secondary)','Torso', 'Torso (Tweak)', 'Fingers', 'Fingers (Detail)', 'Arm.L (IK)', 'Arm.L (FK)', 'Arm.L (Tweak)', 'Arm.R (IK)', 'Arm.R (FK)', 'Arm.R (Tweak)', 'Leg.L (IK)', 'Leg.L (FK)', 'Leg.L (Tweak)', 'Leg.R (IK)', 'Leg.R (FK)', 'Leg.R (Tweak)', 'Attachments', 'Weapon', 'Custom (FK)', 'Custom (IK)', 'Custom (Tweak)', 'Others']
 
-            row_groups = [1,2,2,3,4,5,6,7,8,9,7,8,9,10,11,12,10,11,12,13,13,14,14]
+            row_groups = [1,2,2,3,4,5,6,7,8,9,7,8,9,10,11,12,10,11,12,13,13,14,14,15,15]
 
-            layer_groups = [5,2,3,3,4,6,5,2,5,4,2,5,4,2,5,4,2,5,4,6,6,6,6]
+            layer_groups = [5,2,3,3,4,6,5,2,5,4,2,5,4,2,5,4,2,5,4,6,6,5,2,4,6]
 
-            for i, name, row, group in zip(range(22), names, row_groups, layer_groups):
+            for i, name, row, group in zip(range(25), names, row_groups, layer_groups):
                 armature.rigify_layers[i].name = name
                 armature.rigify_layers[i].row = row
                 armature.rigify_layers[i]['group_prop'] = group
@@ -1182,13 +1180,13 @@ def anim_armature(action):
 
             #Location constraint
             loc = base.constraints.new('COPY_LOCATION')
-            loc.name = "Location Retarget (Standard)"
+            loc.name = "Location Retarget"
             loc.target = armature
             loc.subtarget = 'ORG-' + prefix + bone + '.isolated'
 
             #Rotation constraint
             rot = base.constraints.new('COPY_ROTATION')
-            rot.name = "Rotation Retarget (Standard)"
+            rot.name = "Rotation Retarget"
             rot.target = armature
             rot.subtarget = 'ORG-' + prefix + bone + '.isolated'
 
@@ -1267,13 +1265,12 @@ def anim_armature(action):
                     prefix, bone = bone_convert(bone)
                     retarget(bone)
 
-        for container, bone in utils.arm.other_bones.items():
-            for bone in bone:
-                if bone:
-                    if container == 'weapon' or container == 'viewmodel':
+        for cat in utils.arm.attachment_bones.keys():
+            for container, bone in utils.arm.attachment_bones[cat].items():
+                for bone in bone:
+                    if bone:
                         prefix, bone = bone_convert(bone)
-                        if container == 'weapon' or bone.title().count('Camera'):
-                            retarget(bone)
+                        retarget(bone)
 
         for container, bone in utils.arm.custom_bones.items():
             for bone in bone:
@@ -1324,61 +1321,75 @@ def anim_armature(action):
 
         #Creates camera at camera bone if armature is a viewmodel
         if satinfo.viewmodel:
-            if utils.arm.other_bones['viewmodel']:
-                for bone in utils.arm.other_bones['viewmodel']:
-                    if bone.count('Camera'):
-                        prefix, bone = bone_convert(bone)
-                        pcamera = armature.pose.bones[prefix + bone]
-                        ecamera = armature.data.edit_bones[prefix + bone]
-                        
-                        track = pcamera.constraints.new('DAMPED_TRACK')
-                        track.target = armature
-                        track.subtarget = 'Camera_Target'
-                        track.track_axis = 'TRACK_Z'
+            marked = False
 
-                        rot = pcamera.constraints.new('COPY_ROTATION')
-                        rot.target = armature
-                        rot.subtarget = 'Camera_Target'
-                        rot.use_x = False
-                        rot.use_z = False
-                        rot.target_space = 'LOCAL'
+            if utils.arm.attachment_bones['viewmodel'].get('attach_camera'):
+                bone = utils.arm.attachment_bones['viewmodel']['attach_camera'][0]
+                marked = True
+            elif utils.arm.attachment_bones['viewmodel'].get('camera'):
+                bone = utils.arm.attachment_bones['viewmodel']['camera'][0]
+                marked = True
 
-                        etarget = armature.data.edit_bones['Camera_Target']
+            if marked:
+                prefix, bone = bone_convert(bone)
+                pcamera = armature.pose.bones[prefix + bone]
+                ecamera = armature.data.edit_bones[prefix + bone]
+                
+                track = pcamera.constraints.new('DAMPED_TRACK')
+                track.target = armature
+                track.subtarget = 'Camera_Target'
+                track.track_axis = 'TRACK_Z'
 
-                        ecamera.parent = None
-                        etarget.parent = None
+                rot = pcamera.constraints.new('COPY_ROTATION')
+                rot.target = armature
+                rot.subtarget = 'Camera_Target'
+                rot.use_x = False
+                rot.use_z = False
+                rot.target_space = 'LOCAL'
 
-                        #Relocates the position of the camera to where it would be in game
-                        if ecamera.head.z >= 0.25:
-                            pcamera.location[2] = -ecamera.head.z*0.0713206
-                            pcamera.location[1] = -ecamera.head.z
-                            armature.pose.bones['Camera_Target'].location[2] = -ecamera.head.z
+                etarget = armature.data.edit_bones['Camera_Target']
 
-                            armature.pose.bones['root'].location[2] = -ecamera.head.z
+                #ecamera.parent = None
+                #etarget.parent = None
 
-                        ##Camera##
-                        camera_data = bpy.data.cameras.new('viewmodel_camera')
-                        camera = bpy.data.objects.new('viewmodel_camera', camera_data)
+                #Relocates the position of the camera to where it would be in game
+                if ecamera.head.z >= 0.25:
+                    if prefix.count('attach'):
+                        pcamera.location[0] = -ecamera.head.z*0.0713206
+                    else:
+                        pcamera.location[2] = -ecamera.head.z*0.0713206
 
-                        camera.data.angle = 0.942478
-                        camera.rotation_euler[0] = radians(90)
-                        camera.rotation_euler[2] = radians(180)
+                    #pcamera.location[1] = -ecamera.head.z
+                    #armature.pose.bones['Camera_Target'].location[2] = -ecamera.head.z
+    
+                    armature.pose.bones['root'].location[2] = -ecamera.head.z
 
-                        loc = camera.constraints.new('COPY_LOCATION')
-                        loc.target = utils.arm.animation_armature
-                        loc.subtarget = pcamera.name
-                        rot = camera.constraints.new('COPY_ROTATION')
-                        rot.target = utils.arm.animation_armature
-                        rot.subtarget = pcamera.name
-                        rot.invert_x = True
-                        rot.invert_z = True
-                        rot.target_space = 'LOCAL'
-                        rot.owner_space = 'LOCAL'
+                ##Camera##
+                camera_data = bpy.data.cameras.new('viewmodel_camera')
+                camera = bpy.data.objects.new('viewmodel_camera', camera_data)
 
-                        collection = utils.arm.armature.users_collection[0]
-                        collection.objects.link(camera)
-                        
-                        bpy.context.scene.camera = camera
+                camera.data.angle = 0.942478
+                camera.rotation_euler[0] = radians(90)
+                if prefix.count('attach'):
+                    camera.rotation_euler[2] = radians(90)
+                else:
+                    camera.rotation_euler[2] = radians(180)
+
+                loc = camera.constraints.new('COPY_LOCATION')
+                loc.target = utils.arm.animation_armature
+                loc.subtarget = pcamera.name
+                rot = camera.constraints.new('COPY_ROTATION')
+                rot.target = utils.arm.animation_armature
+                rot.subtarget = pcamera.name
+                rot.invert_x = True
+                rot.invert_z = True
+                rot.target_space = 'LOCAL'
+                rot.owner_space = 'LOCAL'
+
+                collection = utils.arm.armature.users_collection[0]
+                collection.objects.link(camera)
+                
+                bpy.context.scene.camera = camera
         
         material_eyes = False
 
@@ -1414,8 +1425,7 @@ def anim_armature(action):
             utils.arm.animation_armature_real['target_object'] = satproperties.target_object.name
             utils.arm.animation_armature_real['target_object_data'] = satproperties.target_object.data.name.replace('.anim', '')
 
-        utils.arm.animation_armature_real.layers[21] = False
-
+        utils.arm.animation_armature_real.layers[22] = False
 
     def face_flex_setup(): #Sets up drivers for face flexes that will be controlled by face bones
         unit = satinfo.unit
@@ -2103,10 +2113,8 @@ def anim_armature(action):
 
         satproperties.target_object = None
 
-        if utils.arm.armature.visible_get() == True:
+        if utils.arm.armature.visible_get():
             utils.arm.armature.hide_set(True)
-        bpy.context.view_layer.objects.active = utils.arm.animation_armature
-        bpy.ops.object.mode_set(mode='OBJECT')
 
         try:
             bpy.context.scene.collection.objects.unlink(utils.arm.animation_armature)
@@ -2117,6 +2125,12 @@ def anim_armature(action):
             collection.objects.link(utils.arm.animation_armature)
         except:
             pass
+
+        bpy.context.view_layer.objects.active = utils.arm.animation_armature
+
+        print(bpy.context.object.mode)
+        bpy.ops.object.mode_set(mode='OBJECT')
+        print(bpy.context.object.mode)
 
 def bake(mode):
 
@@ -2330,6 +2344,7 @@ def retarget_constraints(self, context):
     satproperties = bpy.context.scene.satproperties
     satinfo = bpy.context.scene.satinfo
     armature = utils.arm.armature
+    armature2 = utils.arm.animation_armature
 
     if satproperties.retarget_constraints:
         value = False
@@ -2383,8 +2398,8 @@ def retarget_constraints(self, context):
                             except:
                                 pass
 
-        for container, bone in utils.arm.other_bones.items():
-            if container == 'weapon' or container == 'viewmodel':
+        for cat in utils.arm.attachment_bones.keys():
+            for container, bone in utils.arm.attachment_bones[cat].items():
                 for bone in bone:
                     if bone:
                         prefix, bone = bone_convert(bone)
@@ -2420,3 +2435,25 @@ def retarget_constraints(self, context):
                 else:
                     if track.mute == True:
                         track.mute = False
+
+        current_mode = bpy.context.object.mode
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        if not satproperties.retarget_constraints:
+            if armature.hide_get():
+                armature.hide_set(False)
+
+            if armature.visible_get():
+                bpy.ops.object.select_all(action='DESELECT')
+                armature.select_set(True)
+                bpy.context.view_layer.objects.active = armature
+                bpy.ops.object.mode_set(mode=current_mode)
+        else:
+            if armature2.hide_get():
+                armature2.hide_set(True)
+
+            if armature2.visible_get():
+                bpy.ops.object.select_all(action='DESELECT')
+                armature2.select_set(True)
+                bpy.context.view_layer.objects.active = armature2
+                bpy.ops.object.mode_set(mode=current_mode)

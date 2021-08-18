@@ -95,27 +95,20 @@ def armature_rename(scheme, armature=None): #Bone prefix/suffix repositioning
 def bone_rename(scheme, bone, index):
     satinfo = bpy.context.scene.satinfo
 
-    if satinfo.goldsource:
+    if bone.startswith(utils.arm.side[0]) or bone.startswith(utils.arm.side[1]) or bone.endswith(utils.arm.side[2]) or bone.endswith(utils.arm.side[3]):
         if index == 0:
-            old = ' L '
-            new = ' L'
+            old = utils.arm.side[0]
+            new = utils.arm.side[2]
         elif index == 1:
-            old = ' R '
-            new = ' R'
-    elif bone.count('l_') or bone.count('r_') or bone.count('_l') or bone.count('_r'):
-        if index == 0:
-            old = 'l_'
-            new = '_l'
-        elif index == 1:
-            old = 'r_'
-            new = '_r'
+            old = utils.arm.side[1]
+            new = utils.arm.side[3]
     else:
         if index == 0:
-            old = 'L_'
-            new = '_L'
+            old = utils.arm.side[0].casefold()
+            new = utils.arm.side[2].casefold()
         elif index == 1:
-            old = 'R_'
-            new = '_R'
+            old = utils.arm.side[1].casefold()
+            new = utils.arm.side[3].casefold()
 
     #To which scheme
     if scheme == 1: #Source -> Blender

@@ -29,12 +29,15 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
             if not loc[bone]['location']:
                 loc[bone]['location'] = armature.pose.bones[prefix + bone].constraints.new('COPY_LOCATION')
 
-                contraint = loc[bone]['location']
+                constraint = loc[bone]['location']
                 #Constraint parameters
-                contraint.name = "Constraint Symmetry Location"
-                contraint.target = armature
-                contraint.subtarget = prefix2 + bone2
+                constraint.name = "Constraint Symmetry Location"
+                constraint.target = armature
+                constraint.subtarget = prefix2 + bone2
                 constraint_update(prefix, bone)
+                if type == 'weapon' or type == 'attachment':
+                    constraint.target_space = 'LOCAL'
+                    constraint.owner_space = 'LOCAL'
             else:
                 final_report_loc.append(bone)
 
@@ -42,22 +45,23 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
             if not rot[bone]['rotation']:
                 rot[bone]['rotation'] = armature.pose.bones[prefix + bone].constraints.new('COPY_ROTATION')
                     
-                contraint = rot[bone]['rotation']
+                constraint = rot[bone]['rotation']
                 #Constraint parameters
-                contraint.name = "Constraint Symmetry Rotation"
-                contraint.target = armature
-                contraint.target_space = 'LOCAL_WITH_PARENT'
-                contraint.owner_space = 'LOCAL_WITH_PARENT'
+                constraint.name = "Constraint Symmetry Rotation"
+                constraint.target = armature
+                constraint.target_space = 'LOCAL_WITH_PARENT'
+                constraint.owner_space = 'LOCAL_WITH_PARENT'
                 if type == 'weapon':
-                    contraint.invert_y = True
-                    contraint.invert_x = False
+                    constraint.invert_y = True
+                    constraint.invert_x = False
+                    constraint.invert_z = True
                 elif satinfo.titanfall or satinfo.special_viewmodel:
-                    contraint.invert_y = False
-                    contraint.invert_x = False
+                    constraint.invert_y = False
+                    constraint.invert_x = False
                 else:
-                    contraint.invert_y = True
-                    contraint.invert_x = True
-                contraint.subtarget = prefix2 + bone2
+                    constraint.invert_y = True
+                    constraint.invert_x = True
+                constraint.subtarget = prefix2 + bone2
             else:
                 final_report_rot.append(bone)
             
@@ -133,36 +137,26 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
                         prefix2, bone2 = bone_convert(bone2)
                         constraint(bone, bone2)
 
-    if utils.arm.other_bones:
-        try:
-            weapon = utils.arm.other_bones['weapon']
-            if side == 'LTR':
-                bone = weapon[weapon.index('p2.L_weapon_bone')]
-                bone2 = weapon[weapon.index('p2.weapon_bone')]
-            elif side == 'RTL':
-                bone = weapon[weapon.index('p2.weapon_bone')]
-                bone2 = weapon[weapon.index('p2.L_weapon_bone')]
+    if utils.arm.attachment_bones:
+        for cat in utils.arm.attachment_bones.keys():
+            for container, bone in utils.arm.attachment_bones[cat].items():
+                if container != 'others' and not container.count('camera') and container != 'bolt':
+                    if bone:
+                        if bone[0] and bone[1]:
+                            if side == 'LTR':
+                                bone = utils.arm.attachment_bones[cat][container][0]
+                                bone2 = utils.arm.attachment_bones[cat][container][1]
+                            elif side == 'RTL':
+                                bone = utils.arm.attachment_bones[cat][container][1]
+                                bone2 = utils.arm.attachment_bones[cat][container][0]
 
-            prefix, bone = bone_convert(bone)
-            prefix2, bone2 = bone_convert(bone2)
-            constraint(bone, bone2, 'weapon')
-        except:
-            pass
+                            prefix, bone = bone_convert(bone)
+                            prefix2, bone2 = bone_convert(bone2)
 
-        try:
-            attachment = utils.arm.other_bones['attachment']
-            if side == 'LTR':
-                bone = attachment[attachment.index('a1.armL_T')]
-                bone2 = attachment[attachment.index('a1.armR_T')]
-            elif side == 'RTL':
-                bone = attachment[attachment.index('a1.armR_T')]
-                bone2 = attachment[attachment.index('a1.armL_T')]
-
-            prefix, bone = bone_convert(bone)
-            prefix2, bone2 = bone_convert(bone2)
-            constraint(bone, bone2)
-        except:
-            pass
+                            if cat == 'weapon':
+                                constraint(bone, bone2, 'weapon')
+                            else:
+                                constraint(bone, bone2, 'attachment')
 
     #If constraints could not be applied
     if final_report_loc:
