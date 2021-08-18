@@ -8,7 +8,8 @@ class Prefixes: #Container for other prefixes
     helper = 'hlp_'
     helper2 = 'ValveBiped.hlp_'
     attachment = 'ValveBiped.attachment_'
-    attachment2 = 'ValveBiped.Anim_'
+    attachment2 = 'ValveBiped.attach_'
+    attachment3 = 'ValveBiped.Anim_'
     other = 'ValveBiped.'
 
     ##Helper prefixes##
@@ -17,7 +18,8 @@ class Prefixes: #Container for other prefixes
 
     ##Attachment prefixes##
     #a1 = ValveBiped.attachment
-    #a2 = ValveBiped.Anim
+    #a2 = ValveBiped.attach
+    #a3 = ValveBiped.Anim
 
     ##Bone prefixes##
     #p1 = Current prefix
@@ -92,7 +94,8 @@ class Armature: #Armature base
             self.symmetrical_bones = {'arms': {'clavicle': [], 'upperarm': [], 'forearm': [], 'hand': []}, 'legs': {'thigh': [], 'calf': [], 'foot': [], 'toe0': []}, 'fingers': {'finger0': [], 'finger01': [], 'finger02': [], 'finger1': [], 'finger11': [], 'finger12': [], 'finger2': [], 'finger21': [], 'finger22': [], 'finger3': [], 'finger31': [], 'finger32': [], 'finger4': [], 'finger41': [], 'finger42': []}}
             self.central_bones = {'pelvis': [], 'spine': [], 'spine1': [], 'spine2': [], 'spine3': [], 'spine4': [], 'neck': [], 'head': []}
             self.helper_bones = {'arms': {'trapezius': [], 'shoulder': [], 'bicep': [], 'elbow': [], 'ulna': [], 'wrist': []}, 'legs': {'quadricep': [], 'knee': []}, 'viewmodel': {'thumbroot': [], 'thumbfix': [], 'wrist_helper1': [], 'wrist_helper2': [], 'forearm_driven': [], 'ulna_extra1': [], 'ulna_extra2': [], 'wrist_extra': []}, 'others': {'others': []}}
-            self.other_bones = {'forward': [], 'weapon': [], 'attachment': [], 'viewmodel': [], 'root': [], 'others': []}
+            self.other_bones = {'forward': [], 'root': [], 'others': []}
+            self.attachment_bones = {'attachment': {'others': []}, 'weapon': {'others': []}, 'viewmodel': {'others': []}}
             self.custom_bones = {'jiggle': [], 'others': []}
 
             self.full_bonelist = armature.data.bones.keys() #Gets all bones in armature
@@ -104,6 +107,7 @@ class Armature: #Armature base
                 central_bones_raw = []
                 helper_bones_raw = []
                 other_bones_raw = []
+                attachment_bones_raw = []
                 custom_bones_raw = []
 
                 self.side = []
@@ -145,11 +149,15 @@ class Armature: #Armature base
 
                         #Attachment bone prefixes
                         elif bone.startswith('ValveBiped.attachment'):
-                            other_bones_raw.append(bone.replace('ValveBiped.attachment_', 'a1.'))
+                            attachment_bones_raw.append(bone.replace('ValveBiped.attachment_', 'a1.'))
+                            continue
+
+                        elif bone.startswith('ValveBiped.attach'):
+                            attachment_bones_raw.append(bone.replace('ValveBiped.attach_', 'a2.'))
                             continue
                         
                         elif bone.startswith('ValveBiped.Anim'):
-                            other_bones_raw.append(bone.replace('ValveBiped.Anim_', 'a2.'))
+                            attachment_bones_raw.append(bone.replace('ValveBiped.Anim_', 'a3.'))
                             continue
 
                         elif bone == 'ValveBiped.ValveBiped':
@@ -214,9 +222,17 @@ class Armature: #Armature base
                             self.other_bones['root'].append(bone)
                             continue
 
-                        #Attachments/#Special bones
-                        elif bone.startswith('ja') or bone.startswith('jx'):
-                            other_bones_raw.append(bone)
+                        #Attachments
+                        elif bone.startswith('ja'):
+                            attachment_bones_raw.append(bone)
+                            continue
+
+                        #Special bones
+                        elif bone.startswith('jx'):
+                            if bone.count('camera') or bone.count('pov'):
+                                attachment_bones_raw.append(bone)
+                            else:
+                                other_bones_raw.append(bone)
                             continue
                     else:
                         self.side = ['L_', 'R_', '_L', '_R']
@@ -249,11 +265,11 @@ class Armature: #Armature base
                     if bone.startswith(satinfo.prefix) or satinfo.special_viewmodel:
                         bone2 = bone.replace(satinfo.prefix, '').title()
 
-                        if bone.casefold().count('weapon') or bone.casefold().count('gun') or bone.casefold().count('missile'):
+                        if bone.casefold().count('attach') or bone.casefold().count('camera') or bone.casefold().count('weapon') or bone.casefold().count('gun') or bone.casefold().count('missile'):
                             if satinfo.prefix:
-                                other_bones_raw.append(bone.replace(satinfo.prefix, 'p1.'))
+                                attachment_bones_raw.append(bone.replace(satinfo.prefix, 'p1.'))
                             else:
-                                other_bones_raw.append(bone)
+                                attachment_bones_raw.append(bone)
                             continue
 
                         #Default prefix
@@ -279,9 +295,13 @@ class Armature: #Armature base
                             continue
 
                     if bone.startswith(Prefixes.other):
-                        other_bones_raw.append(bone.replace(Prefixes.other, 'p2.'))
-                        continue
-                                
+                        if bone.casefold().count('attach') or bone.casefold().count('camera') or bone.casefold().count('weapon') or bone.casefold().count('gun') or bone.casefold().count('missile'):
+                            attachment_bones_raw.append(bone.replace(Prefixes.other, 'p2.'))
+                            continue
+                        else:
+                            other_bones_raw.append(bone.replace(Prefixes.other, 'p2.'))
+                            continue
+                    
                     ##No/Different prefix##
                     custom_bones_raw.append(bone)
 
@@ -369,8 +389,7 @@ class Armature: #Armature base
                             fingers = ['thumb_0', 'thumb_1', 'thumb_2', 'finger_index_0', 'finger_index_1', 'finger_index_2', 'finger_middle_0', 'finger_middle_1', 'finger_middle_2', 'finger_ring_0', 'finger_ring_1', 'finger_ring_2', None, None, None,]
                             
                             if bone.title().count('Hold'):
-                                self.other_bones['attachment'].append(bone)
-                                self.other_bones['attachment'].sort()
+                                attachment_bones_raw.append(bone)
                                 continue
                             
                             elif bone.count('finger_index_meta'):
@@ -761,48 +780,112 @@ class Armature: #Armature base
                     for bone in other_bones_raw:
                         #Titanfall
                         if satinfo.titanfall:
-                            if bone.count('ja'):
-                                self.other_bones['attachment'].append(bone)
-                                self.other_bones['attachment'].sort()
-
-                            elif bone.startswith('jx'):
+                            if bone.startswith('jx'):
                                 self.other_bones['others'].append(bone)
                                 self.other_bones['others'].sort()
                             else:
                                 custom_bones_raw.append(bone)
+
                         elif satinfo.sbox:
                             if bone.casefold().count('ik'):
                                 self.other_bones.setdefault('ik', [])
                                 self.other_bones['ik'].append(bone)
                                 self.other_bones['ik'].sort()
+
                         else:
                             if bone.title().count('Forward'):
                                 self.other_bones['forward'].append(bone)
                                 self.other_bones['forward'].sort()
 
-                            elif bone.title().count('Weapon') or bone.title().count('Muzzle') or bone.title().count('Shell'):
-                                self.other_bones['weapon'].append(bone)
-                                self.other_bones['weapon'].sort()
-
-                            elif bone.startswith('a1.') or bone.startswith('a2.'):
-                                self.other_bones['attachment'].append(bone)
-                                self.other_bones['attachment'].sort()
-
                             elif bone.title().count('Bip01'):
                                 self.central_bones['pelvis'].append(bone)
                                 self.central_bones['pelvis'].sort()
-
-                            elif bone.title().count('Camera'):
-                                self.other_bones['viewmodel'].append(bone)
-                                self.other_bones['viewmodel'].sort()
 
                             elif bone.title().count('Jiggle') or bone.title().count('Jiggy'):
                                 self.custom_bones['jiggle'].append(bone)
                                 self.custom_bones['jiggle'].sort()
 
                             else:
-                                self.other_bones['others'].append(bone)
-                                self.other_bones['others'].sort()
+                                self.custom_bones['others'].append(bone)
+                                self.custom_bones['others'].sort()
+
+                if attachment_bones_raw:
+                    for bone in attachment_bones_raw:
+                        if satinfo.titanfall:
+                            if bone.count('ja'):
+                                self.attachment_bones['attachment']['others'].append(bone)
+                                self.attachment_bones['attachment']['others'].sort()
+                                continue
+                            
+                        elif satinfo.sbox:
+                            if bone.title().count('Hold'):
+                                self.attachment_bones['attachment'].setdefault('hand', [])
+                                self.attachment_bones['attachment']['hand'].append(bone)
+                                self.attachment_bones['attachment']['hand'].sort()
+                                continue
+                        
+                        if bone.title().count('Attach_Camera'):
+                            self.attachment_bones['viewmodel'].setdefault('attach_camera', [])
+                            self.attachment_bones['viewmodel']['attach_camera'].append(bone)
+                            self.attachment_bones['viewmodel']['attach_camera'].sort()
+                            
+                        elif bone.title().count('Camera'):
+                            self.attachment_bones['viewmodel'].setdefault('camera', [])
+                            self.attachment_bones['viewmodel']['camera'].append(bone)
+                            self.attachment_bones['viewmodel']['camera'].sort()
+
+                        elif bone.title().count('Weapon') or bone.title().count('Muzzle') or bone.title().count('Shell'):
+                            if bone.count('bolt_opposite') or bone.count('extra') or bone.count('charger'):
+                                self.attachment_bones['weapon']['others'].append(bone)
+                                self.attachment_bones['weapon']['others'].sort()
+
+                            elif bone.count('bolt'):
+                                self.attachment_bones['weapon'].setdefault('bolt', [])
+                                self.attachment_bones['weapon']['bolt'].append(bone)
+                                self.attachment_bones['weapon']['bolt'].sort(reverse=True)
+                            
+                            elif bone.casefold().count('bullets'):
+                                self.attachment_bones['weapon'].setdefault('clip_bullets', [])
+                                self.attachment_bones['weapon']['clip_bullets'].append(bone)
+                                self.attachment_bones['weapon']['clip_bullets'].sort()
+
+                            elif bone.casefold().count('clip'):
+                                self.attachment_bones['weapon'].setdefault('clip', [])
+                                self.attachment_bones['weapon']['clip'].append(bone)
+                                self.attachment_bones['weapon']['clip'].sort(reverse=True)
+
+                            elif bone.count('weapon_bone'):
+                                self.attachment_bones['weapon'].setdefault('weapon', [])
+                                self.attachment_bones['weapon']['weapon'].append(bone)
+                                self.attachment_bones['weapon']['weapon'].sort()
+
+                            else:
+                                self.attachment_bones['weapon']['others'].append(bone)
+                                self.attachment_bones['weapon']['others'].sort()
+
+                        elif bone.title().count('Bandage'):
+                            if bone.title().count('Arm'):
+                                self.attachment_bones['attachment'].setdefault('arm_bandage', [])
+                                self.attachment_bones['attachment']['arm_bandage'].append(bone)
+                                self.attachment_bones['attachment']['arm_bandage'].sort()
+                            elif bone.title().count('Leg'):
+                                self.attachment_bones['attachment'].setdefault('leg_bandage', [])
+                                self.attachment_bones['attachment']['leg_bandage'].append(bone)
+                                self.attachment_bones['attachment']['leg_bandage'].sort()
+
+                        elif bone.title().count('Arm'):
+                            self.attachment_bones['attachment'].setdefault('arm', [])
+                            self.attachment_bones['attachment']['arm'].append(bone)
+                            self.attachment_bones['attachment']['arm'].sort()
+
+                        elif bone.title().count('Leg'):
+                            self.attachment_bones['attachment'].setdefault('leg', [])
+                            self.attachment_bones['attachment']['leg'].append(bone)
+                            self.attachment_bones['attachment']['leg'].sort()
+
+                        else:
+                            self.attachment_bones['attachment']['others'].append(bone)
+                            self.attachment_bones['attachment']['others'].sort()
 
                 ##Custom bones##
                 if custom_bones_raw:
@@ -879,6 +962,24 @@ class Armature: #Armature base
                     if self.helper_bones['arms']['wrist'][1] == 'h2.wrist':
                         self.helper_bones['arms']['wrist'].sort(reverse=True)
 
+                for cat in self.attachment_bones.keys():
+                    for container in self.attachment_bones[cat].keys():
+                        if container != 'others' and not container.count('camera'):
+                            if len(self.attachment_bones[cat][container]) == 1:
+                                bone = self.attachment_bones[cat][container][0]
+                                prefix, bone = bone_convert(bone)
+
+                                if bone.endswith('L') or bone.endswith('L_T'):
+                                    self.attachment_bones[cat][container].insert(1, None)
+                                elif bone.endswith('R') or bone.endswith('R_T'):
+                                    self.attachment_bones[cat][container].insert(0, None)
+                                elif bone.title().startswith(self.side[0]) or bone.title().endswith(self.side[2]):
+                                    self.attachment_bones[cat][container].insert(1, None)
+                                elif bone.title().startswith(self.side[1]) or bone.title().endswith(self.side[3]):
+                                    self.attachment_bones[cat][container].insert(0, None)
+                                else:
+                                    self.attachment_bones[cat][container].insert(1, None)
+
                 for bone in self.full_bonelist:
                     bone = armature.pose.bones[bone]
                     if bone.bone.use_connect:
@@ -890,6 +991,7 @@ class Armature: #Armature base
                     print("Symmetrical bones:", list(self.symmetrical_bones.values()))
                     print("Central bones:", list(self.central_bones.values()))
                     print("Helper bones:", list(self.helper_bones.values()))
+                    print("Attachment bones:", list(self.attachment_bones.values()))
                     print("Other bones:", list(self.other_bones.values()))
                     print("Custom bones:", self.custom_bones)
                 
@@ -900,6 +1002,7 @@ class Armature: #Armature base
             #print(central_bones_raw)
             #print(helper_bones_raw)
             #print(other_bones_raw)
+            #print(attachment_bones_raw)
             #print(custom_bones_raw)
 
     ##Relative unit##
@@ -1082,20 +1185,28 @@ class Armature: #Armature base
                                 armature.data.bones[prefix + bone].layers[5] = True
                                 armature.data.bones[prefix + bone].layers[0] = False
 
+            if self.attachment_bones:
+                for cat in self.attachment_bones.keys():
+                    for container, bone in self.attachment_bones[cat].items():
+                        for bone in bone:
+                            if bone:
+                                prefix, bone = bone_convert(bone)
+
+                                if cat == 'attachment' or cat == 'viewmodel':
+                                    armature.pose.bones[prefix + bone].bone_group_index = 6
+                                    armature.data.bones[prefix + bone].layers[6] = True
+                                    armature.data.bones[prefix + bone].layers[0] = False
+                                elif cat == 'weapon':
+                                    armature.pose.bones[prefix + bone].bone_group_index = 7
+                                    armature.data.bones[prefix + bone].layers[7] = True
+                                    armature.data.bones[prefix + bone].layers[0] = False
     
-            for container, bone in self.other_bones.items():
-                for bone in bone:
-                    if bone:
-                        prefix, bone = bone_convert(bone)
-                        if container == 'attachment':
-                            armature.pose.bones[prefix + bone].bone_group_index = 6
-                            armature.data.bones[prefix + bone].layers[6] = True
-                            armature.data.bones[prefix + bone].layers[0] = False
-                        elif container == 'weapon':
-                            armature.pose.bones[prefix + bone].bone_group_index = 7
-                            armature.data.bones[prefix + bone].layers[7] = True
-                            armature.data.bones[prefix + bone].layers[0] = False
-                        else:
+            if self.other_bones:
+                for container, bone in self.other_bones.items():
+                    for bone in bone:
+                        if bone:
+                            prefix, bone = bone_convert(bone)
+
                             armature.pose.bones[prefix + bone].bone_group_index = 8
                             armature.data.bones[prefix + bone].layers[8] = True
                             armature.data.bones[prefix + bone].layers[0] = False
@@ -1306,20 +1417,14 @@ def generate_armature(type, action): #Creates or deletes the weight armature
         ##Unimportant bone removal##
 
         #Removes bones such as weapon or attachment bones
+        
         if arm.other_bones:
             for container, bone in arm.other_bones.items():
                 for bone in bone:
                     if bone:
-                        if container == 'forward' or container == 'root' or container == 'ik' or bone == 'p2.ValveBiped':
-                            prefix, bone = bone_convert(bone)
-                            bone = armature.data.edit_bones[prefix + bone]
-                            armature.data.edit_bones.remove(bone)
-
-                        elif type == 'weight':
-                            prefix, bone = bone_convert(bone)
-
-                            bone = armature.data.edit_bones[prefix + bone]
-                            armature.data.edit_bones.remove(bone)
+                        prefix, bone = bone_convert(bone)
+                        bone = armature.data.edit_bones[prefix + bone]
+                        armature.data.edit_bones.remove(bone)
 
         #Keeps only the bare minimum bones for Rigify
         if type == 'anim':
@@ -1343,6 +1448,16 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                         
                             armature.data.edit_bones.remove(ebone)
                             
+            if arm.attachment_bones:
+                for cat in arm.attachment_bones:
+                    for container, bone in arm.attachment_bones[cat].items():
+                        for bone in bone:
+                            if bone:
+                                prefix, bone = bone_convert(bone)
+
+                                bone = armature.data.edit_bones[prefix + bone]
+                                armature.data.edit_bones.remove(bone)
+
         ##Setup for armatures, tweaking bone positions and the like##
 
         arm.chainless_bones = []
@@ -1388,11 +1503,13 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                                 ebone.tail = parent.tail
                                 parent.length = length
                             
-                            if len(parent.children) < 2:
+                            if len(parent.children) <= 1:
                                 ebone.use_connect = True
 
                             if not ebone.use_connect and ebone.children:
                                 arm.chain_start.append(bone)
+                            elif not ebone.use_connect and not ebone.children:
+                                arm.chainless_bones.append(bone)
                         else:
                             if not ebone.children:
                                 arm.chainless_bones.append(bone)
@@ -1400,15 +1517,35 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                                     pbone.rotation_quaternion[3] = -1
                                     pbone.scale = 5,5,5
 
-                            if not ebone.use_connect and ebone.children:
-                                if type == 'anim':
-                                    pbone.rigify_type = 'basic.super_copy'
-                                    pbone.rigify_parameters.super_copy_widget_type = 'bone'
+                            elif ebone.children:
+                                if len(ebone.children) == 1:
+                                    ebone.children[0].use_connect = True
+                                    arm.chain_start.append(bone)
+                                else:
+                                    arm.chainless_bones.append(bone)
+                    else:
+                        if ebone.children:
+                            if len(ebone.children) == 1:
+                                ebone.children[0].use_connect = True
+                                arm.chain_start.append(bone)
+                            else:
+                                arm.chainless_bones.append(bone)
+                        else:
+                            arm.chainless_bones.append(bone)
 
-                                #arm.chain_start.append(bone)
-
-        #Isolated bones for the custom bones
         if type == 'anim':
+            for cat in arm.attachment_bones.keys():
+                for container, bone in arm.attachment_bones[cat].items():
+                    for bone in bone:
+                        if bone:
+                            prefix, bone2 = bone_convert(bone)
+                            ebone = armature.data.edit_bones[prefix + bone2]
+                            pbone = armature.pose.bones[prefix + bone2]
+                            if ebone.length < 0.3*unit:
+                                pbone.scale = 5,5,5
+                                arm.chainless_bones.append(bone)
+
+            #Isolated bones for the custom bones
             for cat in arm.custom_bones.keys():
                 for bone in arm.custom_bones[cat]:
                     if bone:
@@ -1544,27 +1681,28 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                             ebone.tail.xyz = pbone.head.x, pbone.head.y, pbone.head.z + 10*unit
                         elif satinfo.sbox:
                             ebone.tail.xyz = pbone.head.x, pbone.head.y, pbone.head.z + 35*unit
+                        elif satinfo.titanfall:
+                            ebone.tail.xyz = pbone.head.x, pbone.head.y, pbone.head.z + 4*unit
                         else:
                             ebone.tail.xyz = pbone.head.x, pbone.head.y, pbone.head.z + 6*unit
 
         if type == 'anim':
-            for container, bone in arm.other_bones.items():
-                if container == 'weapon' or container == 'viewmodel':
+            for cat in arm.attachment_bones.keys():
+                for container, bone in arm.attachment_bones[cat].items():
                     for bone in bone:
                         if bone:
-                            if container == 'weapon' or bone.title().count('Camera'):
-                                prefix, bone = bone_convert(bone)
-                                #Creates copy of bone that retains the original rotation for the retarget empties
-                                isolatedbone = armature.data.edit_bones.new(prefix + bone + ".isolated")
-                                isolatedbone.head = armature.pose.bones[prefix + bone].head
-                                isolatedbone.tail = armature.pose.bones[prefix + bone].tail
-                                isolatedbone.roll = armature.data.edit_bones[prefix + bone].roll
-                                isolatedbone.parent = armature.data.edit_bones[prefix + bone]
-                                isolatedbone.use_deform = False
-                                isolatedbone.layers[28] = True
+                            prefix, bone = bone_convert(bone)
+                            #Creates copy of bone that retains the original rotation for the retarget empties
+                            isolatedbone = armature.data.edit_bones.new(prefix + bone + ".isolated")
+                            isolatedbone.head = armature.pose.bones[prefix + bone].head
+                            isolatedbone.tail = armature.pose.bones[prefix + bone].tail
+                            isolatedbone.roll = armature.data.edit_bones[prefix + bone].roll
+                            isolatedbone.parent = armature.data.edit_bones[prefix + bone]
+                            isolatedbone.use_deform = False
+                            isolatedbone.layers[28] = True
 
-                                for i in range(0, 11):
-                                    isolatedbone.layers[i] = False
+                            for i in range(0, 11):
+                                isolatedbone.layers[i] = False
             
         ##Bone tweaks##
 
@@ -1602,7 +1740,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                     elif arm.symmetrical_bones['legs'].get('thighlow'):
                         armature.data.edit_bones[prefix + bone].tail.xyz = ptoe.head.x*1.1, -2*unit, ptoe.head.z
                     else:
-                        armature.data.edit_bones[prefix + bone].tail.xyz = ptoe.head.x*1.1, -7*unit, ptoe.head.z
+                        armature.data.edit_bones[prefix + bone].tail.xyz = ptoe.head.x*1.1, -5*unit, ptoe.head.z
 
         #Extends hand bone
         for index, bone in enumerate(arm.symmetrical_bones['arms']['hand']):
@@ -1615,7 +1753,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                     eforearm = armature.data.edit_bones[prefix + bone]
                     length = eforearm.length
 
-                    if satinfo.sbox:
+                    if satinfo.sbox or satinfo.goldsource:
                         eforearm.length = eforearm.length*1.5
                     elif arm.symmetrical_bones['legs'].get('thighlow'):
                         eforearm.length = eforearm.length*1.75
@@ -1710,7 +1848,10 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                     pelbow = armature.pose.bones[prefix + bone]
                     eelbow = armature.data.edit_bones[prefix + bone]
 
-                    eelbow.tail.xyz = pelbow.head.x, pelbow.head.y + 5*unit, pelbow.head.z
+                    if satinfo.sbox:
+                        eelbow.tail.xyz = pelbow.head.x, pelbow.head.y + 15*unit, pelbow.head.z
+                    else:
+                        eelbow.tail.xyz = pelbow.head.x, pelbow.head.y + 5*unit, pelbow.head.z
 
             for index, bone in enumerate(arm.helper_bones['legs']['knee']):
                 if bone:
@@ -1718,7 +1859,10 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                     pknee = armature.pose.bones[prefix + bone]
                     eknee = armature.data.edit_bones[prefix + bone]
 
-                    eknee.tail.xyz = pknee.head.x, pknee.head.y - 5*unit, pknee.head.z
+                    if satinfo.sbox:
+                        eknee.tail.xyz = pknee.head.x, pknee.head.y - 15*unit, pknee.head.z
+                    else:
+                        eknee.tail.xyz = pknee.head.x, pknee.head.y - 5*unit, pknee.head.z
 
             ##Trapezius##
             for index, bone in enumerate(arm.symmetrical_bones['arms']['clavicle']):
@@ -2129,27 +2273,32 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                     ebone.tail.x = ebone.head.x
 
         #Rotates bones with no children to be more readable while keeping their isolated form intact
-        if arm.chainless_bones:
+        if arm.chainless_bones and type == 'anim':
+            chainless_children = {}
+            
             for bone in arm.chainless_bones:
                 prefix, bone = bone_convert(bone)
                 ebone = armature.data.edit_bones[prefix + bone]
 
-                if type == 'anim':
-                    if ebone.children[0].name.endswith('.isolated'):
-                        ebone2 = armature.data.edit_bones[ebone.children[0].name]
-                        ebone2.parent = None
+                if ebone.children:
+                    chainless_children.setdefault(bone, [])
+                    for child in ebone.children:
+                        chainless_children[bone].append(child.name)
+                        child.parent = None
                 
             bpy.ops.object.mode_set(mode='POSE')
             bpy.ops.pose.armature_apply()
             bpy.ops.pose.select_all(action='DESELECT')
             bpy.ops.object.mode_set(mode='EDIT')
             
-            if type == 'anim':
-                for bone in arm.chainless_bones:
-                    prefix, bone = bone_convert(bone)
-                    ebone = armature.data.edit_bones[prefix + bone]
-                    ebone2 = armature.data.edit_bones[prefix + bone + '.isolated']
-                    ebone2.parent = ebone
+            for bone in arm.chainless_bones:
+                prefix, bone = bone_convert(bone)
+                ebone = armature.data.edit_bones[prefix + bone]
+                
+                if chainless_children.get(bone):
+                    for child in chainless_children[bone]:
+                        child = armature.data.edit_bones[child]
+                        child.parent = ebone
 
         armature.location = arm.armature.location
         armature.rotation_euler = arm.armature.rotation_euler
@@ -2161,6 +2310,9 @@ def generate_armature(type, action): #Creates or deletes the weight armature
 
         if type == 'weight':
             armature.data.show_bone_custom_shapes = False
+            for i in range(0, 10):
+                armature.data.layers[i] = True
+
         elif type == 'anim':
             armature.data.rigify_advanced_generation = True
             armature.data.rigify_generate_mode = 'new'
@@ -2252,6 +2404,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                 for container, bone in arm.central_bones.items():
                     for bone in bone:
                         if bone:
+                            prefix, bone = bone_convert(bone)
                             try:
                                 constraint = armature.pose.bones[prefix + bone].constraints["Retarget Location"]
                                 armature.pose.bones[prefix + bone].constraints.remove(constraint)
@@ -2266,25 +2419,23 @@ def generate_armature(type, action): #Creates or deletes the weight armature
 
                 for cat in arm.helper_bones.keys():
                     for container, bone in arm.helper_bones[cat].items():
-                        if container == 'elbow' or container == 'knee':
-                            for bone in bone:
-                                if bone:
-                                    prefix2, bone2 = bone_convert(bone)
+                        for bone in bone:
+                            if bone:
+                                prefix, bone = bone_convert(bone)
+                                try:
+                                    constraint = armature.pose.bones[prefix + bone].constraints["Retarget Location"]
+                                    armature.pose.bones[prefix + bone].constraints.remove(constraint)
+                                except:
+                                    pass
 
-                                    try:
-                                        constraint = armature.pose.bones[prefix2 + bone2].constraints["Retarget Location"]
-                                        armature.pose.bones[prefix2 + bone2].constraints.remove(constraint)
-                                    except:
-                                        pass
+                                try:
+                                    constraint = armature.pose.bones[prefix + bone].constraints["Retarget Rotation"]
+                                    armature.pose.bones[prefix + bone].constraints.remove(constraint)
+                                except:
+                                    pass
 
-                                    try:
-                                        constraint = armature.pose.bones[prefix2 + bone2].constraints["Retarget Rotation"]
-                                        armature.pose.bones[prefix2 + bone2].constraints.remove(constraint)
-                                    except:
-                                        pass
-
-                for container, bone in arm.other_bones.items():
-                    if container == 'weapon' or container == 'viewmodel':
+                for cat in arm.attachment_bones.keys():
+                    for container, bone in arm.attachment_bones[cat].items():
                         for bone in bone:
                             if bone:
                                 prefix, bone = bone_convert(bone)
@@ -2303,15 +2454,16 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                 for container, bone in arm.custom_bones.items():
                     for bone in bone:
                         if bone:
+                            prefix, bone = bone_convert(bone)
                             try:
-                                constraint = armature.pose.bones[bone].constraints["Retarget Location"]
-                                armature.pose.bones[bone].constraints.remove(constraint)
+                                constraint = armature.pose.bones[prefix + bone].constraints["Retarget Location"]
+                                armature.pose.bones[prefix + bone].constraints.remove(constraint)
                             except:
                                 pass
 
                             try:
-                                constraint = armature.pose.bones[bone].constraints["Retarget Rotation"]
-                                armature.pose.bones[bone].constraints.remove(constraint)
+                                constraint = armature.pose.bones[prefix + bone].constraints["Retarget Rotation"]
+                                armature.pose.bones[prefix + bone].constraints.remove(constraint)
                             except:
                                 pass
 
@@ -2361,6 +2513,8 @@ def bone_convert(bone):
             prefix = Prefixes.attachment
         elif bone[0] == 'a2':
             prefix = Prefixes.attachment2
+        elif bone[0] == 'a3':
+            prefix = Prefixes.attachment3
         elif bone[0] == 'p1':
             prefix = satinfo.prefix
         elif bone[0] == 'p2':
