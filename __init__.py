@@ -20,9 +20,9 @@ bl_info = {
     "blender": (2, 93, 2),
     "location": "Properties > Object Data (Armature)",
     "description": "Various utilities to ease the work while working with Source engine armatures.",
-    "url": "https://github.com/Haggets/valve-armature-toolkit",
-    "wiki_url": "https://github.com/Haggets/valve-armature-toolkit",
-    "tracker_url": "https://github.com/Haggets/valve-armature-toolkit/issues",
+    "url": "https://github.com/Haggets/source-armature-toolkit",
+    "wiki_url": "https://github.com/Haggets/source-armature-toolkit",
+    "tracker_url": "https://github.com/Haggets/source-armature-toolkit/issues",
     "category": "Armature"}
             
 classes = [props.SAT_properties, props.SAT_info, preferences.SAT_preferences, ui.SAT_PT_mainpanel, ui.SAT_PT_armaturerename, ui.SAT_PT_constraintsymmetry, ui.SAT_PT_weightarmature, ui.SAT_PT_rigifyretarget, ui.SAT_PT_rigifyretargetexport, ops.SAT_OT_create_armature, ops.SAT_OT_convert_armature, ops.SAT_OT_armaturerename_blender, ops.SAT_OT_armaturerename_source, ops.SAT_OT_constraintsymmetry_create, ops.SAT_OT_constraintsymmetry_delete, ops.SAT_OT_constraintsymmetry_apply, ops.SAT_OT_weightarmature_create, ops.SAT_OT_weightarmature_delete, ops.SAT_OT_rigifyretarget_create, ops.SAT_OT_rigifyretarget_delete, ops.SAT_OT_rigifyretarget_generate, ops.SAT_OT_rigifyretarget_link, ops.SAT_OT_rigifyretarget_bake_single, ops.SAT_OT_rigifyretarget_bake_all, ops.SAT_OT_rigifyretarget_export_all]
