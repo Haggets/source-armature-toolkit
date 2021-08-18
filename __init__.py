@@ -16,8 +16,8 @@ from . import ui
 bl_info = {
     "name": "Source Armature Toolkit",
     "author": "Haggets",
-    "version": (0, 9, 0),
-    "blender": (2, 83, 10),
+    "version": (1, 0, 0),
+    "blender": (2, 93, 2),
     "location": "Properties > Object Data (Armature)",
     "description": "Various utilities to ease the work while working with Source engine armatures.",
     "url": "https://github.com/Haggets/valve-armature-toolkit",
