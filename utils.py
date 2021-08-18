@@ -1415,9 +1415,6 @@ def generate_armature(type, action): #Creates or deletes the weight armature
         update(1, armature)
 
         ##Unimportant bone removal##
-
-        #Removes bones such as weapon or attachment bones
-        
         if arm.other_bones:
             for container, bone in arm.other_bones.items():
                 for bone in bone:
@@ -1426,18 +1423,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                         bone = armature.data.edit_bones[prefix + bone]
                         armature.data.edit_bones.remove(bone)
 
-        #Keeps only the bare minimum bones for Rigify
-        if type == 'anim':
-            for cat in arm.helper_bones.keys():
-                for container, bone in arm.helper_bones[cat].items():
-                    for bone in bone:
-                        if bone:
-                            prefix, bone = bone_convert(bone)
-                            ebone = armature.data.edit_bones[prefix + bone]
-                        
-                            armature.data.edit_bones.remove(ebone)
-
-        elif type == 'weight':
+        if type == 'weight':
             #Removes wrist helpers for viewmodels since i've never seen them used for anything and they mess with weight generation
             for container, bone in arm.helper_bones['viewmodel'].items():
                 if container != 'thumbroot' and container != 'forearm_driven':

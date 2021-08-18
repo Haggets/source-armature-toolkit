@@ -1001,6 +1001,21 @@ def anim_armature(action):
                         
                             ebone.layers[0] = False
 
+            for cat in utils.arm.helper_bones.keys():
+                for container, bone in utils.arm.helper_bones[cat].items():
+                    for bone in bone:
+                        if bone:
+                            prefix, bone = bone_convert(bone)
+                            ebone = armature.data.edit_bones[prefix + bone]
+                            pbone = armature.pose.bones[prefix + bone]
+                            param = pbone.rigify_parameters
+
+                            ebone.layers[28] = True
+                            ebone.layers[0] = False
+                            ebone.layers[5] = False
+                            pbone.rigify_type = 'basic.super_copy'
+                            param.super_copy_widget_type = 'bone'
+
             for cat in utils.arm.attachment_bones.keys():
                 for container, bone in utils.arm.attachment_bones[cat].items():
                     for bone in bone:
@@ -1159,7 +1174,7 @@ def anim_armature(action):
                 
     def link(): #Organizes armature after empty creation
 
-        def retarget(bone): #Creates empties and links them to Rigify armature/Source armature
+        def retarget(bone, type=''): #Creates empties and links them to Rigify armature/Source armature
             armature = bpy.data.objects[utils.arm.armature.name + '.anim']
             
             #Retarget empties creation
@@ -1182,13 +1197,17 @@ def anim_armature(action):
             loc = base.constraints.new('COPY_LOCATION')
             loc.name = "Location Retarget"
             loc.target = armature
-            loc.subtarget = 'ORG-' + prefix + bone + '.isolated'
+            if type == 'helper':
+                loc.subtarget = 'ORG-' + prefix + bone
+            else:
+                loc.subtarget = 'ORG-' + prefix + bone + '.isolated'
 
-            #Rotation constraint
-            rot = base.constraints.new('COPY_ROTATION')
-            rot.name = "Rotation Retarget"
-            rot.target = armature
-            rot.subtarget = 'ORG-' + prefix + bone + '.isolated'
+            if type != 'helper':
+                #Rotation constraint
+                rot = base.constraints.new('COPY_ROTATION')
+                rot.name = "Rotation Retarget"
+                rot.target = armature
+                rot.subtarget = 'ORG-' + prefix + bone + '.isolated'
 
             #Creates target empty and links
             target = bpy.data.objects.new('target_{} ({})'.format(bone, utils.arm.armature.name)[0:60], None)
@@ -1206,9 +1225,11 @@ def anim_armature(action):
             loc = armature.pose.bones[prefix + bone].constraints.new('COPY_LOCATION')
             loc.name = "Retarget Location"
             loc.target = target
-            rot = armature.pose.bones[prefix + bone].constraints.new('COPY_ROTATION')
-            rot.name = "Retarget Rotation"
-            rot.target = target
+
+            if type != 'helper':
+                rot = armature.pose.bones[prefix + bone].constraints.new('COPY_ROTATION')
+                rot.name = "Retarget Rotation"
+                rot.target = target
 
             #Blender freaks out, needs to be added temporarily when the parameter is toggled, update
             '''if bone.endswith('_L') or bone.endswith('_R'):
@@ -1265,6 +1286,13 @@ def anim_armature(action):
                     prefix, bone = bone_convert(bone)
                     retarget(bone)
 
+        for cat in utils.arm.helper_bones:
+            for container, bone in utils.arm.helper_bones[cat].items():
+                for bone in bone:
+                    if bone:
+                        prefix, bone = bone_convert(bone)
+                        retarget(bone, 'helper')
+
         for cat in utils.arm.attachment_bones.keys():
             for container, bone in utils.arm.attachment_bones[cat].items():
                 for bone in bone:
@@ -1277,25 +1305,6 @@ def anim_armature(action):
                 if bone:
                     prefix, bone = bone_convert(bone)
                     retarget(bone)
-
-        #Creates additional location constraints for helper bones to copy their driver bone's location
-        for cat in utils.arm.helper_bones.keys():
-            if cat == 'legs' or cat == 'arms':
-                for container, bone in utils.arm.helper_bones[cat].items():
-                    if container == 'knee' or container == 'elbow':
-                        for index, bone in enumerate(bone):
-                            if bone:
-                                prefix, bone = bone_convert(bone)
-                                armature = utils.arm.armature
-                                loc = armature.pose.bones[prefix + bone].constraints.new('COPY_LOCATION')
-                                loc.name = "Retarget Location"
-
-                                if container == 'knee':
-                                    prefix, bone = bone_convert(utils.arm.symmetrical_bones['legs']['calf'][index])
-                                    loc.target = bpy.data.objects['target_{} ({})'.format(bone, utils.arm.armature.name)[0:60]]
-                                elif container == 'elbow':
-                                    prefix, bone = bone_convert(utils.arm.symmetrical_bones['arms']['forearm'][index])
-                                    loc.target = bpy.data.objects['target_{} ({})'.format(bone, utils.arm.armature.name)[0:60]]
 
         #Connects parent to collection
         collection = bpy.data.collections["Retarget Empties ({})".format(utils.arm.armature.name)[0:60]]
@@ -2128,9 +2137,7 @@ def anim_armature(action):
 
         bpy.context.view_layer.objects.active = utils.arm.animation_armature
 
-        print(bpy.context.object.mode)
         bpy.ops.object.mode_set(mode='OBJECT')
-        print(bpy.context.object.mode)
 
 def bake(mode):
 
@@ -2194,14 +2201,7 @@ def bake(mode):
         
         if not satproperties.bake_helper_bones or utils.arm.other_bones.get('ik'):
             bpy.ops.pose.select_all(action='SELECT')
-            if not satproperties.bake_helper_bones:
-                for cat in utils.arm.helper_bones.keys():
-                    for container, bone in utils.arm.helper_bones[cat].items():
-                        for bone in bone:
-                            if bone:
-                                prefix, bone = bone_convert(bone)
-                                armature2.data.bones[prefix + bone].select = False
-            
+
             if utils.arm.other_bones.get('ik'):
                 for bone in utils.arm.other_bones['ik']:
                     if bone:
@@ -2209,8 +2209,22 @@ def bake(mode):
                         armature2.data.bones[prefix + bone].select = False
 
             bpy.ops.nla.bake(frame_start=action.frame_range[0], frame_end=action.frame_range[1], only_selected=True, visual_keying=True, use_current_action=True, bake_types={'POSE'})
+
+            #Removes the baked rotation values, only keeping positional values
+            armature2.animation_data.nla_tracks[0].strips[0].select = True
+            armature2.animation_data.use_tweak_mode = True
+            for cat in utils.arm.helper_bones.keys():
+                for container, bone in utils.arm.helper_bones[cat].items():
+                    for bone in bone:
+                        if bone:
+                            prefix, bone = bone_convert(bone)
+                            for i in range(int(action.frame_range[0]), int(action.frame_range[1])+1):
+                                armature2.pose.bones[prefix + bone].keyframe_delete('rotation_quaternion', -1, i)
+
+            armature2.animation_data.use_tweak_mode = False
         else:
             bpy.ops.nla.bake(frame_start=action.frame_range[0], frame_end=action.frame_range[1], only_selected=False, visual_keying=True, use_current_action=True, bake_types={'POSE'})
+
         
         armature2.animation_data.use_tweak_mode = False
 
@@ -2392,11 +2406,10 @@ def retarget_constraints(self, context):
                             except:
                                 pass
 
-                        if container == 'knee' or container == 'elbow':
-                            try:
-                                armature.pose.bones[prefix + bone].constraints['Retarget Location'].mute = value
-                            except:
-                                pass
+                        try:
+                            armature.pose.bones[prefix + bone].constraints['Retarget Location'].mute = value
+                        except:
+                            pass
 
         for cat in utils.arm.attachment_bones.keys():
             for container, bone in utils.arm.attachment_bones[cat].items():
