@@ -1260,18 +1260,18 @@ class Armature: #Armature base
                                 #Hand rotation
                                 if container == 'wrist' or container == 'ulna' or container == 'forearm_driven':
                                     if satinfo.special_viewmodel:
-                                        transform.from_min_y_rot = radians(-90)
-                                        transform.from_max_y_rot = radians(90)
+                                        transform.from_min_y_rot = radians(-110)
+                                        transform.from_max_y_rot = radians(110)
                                     else:
-                                        transform.from_min_x_rot = radians(-90)
-                                        transform.from_max_x_rot = radians(90)
+                                        transform.from_min_x_rot = radians(-110)
+                                        transform.from_max_x_rot = radians(110)
 
                                     prefix, bone = bone_convert(self.symmetrical_bones['arms']['hand'][index])
                                     transform.subtarget = prefix + bone
 
                                     if container == 'wrist':
-                                        transform.to_min_x_rot = radians(-75)
-                                        transform.to_max_x_rot = radians(75)
+                                        transform.to_min_x_rot = radians(-90)
+                                        transform.to_max_x_rot = radians(90)
 
                                     elif container == 'ulna':
                                         if satinfo.special_viewmodel:

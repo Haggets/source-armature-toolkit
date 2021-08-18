@@ -5,7 +5,7 @@ from .utils import update
 from .utils import generate_armature
 from .utils import generate_shapekey_dict
 from .utils import bone_convert
-from .armature_rename import armature_rename
+from .armature_rename import armature_rename, bone_rename
 
 def anim_armature(action):
 
@@ -1321,7 +1321,21 @@ def anim_armature(action):
                 for bone in bone:
                     if bone:
                         prefix, bone = bone_convert(bone)
-                        armature.data.edit_bones['ORG-' + prefix + bone + '.isolated'].parent = armature.data.edit_bones['DEF-' + prefix + bone]
+                        try:
+                            armature.data.edit_bones['ORG-' + prefix + bone + '.isolated'].parent = armature.data.edit_bones['DEF-' + prefix + bone]
+                        except:
+                            pass
+
+        for cat in utils.arm.helper_bones.keys():
+            for container, bone in utils.arm.helper_bones[cat].items():
+                for index, bone in enumerate(bone):
+                    if bone:
+                        prefix, bone = bone_convert(bone)
+                        ebone = armature.data.edit_bones[prefix + bone]
+                        try:
+                            ebone.parent = armature.data.edit_bones[ebone.parent.name.replace('ORG-', 'DEF-')]
+                        except:
+                            pass
 
         #Deletes generated armature
         generate_armature('anim', 2)
