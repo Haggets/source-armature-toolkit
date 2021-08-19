@@ -180,6 +180,6 @@ class SAT_info(bpy.types.PropertyGroup):
         default=False
     )
 
-    sfm : bpy.props.BoolProperty(
+    tf2 : bpy.props.BoolProperty(
         default=False
     )

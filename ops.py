@@ -40,13 +40,13 @@ class SAT_OT_armaturerename_blender(bpy.types.Operator): #Converts armature sche
     bl_label = "Blender Friendly Scheme"
     bl_options = {'REGISTER', 'UNDO'}
     
-    @classmethod #Checks if an armature is selected and it is not an SFM one, since it doesn't need it
+    @classmethod #Checks if an armature is selected and it is not a TF2 one, since it doesn't need it
     def poll(cls, context):
         satproperties = bpy.context.scene.satproperties
         satinfo = bpy.context.scene.satinfo
 
         if satproperties.target_armature and satinfo.scheme == 0:
-            return (not satinfo.sfm and not satinfo.sbox)
+            return (not satinfo.tf2 and not satinfo.sbox)
     
     def execute(self, context):
         satproperties = bpy.context.scene.satproperties
@@ -72,7 +72,7 @@ class SAT_OT_armaturerename_source(bpy.types.Operator): #Converts armature schem
         satinfo = bpy.context.scene.satinfo
 
         if satproperties.target_armature and satinfo.scheme == 1:
-            return (not satinfo.sfm and not satinfo.sbox)
+            return (not satinfo.tf2 and not satinfo.sbox)
     
     def execute(self, context):
         satproperties = bpy.context.scene.satproperties
@@ -98,7 +98,7 @@ class SAT_OT_constraintsymmetry_create(bpy.types.Operator):
         satinfo = bpy.context.scene.satinfo
 
         if satproperties.target_armature and satinfo.scheme != -1:
-            return (not satinfo.symmetry)
+            return (not satinfo.symmetry and not satinfo.tf2)
 
     def execute(self, context):
         satproperties = bpy.context.scene.satproperties

@@ -556,6 +556,7 @@ def anim_armature(action):
 
                     ebone.layers[0] = False
                     ebone.layers[8] = False
+                    ebone.layers[9] = False
 
                     if not utils.arm.symmetrical_bones['legs']['toe0']:
                         ebone = armature.data.edit_bones.new(rigify_toe[index])
@@ -1328,7 +1329,7 @@ def anim_armature(action):
 
         for cat in utils.arm.helper_bones.keys():
             for container, bone in utils.arm.helper_bones[cat].items():
-                for index, bone in enumerate(bone):
+                for bone in bone:
                     if bone:
                         prefix, bone = bone_convert(bone)
                         ebone = armature.data.edit_bones[prefix + bone]

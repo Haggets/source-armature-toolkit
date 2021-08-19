@@ -118,7 +118,7 @@ class Armature: #Armature base
                 satinfo.sbox = False
                 satinfo.goldsource = False
                 satinfo.titanfall = False
-                satinfo.sfm
+                satinfo.tf2 = False
                 satinfo.viewmodel = False
                 satinfo.special_viewmodel = False
 
@@ -126,7 +126,7 @@ class Armature: #Armature base
                     marked = False
                     #Helper prefix
                     if bone.startswith('hlp_'):
-                        helper_bones_raw.append(bone.replace(Prefixes.helper, 'h1'))
+                        helper_bones_raw.append(bone.replace(Prefixes.helper, 'h1.'))
                         continue
 
                     ##Source##
@@ -171,14 +171,25 @@ class Armature: #Armature base
                             satinfo.special_viewmodel = True
                             self.other_bones['root'].append(bone.replace(satinfo.prefix, 'p1.'))
                             continue
-
-                    ##Source Filmmaker (Not supported currently)##
-                    elif bone.startswith('bip_') and not satinfo.special_viewmodel:
-                        satinfo.sfm = True
+                    
+                    ##Team Fortress 2##
+                    elif satinfo.tf2 or bone.startswith('bip_') and not satinfo.special_viewmodel:
+                        satinfo.tf2 = True
                         satinfo.prefix = 'bip_'
+                        self.side = ['L_', 'R_', '_L', '_R']
+                        helper_bones = ['forearm', 'bicep_twist']
+                        central_bones = []
+
+                        if bone.title().startswith('Prp'):
+                            custom_bones_raw.append(bone)
+                            continue
+                        
+                        elif bone.title().count('Weapon') or bone.title().count('Handle') or bone.title().count('Rocket') or bone.title().count('Effect') or bone.title().count('Prop') or bone.title().count('Joint') or bone == 'mvm' or bone == 'medal_bone':
+                            attachment_bones_raw.append(bone)
+                            continue
 
                     ##Gold Source##
-                    elif bone.title().startswith('Bip0') or bone.count('Bone') or bone.count('Dummy'):
+                    elif satinfo.goldsource or bone.title().startswith('Bip0') or bone.count('Bone') or bone.count('Dummy'):
                         satinfo.goldsource = True
                         self.side = [' L ', ' R ', '_L', '_R']
                         helper_bones = []
@@ -210,7 +221,7 @@ class Armature: #Armature base
                             continue
                         
                     ##Titanfall##
-                    elif bone.startswith('def') or bone.startswith('ja') or bone.startswith('jx'):
+                    elif satinfo.titanfall or bone.startswith('def') or bone.startswith('ja') or bone.startswith('jx'):
                         satinfo.titanfall = True
                         satinfo.prefix = 'def_'
                         self.side = ['L_', 'R_', '_L', '_R']
@@ -236,6 +247,11 @@ class Armature: #Armature base
                             continue
                     else:
                         self.side = ['L_', 'R_', '_L', '_R']
+
+                    #Featured in some SFM models, pointless
+                    if bone == 'ValveBiped':
+                        self.other_bones['others'].append(bone)
+                        continue
 
                     #Central bone set if defined
                     if central_bones:
@@ -410,6 +426,11 @@ class Armature: #Armature base
                                 self.symmetrical_bones['fingers']['ringmeta'].sort()
                                 continue
 
+                        elif satinfo.tf2:
+                            arms = ['Collar', 'Upperarm', 'Lowerarm', 'Hand']
+                            legs = ['Hip', 'Knee', 'Foot', 'Toe']
+                            fingers = ['thumb_0', 'thumb_1', 'thumb_2', 'index_0', 'index_1', 'index_2', 'middle_0', 'middle_1', 'middle_2', 'ring_0', 'ring_1', 'ring_2', 'pinky_0', 'pinky_1', 'pinky_2']
+
                         #Source
                         else:
                             arms = ['Clavicle', 'Upperarm', 'Forearm', 'Hand']
@@ -577,6 +598,10 @@ class Armature: #Armature base
                             spines = ['Pelvis', 'Spine_0', 'Spine_1', 'Spine_2', None, None]
                             head = ['Neck_0', 'Head']
 
+                        elif satinfo.tf2:
+                            spines = ['Pelvis', 'Spine_0', 'Spine_1', 'Spine_2', 'Spine_3', None]
+                            head = ['Neck', 'Head']
+
                         else:
                             spines = ['Pelvis', 'Spine', 'Spine1', 'Spine2', 'Spine3', 'Spine4']
                             head = ['Neck', 'Head']
@@ -673,6 +698,7 @@ class Armature: #Armature base
                         if satinfo.titanfall:
                             arms = [None, 'Shouldertwist', 'Shouldermid', 'Elbowb', None, 'Forearm']
                             legs = [None, 'Kneeb']
+                            
                         elif satinfo.sbox:
                             arms = [None, None, 'Arm_Upper', 'Arm_Elbow_Helper', None, 'Arm_Lower']
                             legs = ['Leg_Upper', 'Leg_Knee_Helper']
@@ -682,6 +708,10 @@ class Armature: #Armature base
                                 self.helper_bones['legs']['lowerleg'].append(bone)
                                 self.helper_bones['legs']['lowerleg'].sort()
                                 continue
+                        
+                        elif satinfo.tf2:
+                            arms = [None, None, None, None, 'Forearm', None]
+                            legs = []
                         else:
                             arms = ['Trap', 'Shoulder', 'Bicep', 'Elbow', 'Ulna', 'Wrist']
                             legs = ['Quad', 'Knee']
@@ -693,47 +723,49 @@ class Armature: #Armature base
                             self.helper_bones['arms']['shoulder1'].sort()
                             continue
 
-                        if arms[0]:
-                            if bone.title().count(arms[0]):
-                                self.helper_bones['arms']['trapezius'].append(bone)
-                                self.helper_bones['arms']['trapezius'].sort()
-                                continue
-                        if arms[1]:
-                            if bone.title().count(arms[1]):
-                                self.helper_bones['arms']['shoulder'].append(bone)
-                                self.helper_bones['arms']['shoulder'].sort()
-                                continue
-                        if arms[2]:
-                            if bone.title().count(arms[2]):
-                                self.helper_bones['arms']['bicep'].append(bone)
-                                self.helper_bones['arms']['bicep'].sort()
-                                continue
-                        if arms[3]:
-                            if bone.title().count(arms[3]):
-                                self.helper_bones['arms']['elbow'].append(bone)
-                                self.helper_bones['arms']['elbow'].sort()
-                                continue
-                        if arms[4]:
-                            if bone.title().count(arms[4]):
-                                self.helper_bones['arms']['ulna'].append(bone)
-                                self.helper_bones['arms']['ulna'].sort()
-                                continue
-                        if arms[5]:
-                            if bone.title().count(arms[5]):
-                                self.helper_bones['arms']['wrist'].append(bone)
-                                self.helper_bones['arms']['wrist'].sort()
-                                continue
+                        if arms:
+                            if arms[0]:
+                                if bone.title().count(arms[0]):
+                                    self.helper_bones['arms']['trapezius'].append(bone)
+                                    self.helper_bones['arms']['trapezius'].sort()
+                                    continue
+                            if arms[1]:
+                                if bone.title().count(arms[1]):
+                                    self.helper_bones['arms']['shoulder'].append(bone)
+                                    self.helper_bones['arms']['shoulder'].sort()
+                                    continue
+                            if arms[2]:
+                                if bone.title().count(arms[2]):
+                                    self.helper_bones['arms']['bicep'].append(bone)
+                                    self.helper_bones['arms']['bicep'].sort()
+                                    continue
+                            if arms[3]:
+                                if bone.title().count(arms[3]):
+                                    self.helper_bones['arms']['elbow'].append(bone)
+                                    self.helper_bones['arms']['elbow'].sort()
+                                    continue
+                            if arms[4]:
+                                if bone.title().count(arms[4]):
+                                    self.helper_bones['arms']['ulna'].append(bone)
+                                    self.helper_bones['arms']['ulna'].sort()
+                                    continue
+                            if arms[5]:
+                                if bone.title().count(arms[5]):
+                                    self.helper_bones['arms']['wrist'].append(bone)
+                                    self.helper_bones['arms']['wrist'].sort()
+                                    continue
 
-                        if legs[0]:
-                            if bone.title().count(legs[0]):
-                                self.helper_bones['legs']['quadricep'].append(bone)
-                                self.helper_bones['legs']['quadricep'].sort()
-                                continue
-                        if legs[1]:
-                            if bone.title().count(legs[1]):
-                                self.helper_bones['legs']['knee'].append(bone)
-                                self.helper_bones['legs']['knee'].sort()
-                                continue
+                        if legs:
+                            if legs[0]:
+                                if bone.title().count(legs[0]):
+                                    self.helper_bones['legs']['quadricep'].append(bone)
+                                    self.helper_bones['legs']['quadricep'].sort()
+                                    continue
+                            if legs[1]:
+                                if bone.title().count(legs[1]):
+                                    self.helper_bones['legs']['knee'].append(bone)
+                                    self.helper_bones['legs']['knee'].sort()
+                                    continue
                         
                         #Creates pairs for helper bones that aren't the conventional
                         prefix, bone2 = bone_convert(bone)
@@ -834,7 +866,7 @@ class Armature: #Armature base
                             self.attachment_bones['viewmodel']['camera'].append(bone)
                             self.attachment_bones['viewmodel']['camera'].sort()
 
-                        elif bone.title().count('Weapon') or bone.title().count('Muzzle') or bone.title().count('Shell'):
+                        elif bone.title().count('Weapon') or bone.title().count('Muzzle') or bone.title().count('Shell') or bone.title().count('Handle') or bone.title().count('Rocket'):
                             if bone.count('bolt_opposite') or bone.count('extra') or bone.count('charger'):
                                 self.attachment_bones['weapon']['others'].append(bone)
                                 self.attachment_bones['weapon']['others'].sort()
@@ -1259,7 +1291,7 @@ class Armature: #Armature base
                             
                                 #Hand rotation
                                 if container == 'wrist' or container == 'ulna' or container == 'forearm_driven':
-                                    if satinfo.special_viewmodel:
+                                    if satinfo.special_viewmodel or satinfo.tf2:
                                         transform.from_min_y_rot = radians(-110)
                                         transform.from_max_y_rot = radians(110)
                                     else:
@@ -1274,7 +1306,7 @@ class Armature: #Armature base
                                         transform.to_max_x_rot = radians(90)
 
                                     elif container == 'ulna':
-                                        if satinfo.special_viewmodel:
+                                        if satinfo.special_viewmodel or satinfo.tf2:
                                             transform.to_min_y_rot = radians(-50)
                                             transform.to_max_y_rot = radians(50)
                                         else:
@@ -1493,6 +1525,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                                 ebone.use_connect = True
 
                             if not ebone.use_connect and ebone.children:
+                                ebone.children[0].use_connect = True
                                 arm.chain_start.append(bone)
                             elif not ebone.use_connect and not ebone.children:
                                 arm.chainless_bones.append(bone)
@@ -1518,6 +1551,9 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                                 arm.chainless_bones.append(bone)
                         else:
                             arm.chainless_bones.append(bone)
+
+        print(arm.chainless_bones)
+        print(arm.chain_start)
 
         if type == 'anim':
             for cat in arm.attachment_bones.keys():
@@ -1818,7 +1854,19 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                         prefix, bone = bone_convert(bone)
                         ecalf = armature.data.edit_bones[prefix + bone]
 
-                        if arm.symmetrical_bones['legs']['thigh'] and arm.symmetrical_bones['legs']['thigh'][index]:
+                        if arm.symmetrical_bones['legs']['thigh'] and arm.symmetrical_bones['legs']['thigh'][index] and arm.symmetrical_bones['legs']['foot'] and arm.symmetrical_bones['legs']['foot'][index]:
+                            prefix, bone = bone_convert(arm.symmetrical_bones['legs']['thigh'][index])
+                            ethigh = armature.data.edit_bones[prefix + bone]
+
+                            prefix, bone = bone_convert(arm.symmetrical_bones['legs']['foot'][index])
+                            efoot = armature.data.edit_bones[prefix + bone]
+
+                            middle = (ethigh.head.y + efoot.head.y) / 2
+                            if ecalf.head.y > middle - 0.8*unit:
+                                ecalf.head.y = middle - 0.8*unit
+
+                        #Fallback
+                        elif arm.symmetrical_bones['legs']['thigh'] and arm.symmetrical_bones['legs']['thigh'][index]:
                             prefix, bone = bone_convert(arm.symmetrical_bones['legs']['thigh'][index])
                             ethigh = armature.data.edit_bones[prefix + bone]
 

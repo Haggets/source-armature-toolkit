@@ -52,8 +52,6 @@ class SAT_PT_mainpanel(bpy.types.Panel): #Main panel that subpanels will use
                     col.label(text="Type: Titanfall Armature")
                 elif satinfo.sbox:
                     col.label(text="Type: S&Box Armature")
-                elif satinfo.sfm:
-                    col.label(text="Type: Source Filmmaker Armature (Unsupported)")
                 else:
                     col.label(text="Type: Default Source Armature")
             else:
@@ -81,10 +79,13 @@ class SAT_PT_armaturerename(bpy.types.Panel): #Armature rename panel
 
         if satproperties.target_armature:
             col = layout.column()
-            if satinfo.scheme == 0:
+            if satinfo.sbox or satinfo.tf2:
+                col.label(text="Already Blender friendly...")
+            elif satinfo.scheme == 0:
                 col.label(text="Current: Default Scheme")
             elif satinfo.scheme == 1:
                 col.label(text="Current: Blender Friendly Scheme")
+
 
         if preferences.show_info:
             box = layout.box()
@@ -118,6 +119,9 @@ class SAT_PT_constraintsymmetry(bpy.types.Panel): #Constraint Symmetry panel
         if satproperties.target_armature:
             if satproperties.affected_side == 'LTR' and satinfo.symmetry == 2 or satproperties.affected_side == 'RTL' and satinfo.symmetry == 1:
                 col.label(text="Already applied on the opposite side")
+            
+            if satinfo.tf2:
+                col.label(text="Incompatible with this armature type")
         
         col = layout.column()
         col.prop(satproperties, 'symmetry_offset')
