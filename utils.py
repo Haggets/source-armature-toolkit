@@ -1552,9 +1552,6 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                         else:
                             arm.chainless_bones.append(bone)
 
-        print(arm.chainless_bones)
-        print(arm.chain_start)
-
         if type == 'anim':
             for cat in arm.attachment_bones.keys():
                 for container, bone in arm.attachment_bones[cat].items():
@@ -2354,8 +2351,13 @@ def generate_armature(type, action): #Creates or deletes the weight armature
             
         bpy.ops.object.mode_set(mode='OBJECT')
 
-    #Deletion
-    elif action == 1 or action == 2:
+    ## Deletion ##
+    if action == 1:
+        if arm.animation_armature['target_object']:
+            target_object = arm.animation_armature['target_object']
+            animation_data = target_object.data
+            target_object.data = target_object.data['original_data']
+            bpy.data.meshes.remove(animation_data)
 
         #Checks if they weren't deleted already
         if type == 'weight':
@@ -2373,69 +2375,63 @@ def generate_armature(type, action): #Creates or deletes the weight armature
             arm.weight_armature_real = None
             
         elif type == 'anim':
-            if not satinfo.animation_armature_setup:
-                try:
-                    animation_data = bpy.data.objects[arm.animation_armature_real['target_object']].data
-                    bpy.data.objects[arm.animation_armature_real['target_object']].data = bpy.data.meshes[arm.animation_armature_real['target_object_data']]
-                    bpy.data.meshes.remove(animation_data)
-                except:
-                    pass
-
             try:
                 bpy.data.objects.remove(arm.animation_armature)
             except:
                 print("Animation armature already deleted, cleaning rest")
 
-            bpy.data.armatures.remove(arm.animation_armature_real)
+            try:
+                bpy.data.armatures.remove(arm.animation_armature_real)
+            except:
+                pass
 
-            if action == 1 and satinfo.animation_armature_setup:
-                try:
-                    object = bpy.data.objects[arm.armature.name + '.anim']
-                    bpy.data.objects.remove(object)
-                except:
-                    pass
+            armature = arm.armature
 
-                try:
-                    armature = bpy.data.armatures[arm.armature_real.name + '.anim']
-                    bpy.data.armatures.remove(armature)
-                except:
-                    pass
-            elif action == 2:
-                arm.animation_armature = bpy.data.objects[arm.armature.name + '.anim']
-                arm.animation_armature_real = bpy.data.armatures[arm.armature_real.name + '.anim']
-            
-            #Checks if retarget empties are present, if so, remove them
-            if action == 1:
-                armature = arm.armature
-
-                #Removes viewmodel camera if present
-                try:
-                    camera = bpy.data.objects['viewmodel_camera']
-                    camera_data = bpy.data.cameras['viewmodel_camera']
-                    bpy.data.objects.remove(camera)
-                    bpy.data.cameras.remove(camera_data)
-                except:
-                    pass
-                    
-                #Removes original armature constraints
-                for cat in arm.symmetrical_bones.keys():
-                    for bone in arm.symmetrical_bones[cat].values():
-                        for bone in bone:
-                            if bone:
-                                prefix, bone = bone_convert(bone)
-                                try:
-                                    constraint = armature.pose.bones[prefix + bone].constraints["Retarget Location"]
-                                    armature.pose.bones[prefix + bone].constraints.remove(constraint)
-                                except:
-                                    pass
+            #Removes viewmodel camera if present
+            try:
+                camera = bpy.data.objects['viewmodel_camera']
+                camera_data = bpy.data.cameras['viewmodel_camera']
+                bpy.data.objects.remove(camera)
+                bpy.data.cameras.remove(camera_data)
+            except:
+                pass
+                
+            #Removes original armature constraints
+            for cat in arm.symmetrical_bones.keys():
+                for bone in arm.symmetrical_bones[cat].values():
+                    for bone in bone:
+                        if bone:
+                            prefix, bone = bone_convert(bone)
+                            try:
+                                constraint = armature.pose.bones[prefix + bone].constraints["Retarget Location"]
+                                armature.pose.bones[prefix + bone].constraints.remove(constraint)
+                            except:
+                                pass
+                        
+                            try:
+                                constraint = armature.pose.bones[prefix + bone].constraints["Retarget Rotation"]
+                                armature.pose.bones[prefix + bone].constraints.remove(constraint)
+                            except:
+                                pass
                             
-                                try:
-                                    constraint = armature.pose.bones[prefix + bone].constraints["Retarget Rotation"]
-                                    armature.pose.bones[prefix + bone].constraints.remove(constraint)
-                                except:
-                                    pass
-                                
-                for container, bone in arm.central_bones.items():
+            for container, bone in arm.central_bones.items():
+                for bone in bone:
+                    if bone:
+                        prefix, bone = bone_convert(bone)
+                        try:
+                            constraint = armature.pose.bones[prefix + bone].constraints["Retarget Location"]
+                            armature.pose.bones[prefix + bone].constraints.remove(constraint)
+                        except:
+                            pass
+
+                        try:
+                            constraint = armature.pose.bones[prefix + bone].constraints["Retarget Rotation"]
+                            armature.pose.bones[prefix + bone].constraints.remove(constraint)
+                        except:
+                            pass
+
+            for cat in arm.helper_bones.keys():
+                for container, bone in arm.helper_bones[cat].items():
                     for bone in bone:
                         if bone:
                             prefix, bone = bone_convert(bone)
@@ -2451,41 +2447,8 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                             except:
                                 pass
 
-                for cat in arm.helper_bones.keys():
-                    for container, bone in arm.helper_bones[cat].items():
-                        for bone in bone:
-                            if bone:
-                                prefix, bone = bone_convert(bone)
-                                try:
-                                    constraint = armature.pose.bones[prefix + bone].constraints["Retarget Location"]
-                                    armature.pose.bones[prefix + bone].constraints.remove(constraint)
-                                except:
-                                    pass
-
-                                try:
-                                    constraint = armature.pose.bones[prefix + bone].constraints["Retarget Rotation"]
-                                    armature.pose.bones[prefix + bone].constraints.remove(constraint)
-                                except:
-                                    pass
-
-                for cat in arm.attachment_bones.keys():
-                    for container, bone in arm.attachment_bones[cat].items():
-                        for bone in bone:
-                            if bone:
-                                prefix, bone = bone_convert(bone)
-                                try:
-                                    constraint = armature.pose.bones[prefix + bone].constraints["Retarget Location"]
-                                    armature.pose.bones[prefix + bone].constraints.remove(constraint)
-                                except:
-                                    pass
-
-                                try:
-                                    constraint = armature.pose.bones[prefix + bone].constraints["Retarget Rotation"]
-                                    armature.pose.bones[prefix + bone].constraints.remove(constraint)
-                                except:
-                                    pass
-
-                for container, bone in arm.custom_bones.items():
+            for cat in arm.attachment_bones.keys():
+                for container, bone in arm.attachment_bones[cat].items():
                     for bone in bone:
                         if bone:
                             prefix, bone = bone_convert(bone)
@@ -2501,22 +2464,37 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                             except:
                                 pass
 
-                try:
-                    collection = bpy.data.collections["Retarget Empties ({})".format(arm.armature.name)[0:60]]
+            for container, bone in arm.custom_bones.items():
+                for bone in bone:
+                    if bone:
+                        prefix, bone = bone_convert(bone)
+                        try:
+                            constraint = armature.pose.bones[prefix + bone].constraints["Retarget Location"]
+                            armature.pose.bones[prefix + bone].constraints.remove(constraint)
+                        except:
+                            pass
 
-                    if collection.objects.values():
-                        for object in collection.objects.values():
-                            data = object.data
-                            bpy.data.objects.remove(object)
+                        try:
+                            constraint = armature.pose.bones[prefix + bone].constraints["Retarget Rotation"]
+                            armature.pose.bones[prefix + bone].constraints.remove(constraint)
+                        except:
+                            pass
 
-                    bpy.data.collections.remove(collection)
-                except:
-                    pass
+            try:
+                collection = bpy.data.collections["Retarget Empties ({})".format(arm.armature.name)[0:60]]
 
-                arm.animation_armature = None
-                arm.animation_armature_real = None
-                satinfo.animation_armature = False
-            
+                if collection.objects.values():
+                    for object in collection.objects.values():
+                        bpy.data.objects.remove(object)
+
+                bpy.data.collections.remove(collection)
+            except:
+                pass
+
+            arm.animation_armature = None
+            arm.animation_armature_real = None
+            satinfo.animation_armature = False
+        
         #Reselects original armature for the sake of convenience
         armature = arm.armature
 
@@ -2528,6 +2506,26 @@ def generate_armature(type, action): #Creates or deletes the weight armature
             armature.select_set(True)
             bpy.context.view_layer.objects.active = armature
 
+    ## Linking ##
+    elif action == 2:
+        target_object = arm.animation_armature['target_object']
+        material_eyes = arm.animation_armature['material_eyes']
+        try:
+            bpy.data.objects.remove(arm.animation_armature)
+        except:
+            pass
+
+        try:
+            bpy.data.armatures.remove(arm.animation_armature_real)
+        except:
+            pass
+
+        arm.animation_armature = bpy.data.objects[arm.armature.name + '.anim']
+        arm.animation_armature_real = bpy.data.armatures[arm.armature_real.name + '.anim']
+
+        arm.animation_armature['target_object'] = target_object
+        arm.animation_armature['material_eyes'] = material_eyes
+            
 #Thanku Orin for the enhanced code snippet
 def bone_convert(bone):
     satinfo = bpy.context.scene.satinfo
@@ -2566,83 +2564,133 @@ def generate_shapekey_dict(dictionary, raw_list):
         if shapekey.casefold().count('basis') or shapekey.casefold().count('base'):
             dictionary['basis']['basis'] = shapekey
 
-        #Eyebrows
+        ## Eyebrows ##
+
+        #AU1AU2 = Full eyebrow raise
         if shapekey.upper().count('AU1AU2L') or shapekey.upper().count('AU1AU2R'):
-            dictionary['eyebrows']['AU1AU2'] = shapekey
-        elif shapekey.upper().count('AU1AU4L') or shapekey.upper().count('AU1AU4R'):
-            dictionary['eyebrows']['AU1AU4'] = shapekey
-        elif shapekey.upper().count('AU2AU4L') or shapekey.upper().count('AU2AU4R'):
-            dictionary['eyebrows']['AU2AU4'] = shapekey
-        elif shapekey.upper().count('AU1L') or shapekey.upper().count('AU1R'):
-            dictionary['eyebrows']['AU1'] = shapekey
-        elif shapekey.upper().count('AU2L') or shapekey.upper().count('AU2R'):
-            dictionary['eyebrows']['AU2'] = shapekey
+            dictionary['eyebrows']['eyebrow_raise'] = shapekey
+        #AU4 = Full eyebrow drop
         elif shapekey.upper().count('AU4L') or shapekey.upper().count('AU4R'):
-            dictionary['eyebrows']['AU4'] = shapekey
+            dictionary['eyebrows']['eyebrow_drop'] = shapekey
 
-        #Eyes
+        #AU1 = Inner eyebrow raise
+        elif shapekey.upper().count('AU1L') or shapekey.upper().count('AU1R'):
+            dictionary['eyebrows']['inner_eyebrow_raise'] = shapekey
+        #AU2AU4 = Inner eyebrow drop
+        elif shapekey.upper().count('AU2AU4L') or shapekey.upper().count('AU2AU4R'):
+            dictionary['eyebrows']['inner_eyebrow_drop'] = shapekey
+
+        #AU2 = Outer eyebrow raise
+        elif shapekey.upper().count('AU2L') or shapekey.upper().count('AU2R'):
+            dictionary['eyebrows']['outer_eyebrow_raise'] = shapekey
+        #AU1AU4 = Outer eyebrow drop
+        elif shapekey.upper().count('AU1AU4L') or shapekey.upper().count('AU1AU4R'):
+            dictionary['eyebrows']['outer_eyebrow_drop'] = shapekey
+
+        ## Eyes ##
+
+        #f01 = Upper eyelids drop
         elif shapekey.lower().count('f01') or shapekey.lower().count('frame1'):
-            dictionary['eyes']['f01'] = shapekey
+            dictionary['eyes']['upper_eyelid_close'] = shapekey
+        #f02 = Upper eyelids raise
         elif shapekey.lower().count('f02') or shapekey.lower().count('frame2'):
-            dictionary['eyes']['f02'] = shapekey
+            dictionary['eyes']['upper_eyelid_raise'] = shapekey
+        #f03 = Lower eyelids drop
         elif shapekey.lower().count('f03') or shapekey.lower().count('frame3'):
-            dictionary['eyes']['f03'] = shapekey
+            dictionary['eyes']['lower_eyelid_drop'] = shapekey
+        #f04 = Lower eyelids raise
         elif shapekey.lower().count('f04'):
-            dictionary['eyes']['f04'] = shapekey
+            dictionary['eyes']['lower_eyelid_raise'] = shapekey
+        #AU42 = Upper eyelids drop
         elif shapekey.upper().count('AU42'):
-            dictionary['eyes']['AU42'] = shapekey
+            dictionary['eyes']['upper_eyelid_drop'] = shapekey
         
-        #Cheek
+        ## Cheek ##
+
+        #AU6Z = Squint
         elif shapekey.upper().count('AU6ZL') or shapekey.upper().count('AU6ZR'):
-            dictionary['cheek']['AU6Z'] = shapekey
+            dictionary['cheek']['squint'] = shapekey
+        #AU13 = Filling cheek with air/Puffing
         elif shapekey.upper().count('AU13L') or shapekey.upper().count('AU13R'):
-            dictionary['cheek']['AU13'] = shapekey
+            dictionary['cheek']['cheek_puff'] = shapekey
 
-        #Nose
+        ## Nose ##
+
+        #AU9 = Nostril wrinkler
         elif shapekey.upper().count('AU9L') or shapekey.upper().count('AU9R'):
-            dictionary['nose']['AU9'] = shapekey
+            dictionary['nose']['nose_wrinkler'] = shapekey
+        #AU38 = Breath
         elif shapekey.upper().count('AU38'):
-            dictionary['nose']['AU38'] = shapekey
+            dictionary['nose']['breath'] = shapekey
 
-        #Mouth
+        ## Mouth ##
+
+        ### Mouth corners ###
+
+        #AU12 = Smile
         elif shapekey.upper().count('AU12L') or shapekey.upper().count('AU12R'):
-            dictionary['mouth']['AU12'] = shapekey
+            dictionary['mouth']['smile'] = shapekey
+        #AU15 = Frown
         elif shapekey.upper().count('AU15L') or shapekey.upper().count('AU15R'):
-            dictionary['mouth']['AU15'] = shapekey
-        elif shapekey.upper().count('AU10L') or shapekey.upper().count('AU10R'):
-            dictionary['mouth']['AU10'] = shapekey
-        elif shapekey.upper().count('AU17DL') or shapekey.upper().count('AU17DR'):
-            dictionary['mouth']['AU17D'] = shapekey
-        elif shapekey.upper().count('AU16L') or shapekey.upper().count('AU16R'):
-            dictionary['mouth']['AU16'] = shapekey
-        elif shapekey.upper().count('AU32'):
-            dictionary['mouth']['AU32'] = shapekey
+            dictionary['mouth']['frown'] = shapekey
+        #AU24 = Tightener
         elif shapekey.upper().count('AU24'):
-            dictionary['mouth']['AU24'] = shapekey
+            dictionary['mouth']['tightener'] = shapekey
+        #AU18Z = Puckering
         elif shapekey.upper().count('AU18ZL') or shapekey.upper().count('AU18ZR'):
-            dictionary['mouth']['AU18Z'] = shapekey
-        elif shapekey.upper().count('AU22ZL') or shapekey.upper().count('AU22ZR'):
-            dictionary['mouth']['AU22Z'] = shapekey
-        elif shapekey.upper().count('AD96L'):
-            dictionary['mouth']['AD96L'] = shapekey
-        elif shapekey.upper().count('AD96R'):
-            dictionary['mouth']['AD96R'] = shapekey
+            dictionary['mouth']['puckerer'] = shapekey
 
-        #Chin
+        ### Upper lips ###
+
+        #AU10 = Upper lip raise
+        elif shapekey.upper().count('AU10L') or shapekey.upper().count('AU10R'):
+            dictionary['mouth']['upper_lip_raise'] = shapekey
+
+        ### Lower lips ###
+
+        #AU17D = Lower lip raise
+        elif shapekey.upper().count('AU17DL') or shapekey.upper().count('AU17DR'):
+            dictionary['mouth']['lower_lip_raise'] = shapekey
+        #AU16 = Lower lip drop
+        elif shapekey.upper().count('AU16L') or shapekey.upper().count('AU16R'):
+            dictionary['mouth']['lower_lip_drop'] = shapekey
+        #AU32 = Bite
+        elif shapekey.upper().count('AU32'):
+            dictionary['mouth']['bite'] = shapekey
+
+        ### Middle lips ###
+
+        #AD96L/R = Mouth sideways
+        elif shapekey.upper().count('AD96L'):
+            dictionary['mouth']['mouth_left'] = shapekey
+        elif shapekey.upper().count('AD96R'):
+            dictionary['mouth']['mouth_right'] = shapekey
+        #AU22Z = Light puckering
+        elif shapekey.upper().count('AU22ZL') or shapekey.upper().count('AU22ZR'):
+            dictionary['mouth']['light_puckerer'] = shapekey
+
+        ## Chin ##
+
+        #AU31 = Chin clench (Unused)
         elif shapekey.upper().count('AU31'):
-            dictionary['chin']['AU31'] = shapekey
-        elif shapekey.upper().count('AU26L') or shapekey.upper().count('AU26R'):
-            dictionary['chin']['AU26'] = shapekey
-        elif shapekey.upper().count('AU27L') or shapekey.upper().count('AU27R'):
-            dictionary['chin']['AU27'] = shapekey
-        elif shapekey.upper().count('AU27ZL') or shapekey.upper().count('AU27ZR'):
-            dictionary['chin']['AU27Z'] = shapekey
-        elif shapekey.upper().count('AD30L'):
-            dictionary['chin']['AD30L'] = shapekey
-        elif shapekey.upper().count('AD30R'):
-            dictionary['chin']['AD30R'] = shapekey
+            dictionary['chin']['chin_clench'] = shapekey
+        #AU17 = Chin raise (sort of)
         elif shapekey.upper().count('AU17L') or shapekey.upper().count('AU17R'):
-            dictionary['chin']['AU17'] = shapekey
+            dictionary['chin']['chin_raise'] = shapekey
+        #AU26 = Light chin drop
+        elif shapekey.upper().count('AU26L') or shapekey.upper().count('AU26R'):
+            dictionary['chin']['light_chin_drop'] = shapekey
+        #AU27 = Medium chin drop
+        elif shapekey.upper().count('AU27L') or shapekey.upper().count('AU27R'):
+            dictionary['chin']['medium_chin_drop'] = shapekey
+        #AU27Z = Full mouth open
+        elif shapekey.upper().count('AU27ZL') or shapekey.upper().count('AU27ZR'):
+            dictionary['chin']['full_chin_drop'] = shapekey
+        #AD30L/R = Chin sideways
+        elif shapekey.upper().count('AD30L'):
+            dictionary['chin']['chin_left'] = shapekey
+        elif shapekey.upper().count('AD30R'):
+            dictionary['chin']['chin_right'] = shapekey
 
     return dictionary
 

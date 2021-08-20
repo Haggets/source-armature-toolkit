@@ -58,6 +58,8 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
                 elif satinfo.titanfall or satinfo.special_viewmodel:
                     constraint.invert_y = False
                     constraint.invert_x = False
+                elif satinfo.sbox and type == 'attachment':
+                    constraint.invert_z = True
                 else:
                     constraint.invert_y = True
                     constraint.invert_x = True

@@ -181,7 +181,7 @@ class SAT_OT_weightarmature_create(bpy.types.Operator):
         satinfo = bpy.context.scene.satinfo
 
         if not satproperties.target_armature.hide_get() and not satproperties.target_armature.visible_get():
-            self.report({'ERROR'}, "Selected armature is in an excluded collection, place it in an active collection.")
+            self.report({'ERROR'}, "Default armature is in an excluded collection, place it in an active collection.")
         else:
             weight_armature(0)
             satinfo.weight_armature = True
@@ -229,7 +229,7 @@ class SAT_OT_rigifyretarget_create(bpy.types.Operator):
         satinfo = bpy.context.scene.satinfo
 
         if not satproperties.target_armature.hide_get() and not satproperties.target_armature.visible_get():
-            self.report({'ERROR'}, "Selected armature is in an excluded collection, place it in an active collection.")
+            self.report({'ERROR'}, "Default armature is in an excluded collection, place it in an active collection.")
         else:
             anim_armature(0)
             satinfo.animation_armature = True
@@ -260,9 +260,9 @@ class SAT_OT_rigifyretarget_delete(bpy.types.Operator):
 
         return{'FINISHED'}
 
-class SAT_OT_rigifyretarget_generate(bpy.types.Operator):
-    """Generates Rigify armature"""
-    bl_idname = "sat.rigifyretarget_generate"
+class SAT_OT_rigifyretarget_generate_and_link(bpy.types.Operator):
+    """Generates Rigify armature and links it to the original armature"""
+    bl_idname = "sat.rigifyretarget_generate_and_link"
     bl_label = "Animation Ready Armature Generation"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -275,38 +275,23 @@ class SAT_OT_rigifyretarget_generate(bpy.types.Operator):
             return (context.object.name == satproperties.target_armature.name + '.anim_setup')
 
     def execute(self, context):
-        bpy.ops.pose.rigify_generate()
-        armature = bpy.data.objects[utils.arm.armature.name + '.anim']
-        armature.scale = utils.arm.armature.scale
-
-        return{'FINISHED'}
-
-class SAT_OT_rigifyretarget_link(bpy.types.Operator):
-    """Connects original armature with generated Rigify armature"""
-    bl_idname = "sat.rigifyretarget_link"
-    bl_label = "Animation Ready Armature Link"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(cls, context):
         satproperties = bpy.context.scene.satproperties
         satinfo = bpy.context.scene.satinfo
 
-        if satproperties.target_armature and satinfo.scheme != -1:
-            return (context.object.name == satproperties.target_armature.name + '.anim')
-
-    def execute(self, context):
-        satproperties = bpy.context.scene.satproperties
-        satinfo = bpy.context.scene.satinfo
-
-        if not satproperties.target_armature.hide_get() and not satproperties.target_armature.visible_get() or not utils.arm.animation_armature.hide_get() and not utils.arm.animation_armature.visible_get():
-            self.report({'ERROR'}, "Selected armature is in an excluded collection, enable said collection.")
+        if not satproperties.target_armature.hide_get() and not satproperties.target_armature.visible_get():
+            self.report({'ERROR'}, "Default armature in plugin is in an excluded collection, enable said collection.")
+        elif not utils.arm.animation_armature.hide_get() and not utils.arm.animation_armature.visible_get():
+            self.report({'ERROR'}, "Animation armature is in an excluded collection, enable said collection.")
         else:
+            bpy.ops.pose.rigify_generate()
+            armature = bpy.data.objects[utils.arm.armature.name + '.anim']
+            armature.scale = utils.arm.armature.scale
+
             anim_armature(2)
             satinfo.animation_armature_setup = False
 
         return{'FINISHED'}
-
+        
 class SAT_OT_rigifyretarget_bake_single(bpy.types.Operator):
     """Bakes selected NLA strip/current action from the animation armature onto the original armature"""
     bl_idname = "sat.rigifyretarget_bake_single"
@@ -326,8 +311,10 @@ class SAT_OT_rigifyretarget_bake_single(bpy.types.Operator):
     def execute(self, context):
         satproperties = bpy.context.scene.satproperties
 
-        if not satproperties.target_armature.hide_get() and not satproperties.target_armature.visible_get() or not utils.arm.animation_armature.hide_get() and not utils.arm.animation_armature.visible_get():
-            self.report({'ERROR'}, "Selected armature is in an excluded collection, enable said collection.")
+        if not satproperties.target_armature.hide_get() and not satproperties.target_armature.visible_get():
+            self.report({'ERROR'}, "Default armature in plugin is in an excluded collection, enable said collection.")
+        elif not utils.arm.animation_armature.hide_get() and not utils.arm.animation_armature.visible_get():
+            self.report({'ERROR'}, "Animation armature is in an excluded collection, enable said collection.")
         else:
             bake(0)
 
@@ -352,8 +339,10 @@ class SAT_OT_rigifyretarget_bake_all(bpy.types.Operator):
     def execute(self, context):
         satproperties = bpy.context.scene.satproperties
 
-        if not satproperties.target_armature.hide_get() and not satproperties.target_armature.visible_get() or not utils.arm.animation_armature.hide_get() and not utils.arm.animation_armature.visible_get():
-            self.report({'ERROR'}, "Selected armature is in an excluded collection, enable said collection.")
+        if not satproperties.target_armature.hide_get() and not satproperties.target_armature.visible_get():
+            self.report({'ERROR'}, "Default armature is in an excluded collection, enable said collection.")
+        elif not utils.arm.animation_armature.hide_get() and not utils.arm.animation_armature.visible_get():
+            self.report({'ERROR'}, "Animation armature is in an excluded collection, enable said collection.")
         else:
             bake(1)
 

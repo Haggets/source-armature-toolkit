@@ -187,15 +187,12 @@ class SAT_PT_rigifyretarget(bpy.types.Panel): #Rigify Retargetting panel
                 if satinfo.animation_armature:
                     if satinfo.animation_armature_setup:
                         if bpy.context.object.name != satproperties.target_armature.name + '.anim':
-                            col.operator('sat.rigifyretarget_generate', text="Generate rig", icon='OUTLINER_DATA_ARMATURE')
+                            col.operator('sat.rigifyretarget_generate_and_link', text="Generate & Link", icon='OUTLINER_DATA_ARMATURE')
                             if satproperties.target_object:
                                 col.label(text="Reposition facial drivers correctly", icon='INFO')
                                 col.label(text="and edit bone parameters to your need")
                             else:
                                 col.label(text="Edit bone parameters to your need", icon='INFO')
-
-                        else:
-                            col.operator('sat.rigifyretarget_link', text="Link to generated armature", icon='OUTLINER_DATA_ARMATURE')
 
                     else:
                         col.prop(satproperties, 'retarget_constraints')

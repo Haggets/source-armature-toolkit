@@ -60,7 +60,10 @@ def armature_rename(scheme, armature=None): #Bone prefix/suffix repositioning
     #Updates bone list in case it was modified
     utils.arm.get_bones(False)
 
-    current_mode = bpy.context.object.mode
+    if bpy.context.object:
+        current_mode = bpy.context.object.mode
+    else:
+        current_mode = ''
     selected_objects = bpy.context.selected_objects
     active_object = bpy.context.view_layer.objects.active
 
@@ -82,10 +85,11 @@ def armature_rename(scheme, armature=None): #Bone prefix/suffix repositioning
     bpy.context.view_layer.objects.active = armature
 
     #Defaults back to object mode to force updates on vertex groups
-    if current_mode != 'OBJECT' and current_mode != 'EDIT' and current_mode != 'POSE':
-        bpy.ops.object.mode_set(mode='OBJECT')
-    else:
-        bpy.ops.object.mode_set(mode=current_mode)
+    if current_mode:
+        if current_mode != 'OBJECT' and current_mode != 'EDIT' and current_mode != 'POSE':
+            bpy.ops.object.mode_set(mode='OBJECT')
+        else:
+            bpy.ops.object.mode_set(mode=current_mode)
 
     if not armature:
         utils.arm.get_bones(True)

@@ -25,7 +25,7 @@ bl_info = {
     "tracker_url": "https://github.com/Haggets/source-armature-toolkit/issues",
     "category": "Armature"}
             
-classes = [props.SAT_properties, props.SAT_info, preferences.SAT_preferences, ui.SAT_PT_mainpanel, ui.SAT_PT_armaturerename, ui.SAT_PT_constraintsymmetry, ui.SAT_PT_weightarmature, ui.SAT_PT_rigifyretarget, ui.SAT_PT_rigifyretargetexport, ops.SAT_OT_create_armature, ops.SAT_OT_convert_armature, ops.SAT_OT_armaturerename_blender, ops.SAT_OT_armaturerename_source, ops.SAT_OT_constraintsymmetry_create, ops.SAT_OT_constraintsymmetry_delete, ops.SAT_OT_constraintsymmetry_apply, ops.SAT_OT_weightarmature_create, ops.SAT_OT_weightarmature_delete, ops.SAT_OT_rigifyretarget_create, ops.SAT_OT_rigifyretarget_delete, ops.SAT_OT_rigifyretarget_generate, ops.SAT_OT_rigifyretarget_link, ops.SAT_OT_rigifyretarget_bake_single, ops.SAT_OT_rigifyretarget_bake_all, ops.SAT_OT_rigifyretarget_export_all]
+classes = [props.SAT_properties, props.SAT_info, preferences.SAT_preferences, ui.SAT_PT_mainpanel, ui.SAT_PT_armaturerename, ui.SAT_PT_constraintsymmetry, ui.SAT_PT_weightarmature, ui.SAT_PT_rigifyretarget, ui.SAT_PT_rigifyretargetexport, ops.SAT_OT_create_armature, ops.SAT_OT_convert_armature, ops.SAT_OT_armaturerename_blender, ops.SAT_OT_armaturerename_source, ops.SAT_OT_constraintsymmetry_create, ops.SAT_OT_constraintsymmetry_delete, ops.SAT_OT_constraintsymmetry_apply, ops.SAT_OT_weightarmature_create, ops.SAT_OT_weightarmature_delete, ops.SAT_OT_rigifyretarget_create, ops.SAT_OT_rigifyretarget_delete, ops.SAT_OT_rigifyretarget_generate_and_link, ops.SAT_OT_rigifyretarget_bake_single, ops.SAT_OT_rigifyretarget_bake_all, ops.SAT_OT_rigifyretarget_export_all]
 
 def register():
 
