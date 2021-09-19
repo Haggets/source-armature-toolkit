@@ -591,14 +591,16 @@ def anim_armature(action):
         unit = satinfo.unit
         armature = utils.arm.animation_armature
 
-        armature['material_eyes'] = False
         armature['target_object'] = None
+        armature['material_eyes'] = False
+        armature['has_shapekeys'] = False
 
         bpy.ops.object.mode_set(mode='EDIT')
 
         #Shapekey drivers
         if satproperties.target_object:
             armature['target_object'] = satproperties.target_object
+            armature['has_shapekeys'] = True
             satproperties.target_object = None
             target_object = armature['target_object']
             try:
@@ -1452,7 +1454,7 @@ def anim_armature(action):
         armature = bpy.data.objects[utils.arm.armature.name + '.anim']
         armature.data.name = utils.arm.armature_real.name + '.anim'
 
-        utils.update(1, armature)
+        update(1, armature)
 
         #Parents isolated bones
         for cat in utils.arm.symmetrical_bones.keys():
@@ -1576,14 +1578,8 @@ def anim_armature(action):
 
         utils.arm.animation_armature_real.layers[24] = False
     
-        ## Face flex linking ##
-        try:
-            shapekeys_raw = satproperties.target_object.data.shape_keys.key_blocks.keys()
-        except:
-            shapekeys_raw = None
-
-        if satproperties.target_object and shapekeys_raw:
-            keyblocks = satproperties.target_object.data.shape_keys.key_blocks
+        if armature['target_object'] and armature['has_shapekeys']:
+            keyblocks = armature['target_object'].data.shape_keys.key_blocks
 
             ## Driver bone parameters ##
             for cat in utils.arm.rigify_shapekeys.keys():
@@ -1964,8 +1960,6 @@ def anim_armature(action):
             link()
 
         satproperties.retarget_constraints = True
-
-        satproperties.target_object = None
 
         if utils.arm.armature.visible_get():
             utils.arm.armature.hide_set(True)

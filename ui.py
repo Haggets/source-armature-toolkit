@@ -183,19 +183,17 @@ class SAT_PT_rigifyretarget(bpy.types.Panel): #Rigify Retargetting panel
                 col.prop(satproperties, 'target_object')
                 col.label(text="Used to check for facial expressions")
 
-            if satproperties.target_armature:
-                if satinfo.animation_armature:
-                    if satinfo.animation_armature_setup:
-                        if bpy.context.object.name != satproperties.target_armature.name + '.anim':
-                            col.operator('sat.rigifyretarget_generate_and_link', text="Generate & Link", icon='OUTLINER_DATA_ARMATURE')
-                            if satproperties.target_object:
-                                col.label(text="Reposition facial drivers correctly", icon='INFO')
-                                col.label(text="and edit bone parameters to your need")
-                            else:
-                                col.label(text="Edit bone parameters to your need", icon='INFO')
-
-                    else:
-                        col.prop(satproperties, 'retarget_constraints')
+            if satproperties.target_armature and satinfo.animation_armature:
+                if satinfo.animation_armature_setup:
+                    if bpy.context.object.name != satproperties.target_armature.name + '.anim':
+                        col.operator('sat.rigifyretarget_generate_and_link', text="Generate & Link", icon='OUTLINER_DATA_ARMATURE')
+                        if satproperties.target_object:
+                            col.label(text="Reposition facial drivers correctly", icon='INFO')
+                            col.label(text="and edit bone parameters to your need")
+                        else:
+                            col.label(text="Edit bone parameters to your need", icon='INFO')
+                else:
+                    col.prop(satproperties, 'retarget_constraints')
 
             if preferences.show_info:
                 box = layout.box()

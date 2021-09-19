@@ -1046,9 +1046,10 @@ class Armature: #Armature base
             armature = self.armature
             unit_bone = armature.pose.bones[0].length
 
-            #if satinfo.goldsource:
-            #    satinfo.unit = unit_bone*209.97500305553845
-            if satinfo.goldsource:
+            if armature.get('MODE') == 'SourceIO':
+                satinfo.unit = unit_bone*1
+                print('SourceIO import')
+            elif satinfo.goldsource:
                 satinfo.unit = unit_bone*4.36085145847641
             elif satinfo.sbox:
                 satinfo.unit = unit_bone*0.09201296705261927
@@ -1611,9 +1612,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
 
                         if arm.central_bones['pelvis']:
                             prefix, bone = bone_convert(arm.central_bones['pelvis'][0])
-                            if parent.name == prefix + bone:
-                                continue
-                            else:
+                            if parent.name != prefix + bone:
                                 parent.tail = pbone.head
                         else:
                             if parent:
@@ -2353,11 +2352,12 @@ def generate_armature(type, action): #Creates or deletes the weight armature
 
     ## Deletion ##
     if action == 1:
-        if arm.animation_armature['target_object']:
-            target_object = arm.animation_armature['target_object']
-            animation_data = target_object.data
-            target_object.data = target_object.data['original_data']
-            bpy.data.meshes.remove(animation_data)
+        if arm.animation_armature:
+            if arm.animation_armature['target_object']:
+                target_object = arm.animation_armature['target_object']
+                animation_data = target_object.data
+                target_object.data = target_object.data['original_data']
+                bpy.data.meshes.remove(animation_data)
 
         #Checks if they weren't deleted already
         if type == 'weight':
@@ -2510,6 +2510,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
     elif action == 2:
         target_object = arm.animation_armature['target_object']
         material_eyes = arm.animation_armature['material_eyes']
+        has_shapekeys = arm.animation_armature['has_shapekeys']
         try:
             bpy.data.objects.remove(arm.animation_armature)
         except:
@@ -2525,6 +2526,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
 
         arm.animation_armature['target_object'] = target_object
         arm.animation_armature['material_eyes'] = material_eyes
+        arm.animation_armature['has_shapekeys'] = has_shapekeys
             
 #Thanku Orin for the enhanced code snippet
 def bone_convert(bone):
@@ -2560,6 +2562,7 @@ def bone_convert(bone):
 
 def generate_shapekey_dict(dictionary, raw_list):
     for shapekey in raw_list:
+        print(shapekey)
         #Basis
         if shapekey.casefold().count('basis') or shapekey.casefold().count('base'):
             dictionary['basis']['basis'] = shapekey
@@ -2567,14 +2570,14 @@ def generate_shapekey_dict(dictionary, raw_list):
         ## Eyebrows ##
 
         #AU1AU2 = Full eyebrow raise
-        if shapekey.upper().count('AU1AU2L') or shapekey.upper().count('AU1AU2R'):
+        if shapekey.upper().count('AU1AU2L') or shapekey.upper().count('AU1AU2R') or shapekey.count('happyBigUpper'):
             dictionary['eyebrows']['eyebrow_raise'] = shapekey
         #AU4 = Full eyebrow drop
         elif shapekey.upper().count('AU4L') or shapekey.upper().count('AU4R'):
             dictionary['eyebrows']['eyebrow_drop'] = shapekey
 
         #AU1 = Inner eyebrow raise
-        elif shapekey.upper().count('AU1L') or shapekey.upper().count('AU1R'):
+        elif shapekey.upper().count('AU1L') or shapekey.upper().count('AU1R') or shapekey.count('scaredUpper'):
             dictionary['eyebrows']['inner_eyebrow_raise'] = shapekey
         #AU2AU4 = Inner eyebrow drop
         elif shapekey.upper().count('AU2AU4L') or shapekey.upper().count('AU2AU4R'):
@@ -2590,7 +2593,7 @@ def generate_shapekey_dict(dictionary, raw_list):
         ## Eyes ##
 
         #f01 = Upper eyelids drop
-        elif shapekey.lower().count('f01') or shapekey.lower().count('frame1'):
+        elif shapekey.lower().count('f01') or shapekey.lower().count('frame1') or shapekey.count('CloseLidUp'):
             dictionary['eyes']['upper_eyelid_close'] = shapekey
         #f02 = Upper eyelids raise
         elif shapekey.lower().count('f02') or shapekey.lower().count('frame2'):
@@ -2599,7 +2602,7 @@ def generate_shapekey_dict(dictionary, raw_list):
         elif shapekey.lower().count('f03') or shapekey.lower().count('frame3'):
             dictionary['eyes']['lower_eyelid_drop'] = shapekey
         #f04 = Lower eyelids raise
-        elif shapekey.lower().count('f04'):
+        elif shapekey.lower().count('f04') or shapekey.count('CloseLidLo'):
             dictionary['eyes']['lower_eyelid_raise'] = shapekey
         #AU42 = Upper eyelids drop
         elif shapekey.upper().count('AU42'):
@@ -2608,7 +2611,7 @@ def generate_shapekey_dict(dictionary, raw_list):
         ## Cheek ##
 
         #AU6Z = Squint
-        elif shapekey.upper().count('AU6ZL') or shapekey.upper().count('AU6ZR'):
+        elif shapekey.upper().count('AU6ZL') or shapekey.upper().count('AU6ZR') or shapekey.count('painSmallUpper'):
             dictionary['cheek']['squint'] = shapekey
         #AU13 = Filling cheek with air/Puffing
         elif shapekey.upper().count('AU13L') or shapekey.upper().count('AU13R'):
