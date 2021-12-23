@@ -1064,37 +1064,61 @@ class Armature: #Armature base
         satinfo = bpy.context.scene.satinfo
 
         def get_weight_armature():
+            # Object
             try:
                 self.weight_armature = bpy.data.objects[self.armature.name + '.weight']
                 satinfo.weight_armature = True
             except:
+                self.weight_armature = None
                 satinfo.weight_armature = False
         
+            # Metadata
             try:
                 self.weight_armature_real = bpy.data.armatures[self.armature_real.name + '.weight']
-                satinfo.weight_armature = True
             except:
+                self.weight_armature_real = None
+
+            # If only metadata exists
+            if not self.weight_armature and self.weight_armature_real:
                 satinfo.weight_armature = False
+                bpy.data.armatures.remove(self.weight_armature_real)
                 
         def get_anim_armature():
             #Checks if it's a setup armature or a proper armature
             try:
+                # Object
+                try:
+                    self.animation_armature = bpy.data.objects[self.armature.name + '.anim']
+                    satinfo.animation_armature = True
+                    satinfo.animation_armature_setup = False
+                except:
+                    self.animation_armature = None
+                    satinfo.animation_armature = False
+                    
                 try:
                     self.animation_armature = bpy.data.objects[self.armature.name + '.anim_setup']
+                    satinfo.animation_armature = True
                     satinfo.animation_armature_setup = True
                 except:
-                    self.animation_armature = bpy.data.objects[self.armature.name + '.anim']
+                    self.animation_armature = None
+                    satinfo.animation_armature = True
                     satinfo.animation_armature_setup = False
 
+                # Metadata
                 try:
                     self.animation_armature_real = bpy.data.armatures[self.armature_real.name + '.anim_setup']
-                    satinfo.animation_armature_setup = True
                 except:
+                    self.animation_armature_real = None
+
+                try:
                     self.animation_armature_real = bpy.data.armatures[self.armature_real.name + '.anim']
-                    satinfo.animation_armature_setup = False
+                except:
+                    self.animation_armature_real = None
 
-                satinfo.animation_armature = True
-
+                # If only metadata exists
+                if not self.animation_armature and self.animation_armature_real:
+                    satinfo.animation_armature = False
+                    bpy.data.armatures.remove(arm.animation_armature_real)
             except:
                 satinfo.animation_armature = False
 

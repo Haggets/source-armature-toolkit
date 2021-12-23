@@ -70,6 +70,7 @@ def armature_rename(scheme, armature=None): #Bone prefix/suffix repositioning
     if not armature:
         armature = utils.arm.armature
         convert(False)
+        utils.arm.get_armatures()
         if satinfo.weight_armature:
             armature = utils.arm.weight_armature
             convert(False)

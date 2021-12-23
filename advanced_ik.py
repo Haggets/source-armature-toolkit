@@ -299,7 +299,6 @@ def anim_armature(action):
                                                 param.primary_rotation_axis = '-Z'
                                     else:
                                         pbone.rigify_type = 'basic.super_copy'
-                                    param.make_extra_ik_control = True
                                     param.tweak_layers[6] = True
                                     param.tweak_layers[1] = False
 
