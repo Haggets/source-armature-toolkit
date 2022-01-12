@@ -1,5 +1,3 @@
-[![discord](https://img.shields.io/discord/693987167210438656.svg?style=flat&label=Discord&logo=discord&color=7289DA&json?)](https://discord.gg/kH99XSU)
-
 # Source Armature Toolkit
 Flexible multi-purpose Blender plugin focused on fastening the workflow of working with Source armatures.
 
