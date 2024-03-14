@@ -1,4 +1,4 @@
-## This plugin is outdated and no longer being worked on, but everything should work just fine as of Blender 3.0 except for the Rigify Retarget function which is broken (which i would get rid of but i don't want to ruin the day of anyone that uses it on an older version of Blender). Sorry!
+## Hello! This plugin is outdated and on life support. It won't receive any more updates except for errors that break the plugin.
 
 # Source Armature Toolkit
 
