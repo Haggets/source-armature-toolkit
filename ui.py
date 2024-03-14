@@ -1,8 +1,8 @@
 import bpy
-from . import __init__
-from . import ops
-from . import utils
+
+from . import __init__, ops, utils
 from .addon_updater_ops import get_user_preferences
+
 
 class SAT_PT_mainpanel(bpy.types.Panel): #Main panel that subpanels will use
     bl_label = "Source Armature Toolkit"
@@ -16,11 +16,11 @@ class SAT_PT_mainpanel(bpy.types.Panel): #Main panel that subpanels will use
         satinfo = bpy.context.scene.satinfo
         layout = self.layout
         col = layout.column()
-        
+
         col.prop(satproperties, 'target_armature') #Armature that will be affected by the utilities
         if not satproperties.target_armature and not satinfo.creating_armature:
             col.operator('sat.create_armature')
-        
+
         if satinfo.creating_armature:
             col.prop(satproperties, 'game_armature_type')
             col.prop(satproperties, 'game_armature')
@@ -58,7 +58,7 @@ class SAT_PT_mainpanel(bpy.types.Panel): #Main panel that subpanels will use
                 col.label(text="No Armature...")
         else:
             col.label(text="Select armature in plugin once done")
-        
+
 class SAT_PT_armaturerename(bpy.types.Panel): #Armature rename panel
     bl_label = "Armature Renaming"
     bl_parent_id = 'SAT_PT_mainpanel'
@@ -66,7 +66,7 @@ class SAT_PT_armaturerename(bpy.types.Panel): #Armature rename panel
     bl_region_type = 'WINDOW'
     bl_context = 'data'
     bl_options = {'DEFAULT_CLOSED'}
-    
+
     def draw(self, context):
         satproperties = bpy.context.scene.satproperties
         satinfo = bpy.context.scene.satinfo
@@ -100,13 +100,13 @@ class SAT_PT_constraintsymmetry(bpy.types.Panel): #Constraint Symmetry panel
     bl_region_type = 'WINDOW'
     bl_context = 'data'
     bl_options = {'DEFAULT_CLOSED'}
-    
+
     def draw(self, context):
         satproperties = bpy.context.scene.satproperties
         satinfo = bpy.context.scene.satinfo
         preferences = get_user_preferences()
         layout = self.layout
-        
+
         row = layout.row()
         row.operator('sat.constraintsymmetry_create', text='Add')
         row.operator('sat.constraintsymmetry_delete', text='Remove')
@@ -119,10 +119,10 @@ class SAT_PT_constraintsymmetry(bpy.types.Panel): #Constraint Symmetry panel
         if satproperties.target_armature:
             if satproperties.affected_side == 'LTR' and satinfo.symmetry == 2 or satproperties.affected_side == 'RTL' and satinfo.symmetry == 1:
                 col.label(text="Already applied on the opposite side")
-            
+
             if satinfo.tf2:
                 col.label(text="Incompatible with this armature type")
-        
+
         col = layout.column()
         col.prop(satproperties, 'symmetry_offset')
         col.prop(satproperties, 'symmetry_upperarm_rotation_fix')
@@ -132,7 +132,7 @@ class SAT_PT_constraintsymmetry(bpy.types.Panel): #Constraint Symmetry panel
             box.label(text="Meant for armature reproportioning", icon='INFO')
             box.label(text="Allows for symmetry while keeping", icon='INFO')
             box.label(text="corrected roll values")
-        
+
 class SAT_PT_weightarmature(bpy.types.Panel): #Weight Armature panel
     bl_label = "Weight Armature"
     bl_parent_id = 'SAT_PT_mainpanel'
@@ -140,7 +140,7 @@ class SAT_PT_weightarmature(bpy.types.Panel): #Weight Armature panel
     bl_region_type = 'WINDOW'
     bl_context = 'data'
     bl_options = {'DEFAULT_CLOSED'}
-    
+
     def draw (self, context):
         satinfo = bpy.context.scene.satinfo
         preferences = get_user_preferences()
@@ -165,7 +165,7 @@ class SAT_PT_rigifyretarget(bpy.types.Panel): #Rigify Retargetting panel
     bl_region_type = 'WINDOW'
     bl_context = 'data'
     bl_options = {'DEFAULT_CLOSED'}
-    
+
     def draw (self, context):
         satproperties = bpy.context.scene.satproperties
         satinfo = bpy.context.scene.satinfo

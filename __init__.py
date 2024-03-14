@@ -3,17 +3,18 @@
 import bpy
 
 # Updater
-from . import addon_updater_ops
-from . import preferences
-
-from . import armature_rename
-from . import constraint_symmetry
-from . import weight_armature
-from . import armature_creation
-from . import utils
-from . import props
-from . import ops
-from . import ui
+from . import (
+    addon_updater_ops,
+    armature_creation,
+    armature_rename,
+    constraint_symmetry,
+    ops,
+    preferences,
+    props,
+    ui,
+    utils,
+    weight_armature,
+)
 
 bl_info = {
     "name": "Source Armature Toolkit",
@@ -25,10 +26,35 @@ bl_info = {
     "url": "https://github.com/Haggets/source-armature-toolkit",
     "wiki_url": "https://github.com/Haggets/source-armature-toolkit",
     "tracker_url": "https://github.com/Haggets/source-armature-toolkit/issues",
-    "category": "Armature"}
+    "category": "Armature",
+}
 
-classes = [props.SAT_properties, props.SAT_info, preferences.SAT_preferences, ui.SAT_PT_mainpanel, ui.SAT_PT_armaturerename, ui.SAT_PT_constraintsymmetry, ui.SAT_PT_weightarmature, ui.SAT_PT_rigifyretarget, ui.SAT_PT_rigifyretargetexport, ops.SAT_OT_create_armature, ops.SAT_OT_convert_armature, ops.SAT_OT_armaturerename_blender, ops.SAT_OT_armaturerename_source, ops.SAT_OT_constraintsymmetry_create,
-           ops.SAT_OT_constraintsymmetry_delete, ops.SAT_OT_constraintsymmetry_apply, ops.SAT_OT_weightarmature_create, ops.SAT_OT_weightarmature_delete, ops.SAT_OT_rigifyretarget_create, ops.SAT_OT_rigifyretarget_delete, ops.SAT_OT_rigifyretarget_generate_and_link, ops.SAT_OT_rigifyretarget_bake_single, ops.SAT_OT_rigifyretarget_bake_all, ops.SAT_OT_rigifyretarget_export_all]
+classes = [
+    props.SAT_properties,
+    props.SAT_info,
+    preferences.SAT_preferences,
+    ui.SAT_PT_mainpanel,
+    ui.SAT_PT_armaturerename,
+    ui.SAT_PT_constraintsymmetry,
+    ui.SAT_PT_weightarmature,
+    ui.SAT_PT_rigifyretarget,
+    ui.SAT_PT_rigifyretargetexport,
+    ops.SAT_OT_create_armature,
+    ops.SAT_OT_convert_armature,
+    ops.SAT_OT_armaturerename_blender,
+    ops.SAT_OT_armaturerename_source,
+    ops.SAT_OT_constraintsymmetry_create,
+    ops.SAT_OT_constraintsymmetry_delete,
+    ops.SAT_OT_constraintsymmetry_apply,
+    ops.SAT_OT_weightarmature_create,
+    ops.SAT_OT_weightarmature_delete,
+    ops.SAT_OT_rigifyretarget_create,
+    ops.SAT_OT_rigifyretarget_delete,
+    ops.SAT_OT_rigifyretarget_generate_and_link,
+    ops.SAT_OT_rigifyretarget_bake_single,
+    ops.SAT_OT_rigifyretarget_bake_all,
+    ops.SAT_OT_rigifyretarget_export_all,
+]
 
 
 def register():

@@ -1,8 +1,7 @@
 import bpy
-from . import utils
-from . import advanced_ik
-from . import constraint_symmetry
-from . import armature_creation
+
+from . import advanced_ik, armature_creation, constraint_symmetry, utils
+
 
 class SAT_properties(bpy.types.PropertyGroup): #Defines global properties the plugin will use
 
@@ -17,15 +16,15 @@ class SAT_properties(bpy.types.PropertyGroup): #Defines global properties the pl
     #Retuns only meshes
     def object_poll(self, object):
         return object.type == 'MESH'
-        
+
     target_armature : bpy.props.PointerProperty(
         type=bpy.types.Object,
         name='Armature',
         description="Armature that will be used to perform operations on",
-        poll=armature_poll, 
+        poll=armature_poll,
         update=utils.create_armature
         )
-    
+
     target_object : bpy.props.PointerProperty(
         type=bpy.types.Object,
         name='Object',
@@ -34,10 +33,10 @@ class SAT_properties(bpy.types.PropertyGroup): #Defines global properties the pl
         )
 
     affected_side : bpy.props.EnumProperty(
-        name="Affected side", 
-        description="Side that will be used for applying symmetry constraints", 
+        name="Affected side",
+        description="Side that will be used for applying symmetry constraints",
         items=[
-            ('LTR', "Left Side", "Left to Right"), 
+            ('LTR', "Left Side", "Left to Right"),
             ('RTL', "Right Side", "Right to Left")
         ]
     )
@@ -82,10 +81,10 @@ class SAT_properties(bpy.types.PropertyGroup): #Defines global properties the pl
     )
 
     game_armature : bpy.props.EnumProperty(
-        name="Game Armature", 
-        description="Create armature from the selected game", 
+        name="Game Armature",
+        description="Create armature from the selected game",
         items=[
-            ('HL2', "Half Life 2/Garry's Mod", "Citizen armature"), 
+            ('HL2', "Half Life 2/Garry's Mod", "Citizen armature"),
             ('L4D2', "Left 4 Dead 2", "Survivor armatures"),
             ('SBOX', "S&Box", "Standard S&Box armature"),
         ],
@@ -118,7 +117,7 @@ class SAT_info(bpy.types.PropertyGroup):
     creating_armature : bpy.props.BoolProperty(
         default=False
     )
-    
+
     armature_name : bpy.props.StringProperty(
         default=''
     )

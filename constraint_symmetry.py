@@ -1,6 +1,8 @@
 import bpy
+
 from . import utils
 from .utils import bone_convert
+
 
 def constraint_symmetry(action, side): #Creates symmetry by using constraints, keeping corrected roll value
     satinfo = bpy.context.scene.satinfo
@@ -44,7 +46,7 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
             #Rotation
             if not rot[bone]['rotation']:
                 rot[bone]['rotation'] = armature.pose.bones[prefix + bone].constraints.new('COPY_ROTATION')
-                    
+
                 constraint = rot[bone]['rotation']
                 #Constraint parameters
                 constraint.name = "Constraint Symmetry Rotation"
@@ -66,7 +68,7 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
                 constraint.subtarget = prefix2 + bone2
             else:
                 final_report_rot.append(bone)
-            
+
             if not satinfo.symmetry:
                 if side == 'LTR':
                     satinfo.symmetry = 1
@@ -78,7 +80,7 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
             #Location
             if loc[bone]['location']:
                 armature.pose.bones[prefix + bone].constraints.remove(loc[bone]['location'])
-                
+
                 loc[bone]['location'] = None
             else:
                 final_report_loc.append(bone)
@@ -121,7 +123,7 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
                     prefix, bone = bone_convert(bone)
                     prefix2, bone2 = bone_convert(bone2)
                     constraint(bone, bone2)
-            
+
     #Helpers
     if utils.arm.helper_bones:
         for cat in utils.arm.helper_bones.keys():
@@ -166,7 +168,7 @@ def constraint_symmetry(action, side): #Creates symmetry by using constraints, k
             print("Location constraints already exist for:", final_report_loc)
         elif action == 1:
             print("Location constraints not found for:", final_report_loc)
-        
+
     if final_report_rot:
         if action == 0:
             print("Rotation constraints already exist for:", final_report_rot)

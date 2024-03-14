@@ -1,12 +1,12 @@
 import bpy
+
+from . import utils
+from .advanced_ik import anim_armature, bake, export
+from .armature_creation import armature
 from .armature_rename import armature_rename
 from .constraint_symmetry import constraint_symmetry
 from .weight_armature import weight_armature
-from .advanced_ik import anim_armature
-from .advanced_ik import bake
-from .advanced_ik import export
-from .armature_creation import armature
-from . import utils
+
 
 class SAT_OT_create_armature(bpy.types.Operator):
     """Creates armature from scratch"""
@@ -19,7 +19,7 @@ class SAT_OT_create_armature(bpy.types.Operator):
 
         armature(0)
         satinfo.creating_armature = 1
-        
+
         return{'FINISHED'}
 
 class SAT_OT_convert_armature(bpy.types.Operator):
@@ -28,10 +28,10 @@ class SAT_OT_convert_armature(bpy.types.Operator):
     bl_label = 'Convert Armature'
     bl_description = 'Converts armature to be like Source armatures (Unconnected with different orientation)'
     bl_options = {'REGISTER', 'UNDO'}
-    
+
     def execute(self, context):
         pass
-        
+
         return{"FINISHED"}
 
 class SAT_OT_armaturerename_blender(bpy.types.Operator): #Converts armature scheme to become Blender friendly
@@ -39,7 +39,7 @@ class SAT_OT_armaturerename_blender(bpy.types.Operator): #Converts armature sche
     bl_idname = "sat.armaturerename_blender"
     bl_label = "Blender Friendly Scheme"
     bl_options = {'REGISTER', 'UNDO'}
-    
+
     @classmethod #Checks if an armature is selected and it is not a TF2 one, since it doesn't need it
     def poll(cls, context):
         satproperties = bpy.context.scene.satproperties
@@ -47,7 +47,7 @@ class SAT_OT_armaturerename_blender(bpy.types.Operator): #Converts armature sche
 
         if satproperties.target_armature and satinfo.scheme == 0:
             return (not satinfo.tf2 and not satinfo.sbox)
-    
+
     def execute(self, context):
         satproperties = bpy.context.scene.satproperties
         satinfo = bpy.context.scene.satinfo
@@ -57,15 +57,15 @@ class SAT_OT_armaturerename_blender(bpy.types.Operator): #Converts armature sche
         else:
             armature_rename(1)
             satinfo.scheme = 1
-        
+
         return{'FINISHED'}
-    
+
 class SAT_OT_armaturerename_source(bpy.types.Operator): #Converts armature scheme back to the original
     """Reverts back to original Source friendly scheme for export"""
     bl_idname = "sat.armaturerename_source"
     bl_label = "Original scheme"
     bl_options = {'REGISTER', 'UNDO'}
-    
+
     @classmethod
     def poll(cls, context):
         satproperties = bpy.context.scene.satproperties
@@ -73,7 +73,7 @@ class SAT_OT_armaturerename_source(bpy.types.Operator): #Converts armature schem
 
         if satproperties.target_armature and satinfo.scheme == 1:
             return (not satinfo.tf2 and not satinfo.sbox)
-    
+
     def execute(self, context):
         satproperties = bpy.context.scene.satproperties
         satinfo = bpy.context.scene.satinfo
@@ -85,13 +85,13 @@ class SAT_OT_armaturerename_source(bpy.types.Operator): #Converts armature schem
             satinfo.scheme = 0
 
         return{'FINISHED'}
-    
+
 class SAT_OT_constraintsymmetry_create(bpy.types.Operator):
     """Creates symmetry with constraints to allow for armature reproportioning while keeping correct roll values"""
     bl_idname = "sat.constraintsymmetry_create"
     bl_label = "Roll Corrected Symmetry"
     bl_options = {'REGISTER', 'UNDO'}
-    
+
     @classmethod
     def poll(cls, context):
         satproperties = bpy.context.scene.satproperties
@@ -109,15 +109,15 @@ class SAT_OT_constraintsymmetry_create(bpy.types.Operator):
             satinfo.symmetry = 1
         elif satproperties.affected_side == 'RTL':
             satinfo.symmetry = 2
-        
+
         return{'FINISHED'}
-    
+
 class SAT_OT_constraintsymmetry_delete(bpy.types.Operator):
     """Removes previously added constraints"""
     bl_idname = "sat.constraintsymmetry_delete"
     bl_label = "Symmetry Constraints Removal"
     bl_options = {'REGISTER', 'UNDO'}
-    
+
     @classmethod
     def poll(cls, context):
         satproperties = bpy.context.scene.satproperties
@@ -135,9 +135,9 @@ class SAT_OT_constraintsymmetry_delete(bpy.types.Operator):
 
         constraint_symmetry(1, satproperties.affected_side)
         satinfo.symmetry = 0
-        
+
         return{'FINISHED'}
-    
+
 class SAT_OT_constraintsymmetry_apply(bpy.types.Operator):
     """Modifies default pose to be the current one"""
     bl_idname = "sat.constraintsymmetry_apply"
@@ -167,7 +167,7 @@ class SAT_OT_weightarmature_create(bpy.types.Operator):
     bl_idname = "sat.weightarmature_create"
     bl_label = "Better Automatic Weighting"
     bl_options = {'REGISTER', 'UNDO'}
-    
+
     @classmethod
     def poll(cls, context):
         satproperties = bpy.context.scene.satproperties
@@ -209,7 +209,7 @@ class SAT_OT_weightarmature_delete(bpy.types.Operator):
         satinfo.weight_armature = False
 
         return{'FINISHED'}
-    
+
 class SAT_OT_rigifyretarget_create(bpy.types.Operator):
     """Creates animation ready armature"""
     bl_idname = "sat.rigifyretarget_create"
@@ -291,7 +291,7 @@ class SAT_OT_rigifyretarget_generate_and_link(bpy.types.Operator):
             satinfo.animation_armature_setup = False
 
         return{'FINISHED'}
-        
+
 class SAT_OT_rigifyretarget_bake_single(bpy.types.Operator):
     """Bakes selected NLA strip/current action from the animation armature onto the original armature"""
     bl_idname = "sat.rigifyretarget_bake_single"
@@ -358,7 +358,7 @@ class SAT_OT_rigifyretarget_export_all(bpy.types.Operator):
     def poll(cls, context):
         satproperties = bpy.context.scene.satproperties
         satinfo = bpy.context.scene.satinfo
-        
+
         if satproperties.target_armature and satinfo.scheme != -1 and not satinfo.sbox:
             if satinfo.animation_armature and not satinfo.animation_armature_setup and utils.arm.animation_armature and not satproperties.retarget_constraints:
                 if utils.arm.animation_armature.animation_data:

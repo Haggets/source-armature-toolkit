@@ -1,11 +1,11 @@
+from math import radians
+
 import bpy
-from math import radians 
+
 from . import utils
-from .utils import update
-from .utils import generate_armature
-from .utils import generate_shapekey_dict
-from .utils import bone_convert
 from .armature_rename import armature_rename, bone_rename
+from .utils import bone_convert, generate_armature, generate_shapekey_dict, update
+
 
 def anim_armature(action):
 
@@ -25,7 +25,7 @@ def anim_armature(action):
 
             #Selects animation armature
             update(1, armature)
-                
+
             #Hides all but the first layer
             for i in [1,2,3,5,4,6,7]:
                 armature.data.layers[i] = False
@@ -46,7 +46,7 @@ def anim_armature(action):
                     prefix, bone = bone_convert(utils.arm.central_bones['pelvis'][0])
                     ppelvis = armature.pose.bones[prefix + bone]
                     epelvis = armature.data.edit_bones[prefix + bone]
-                    
+
                     for index, bone in enumerate(rigify_pelvis):
                         ebone = armature.data.edit_bones.new(bone)
 
@@ -73,7 +73,7 @@ def anim_armature(action):
                                 ebone.tail.x = ppelvis.head.x-10*unit
                             else:
                                 ebone.tail.x = ppelvis.head.x-3.25*unit
-            
+
             rigify_palm = {}
 
             if utils.arm.symmetrical_bones['fingers'].get('indexmeta') or utils.arm.symmetrical_bones['fingers'].get('middlemeta') or utils.arm.symmetrical_bones['fingers'].get('ringmeta'):
@@ -97,7 +97,7 @@ def anim_armature(action):
 
                         pbone.rigify_type = 'basic.super_copy'
                         pbone.rigify_parameters.super_copy_widget_type = 'bone'
-            
+
             #Disabled, more trouble than they're worth and rather purposeless anyways, only for S&Box armatures (Since they already have palm bones)
             '''else:
                 #Creates multiple palm bones for fingers
@@ -110,7 +110,7 @@ def anim_armature(action):
                     if container == 'finger1' or container == 'finger2' or container == 'finger3' or container == 'finger3' or container == 'finger4':
                         if bone:
                             fingers += 1
-                
+
                 if fingers > 1:
                     for container, bone in utils.arm.symmetrical_bones['fingers'].items():
                         if container == 'finger1' or container == 'finger2' or container == 'finger3' or container == 'finger3' or container == 'finger4':
@@ -206,7 +206,7 @@ def anim_armature(action):
                         ebone.layers[0] = False
                         ebone.layers[8] = False
 
-            #Creates hand bones 
+            #Creates hand bones
             rigify_hands = ['Hand_L', 'Hand_R']
 
             if utils.arm.symmetrical_bones['arms']['forearm']:
@@ -226,7 +226,7 @@ def anim_armature(action):
 
                         ebone.parent = eforearm
                         ebone.use_connect = True
-            
+
             #Creates camera target if armature is a viewmodel
             if satinfo.viewmodel:
                 marked = False
@@ -242,7 +242,7 @@ def anim_armature(action):
                     prefix, bone = bone_convert(bone)
                     pcamera = armature.pose.bones[prefix + bone]
                     etarget = armature.data.edit_bones.new('Camera_Target')
-                    
+
                     prefix, bone = bone_convert(utils.arm.central_bones['pelvis'][0])
                     ppelvis = armature.pose.bones[prefix + bone]
                     etarget.head.xyz = pcamera.head.x, -ppelvis.head.z, pcamera.head.z
@@ -259,7 +259,7 @@ def anim_armature(action):
                         pbone = armature.pose.bones[bone]
                         pbone.rigify_type = 'basic.super_copy'
                         pbone.rigify_parameters.make_control = False
-                
+
             #Rigify palm
             if rigify_palm:
                 for bone in rigify_palm['finger1']:
@@ -420,7 +420,7 @@ def anim_armature(action):
                                 param.tweak_layers[4] = True
                             else:
                                 pbone.rigify_type = 'basic.super_copy'
-                    
+
                         ebone.layers[0] = False
 
             for cat in utils.arm.helper_bones.keys():
@@ -460,7 +460,7 @@ def anim_armature(action):
                                 ebone.layers[7] = False
                                 pbone.rigify_type = 'basic.super_copy'
                                 param.super_copy_widget_type = 'bone'
-                            
+
             marked = False
 
             if satinfo.viewmodel:
@@ -514,7 +514,7 @@ def anim_armature(action):
                         param = pbone.rigify_parameters
 
                         ebone.layers[21] = True
-                        
+
                         ebone.layers[0] = False
                         ebone.layers[9] = False
 
@@ -621,7 +621,7 @@ def anim_armature(action):
                 target_object.data = object_data
 
                 utils.arm.shapekeys = generate_shapekey_dict(utils.arm.shapekeys, shapekeys_raw)
-                
+
                 #Generates widgets for easier representation of every driver bone
                 create_widgets()
 
@@ -635,13 +635,13 @@ def anim_armature(action):
                 upper_lip = False
                 middle_lip = False
                 chin = False
-                
+
                 ## Bone creation ##
                 for cat in utils.arm.shapekeys.keys():
                     for container, shapekey in utils.arm.shapekeys[cat].items():
                         if cat == 'eyebrows':
                             if container:
-                                if not eyebrows: 
+                                if not eyebrows:
                                     eyebrows = True
                                     #Inner, outer and full eyebrows
                                     for bone in ['Eyebrow_L', 'Eyebrow_R', 'Inner_Eyebrow_L', 'Inner_Eyebrow_R', 'Outer_Eyebrow_L', 'Outer_Eyebrow_R']:
@@ -675,7 +675,7 @@ def anim_armature(action):
 
                                         ebone = armature.data.edit_bones.new(bone)
                                         ebone.use_deform = False
-                                    
+
                                         if bone == 'UpperEye_L':
                                             ebone.head.xyz = 1.18783*unit, -3.53386*unit, 68.0906*unit
                                         elif bone == 'UpperEye_R':
@@ -684,7 +684,7 @@ def anim_armature(action):
                                             ebone.head.xyz = 1.18783*unit, -3.53386*unit, 67.5157*unit
                                         elif bone == 'LowerEye_R':
                                             ebone.head.xyz = -1.18783*unit, -3.53386*unit, 67.5157*unit
-                                            
+
                                         ebone.tail.xyz = ebone.head.x, ebone.head.y + 0.5*unit, ebone.head.z
 
                         elif cat == 'cheek':
@@ -706,7 +706,7 @@ def anim_armature(action):
                                             ebone.tail.xyz = -1.76452*unit, -2.78046*unit, ebone.head.z
 
                                         ebone.length = 0.5*unit
-                                    
+
                         elif cat == 'nose':
                             if container:
                                 if not nose:
@@ -744,7 +744,7 @@ def anim_armature(action):
                                             elif bone == 'MouthCorner_R':
                                                 ebone.head.xyz = -1.20563*unit, -3.80961*unit, 64.8528*unit
                                                 ebone.tail.xyz = -0.976012*unit, -3.36545*unit, ebone.head.z
-                                            
+
                                             ebone.length = 0.5*unit
 
                                 elif not upper_lip:
@@ -805,7 +805,7 @@ def anim_armature(action):
 
                                         ebone = armature.data.edit_bones.new(bone)
                                         ebone.use_deform = False
-                                    
+
                                         ebone.head.xyz = 0, -4.31075*unit, 62.8409*unit
                                         ebone.tail.xyz = ebone.head.x, -3.83612*unit, 62.9982*unit
 
@@ -827,7 +827,7 @@ def anim_armature(action):
                     #Right side
                     elif vertex.co[0] < -0.005*unit:
                         right_group.add([vertex.index], 1, 'REPLACE')
-                    
+
 
                     elif vertex.co[0] < 0.005*unit and vertex.co[0] > -0.005*unit:
                         left_group.add([vertex.index], 0.75, 'REPLACE')
@@ -895,7 +895,7 @@ def anim_armature(action):
 
                         edriver = armature.data.edit_bones.new('driver_' + name)
                         edriver.use_deform = False
-                        
+
                         if name.title().count('L_') or name.title().count('_L'):
                             edriver.head.xyz = 1.18783*unit, -15*unit, 67.8032*unit
                         elif name.title().count('R_') or name.title().count('_R'):
@@ -966,7 +966,7 @@ def anim_armature(action):
                             texcoord = node.new('ShaderNodeTexCoord')
                             texcoord.name = "SAT Eye Movement Origin"
                             texcoord.location = mapping.location[0] - 200, mapping.location[1]
-                        
+
                         if not texcoord.outputs['UV'].links:
                             link.new(texcoord.outputs['UV'], mapping.inputs['Vector'])
 
@@ -1029,7 +1029,7 @@ def anim_armature(action):
                         prefix2, bone2 = bone_convert(utils.arm.central_bones['head'][0])
                     elif utils.arm.central_bones['neck']:
                         prefix2, bone2 = bone_convert(utils.arm.central_bones['neck'][0])
-                        
+
                     ebone.parent = armature.data.edit_bones[prefix2 + bone2]
 
                     #Locks rotation and scale since they aren't meant to be used
@@ -1076,11 +1076,11 @@ def anim_armature(action):
                         limit_loc.min_x = -0.5*unit
 
                     else:
-                        limit_loc.min_x = -1*unit   
+                        limit_loc.min_x = -1*unit
 
                     #Max X
                     limit_loc.use_max_x = True
-                    
+
                     if bone.count('MouthCorner') or bone == 'Nostril_L':
                         limit_loc.max_x = 0.5*unit
 
@@ -1091,7 +1091,7 @@ def anim_armature(action):
                         limit_loc.max_x = 1*unit
 
                     #Min Y
-                    
+
                     limit_loc.use_min_y = True
 
                     if bone.count('Cheek'):
@@ -1109,10 +1109,10 @@ def anim_armature(action):
 
                     #Min Z
                     limit_loc.use_min_z = True
-                    
+
                     if bone.count('Cheek') or bone.count('Nostril') or bone.count('UpperLip'):
                         limit_loc.min_z = 0
-                        
+
                     elif bone.count('UpperEye') or bone.count('LowerEye'):
                         limit_loc.min_z = -0.2*unit
 
@@ -1121,7 +1121,7 @@ def anim_armature(action):
 
                     elif bone.count('Chin'):
                         limit_loc.min_z = -1.5*unit
-                        
+
                     else:
                         limit_loc.min_z = -1*unit
 
@@ -1141,7 +1141,7 @@ def anim_armature(action):
                     if bone.count('Eyebrow') or bone.count('UpperEye') or bone.count('LowerEye'):
                         widget = bpy.data.objects['UpDown']
                         pbone.custom_shape = widget
-                        
+
                         if bone.count('Eyebrow'):
                             pbone.custom_shape_scale = 0.3
 
@@ -1166,7 +1166,7 @@ def anim_armature(action):
 
                         elif bone.endswith('_R'):
                             widget = bpy.data.objects['Nostril_R']
-                            
+
                         pbone.custom_shape = widget
                         pbone.custom_shape_scale = 0.35
 
@@ -1212,7 +1212,7 @@ def anim_armature(action):
 
                         ebone.layers[1] = True
                         ebone.layers[0] = False
-                        
+
                     if bone.count('Inner_Eyebrow') or bone.count('Outer_Eyebrow') or bone.count('Nostril') or bone.count('Cheek') or bone.count('MiddleLip'):
                         ebone.layers[2] = True
                         ebone.layers[0] = False
@@ -1239,7 +1239,7 @@ def anim_armature(action):
                                     prefix, bone = bone_convert(bone)
                                     ebone = armature.data.edit_bones[prefix + bone]
                                     edriver = armature.data.edit_bones.new('driver_' + bone)
-                                    
+
                                     edriver.layers[1] = True
                                     edriver.layers[0] = False
 
@@ -1265,7 +1265,7 @@ def anim_armature(action):
                                     pbone = armature.pose.bones[prefix + bone]
                                     pdriver = armature.pose.bones['driver_' + bone]
                                     param = pdriver.rigify_parameters
-                                    
+
                                     #Locks rotation and scale since they aren't meant to be used
                                     pdriver.lock_location = False, True, False
                                     pdriver.lock_rotation_w = True
@@ -1353,7 +1353,7 @@ def anim_armature(action):
 
         def retarget(bone, type=''): #Creates empties and links them to Rigify armature/Source armature
             armature = bpy.data.objects[utils.arm.armature.name + '.anim']
-            
+
             #Retarget empties creation
             try:
                 collection = bpy.data.collections["Retarget Empties ({})".format(utils.arm.armature.name)[0:60]] #Name length limit
@@ -1497,7 +1497,7 @@ def anim_armature(action):
                 prefix, bone = bone_convert(bone)
                 pcamera = armature.pose.bones[prefix + bone]
                 ecamera = armature.data.edit_bones[prefix + bone]
-                
+
                 track = pcamera.constraints.new('DAMPED_TRACK')
                 track.target = armature
                 track.subtarget = 'Camera_Target'
@@ -1524,7 +1524,7 @@ def anim_armature(action):
 
                     #pcamera.location[1] = -ecamera.head.z
                     #armature.pose.bones['Camera_Target'].location[2] = -ecamera.head.z
-    
+
                     armature.pose.bones['root'].location[2] = -ecamera.head.z
 
                 ##Camera##
@@ -1551,9 +1551,9 @@ def anim_armature(action):
 
                 collection = utils.arm.armature.users_collection[0]
                 collection.objects.link(camera)
-                
+
                 bpy.context.scene.camera = camera
-        
+
         if not armature['material_eyes']:
             for container, bone in utils.arm.custom_bones.items():
                 for bone in bone:
@@ -1576,7 +1576,7 @@ def anim_armature(action):
                             ebone.layers[0] = False
 
         utils.arm.animation_armature_real.layers[24] = False
-    
+
         if armature['target_object'] and armature['has_shapekeys']:
             keyblocks = armature['target_object'].data.shape_keys.key_blocks
 
@@ -1638,7 +1638,7 @@ def anim_armature(action):
                                 #Creates another driver controlled by the corresponding eye bone
                                 variable2 = driver.driver.variables.new()
                                 variable2.name = "eye"
-                                    
+
                                 driver.driver.expression = '{} + {}/5'.format(variable.name, variable2.name) #Combines the old driver with the new driver, making the latter have less influence
                                 variable2.type = 'TRANSFORMS'
 
@@ -1653,7 +1653,7 @@ def anim_armature(action):
                                     target.bone_target = "UpperEye_L"
                                 elif shapekey.endswith('_R'):
                                     target.bone_target = "UpperEye_R"
-                            
+
                             elif container == 'upper_eyelid_raise':
                                 if shapekey.endswith('_L'):
                                     target.bone_target = "UpperEye_L"
@@ -1681,10 +1681,10 @@ def anim_armature(action):
                                 elif shapekey.endswith('_R'):
                                     if utils.arm.eye_right:
                                         target.bone_target = utils.arm.eye_right
-                            
+
                             if container == 'upper_eyelid_close' or container == 'lower_eyelid_drop' or container == 'upper_eyelid_drop':
                                 driver.modifiers[0].coefficients[1] = -5/unit
-                            
+
                             elif container == 'upper_eyelid_raise' or container == 'lower_eyelid_raise':
                                 driver.modifiers[0].coefficients[1] = 5/unit
 
@@ -1752,7 +1752,7 @@ def anim_armature(action):
                                             driver.modifiers[0].coefficients[1] = 2/unit
                                         elif shapekey.endswith('_R'):
                                             driver.modifiers[0].coefficients[1] = -2/unit
-                                    
+
                                     elif container == 'puckerer':
                                         if shapekey.endswith('_L'):
                                             driver.modifiers[0].coefficients[1] = -2/unit
@@ -1795,7 +1795,7 @@ def anim_armature(action):
 
                             #MiddleLip
                             elif container == 'mouth_left' or container == 'mouth_right' or container == 'light_puckerer':
-                                target.bone_target = "MiddleLip" 
+                                target.bone_target = "MiddleLip"
                                 target.transform_space = 'LOCAL_SPACE'
 
                                 if container == 'mouth_left' or container == 'mouth_right':
@@ -1812,9 +1812,9 @@ def anim_armature(action):
                                     driver.modifiers[0].coefficients[1] = -2/unit
 
                         elif cat == 'chin':
-                            target.bone_target = "Chin" 
+                            target.bone_target = "Chin"
                             target.transform_space = 'LOCAL_SPACE'
-                            
+
                             #Upwards/Downwards movement
                             if container == 'chin_raise' or container == 'light_chin_drop' or container == 'medium_chin_drop' or container == 'full_chin_drop':
                                 target.transform_type = 'LOC_Z'
@@ -1987,7 +1987,7 @@ def create_widgets(widget=[]):
         bpy.context.scene.collection.children.link(collection)
 
         collection.hide_viewport = True
-        
+
     #Empty that stores all the generated widgets for easier storage/manipulation
     try:
         parent = bpy.data.objects['parent_widgets']
@@ -1997,7 +1997,7 @@ def create_widgets(widget=[]):
 
     if not widget:
         widget = ['4Directions', 'Cheek', 'LowerLip', 'MiddleLip', 'UpperLip', 'Nostril_L', 'Nostril_R', 'UpDown']
-        
+
     for widget in widget:
         try:
             bpy.data.objects[widget]
@@ -2044,7 +2044,7 @@ def create_widgets(widget=[]):
             elif widget == 'UpDown':
                 vertices = [(0.0000, 0.0000, 1.0000), (-0.3827, 0.0000, 0.9239), (-0.7071, 0.0000, 0.7071), (-0.9239, 0.0000, 0.3827), (-1.0000, 0.0000, 0.0000), (-0.9239, -0.0000, -0.3827), (-0.7071, -0.0000, -0.7071), (-0.3827, -0.0000, -0.9239), (0.0000, -0.0000, -1.0000), (0.3827, -0.0000, -0.9239), (0.7071, -0.0000, -0.7071), (0.9239, -0.0000, -0.3827), (1.0000, 0.0000, 0.0000), (0.9239, 0.0000, 0.3827), (0.7071, 0.0000, 0.7071), (0.3827, 0.0000, 0.9239), (0.3718, 0.0000, -1.8058), (0.6592, 0.0000, -1.3381), (-0.3718, 0.0000, -1.8058), (-0.6592, 0.0000, -1.3381), (-0.4179, 0.0000, -1.0882), (-0.7722, 0.0000, -0.8515), (0.7722, 0.0000, -0.8515), (0.4179, 0.0000, -1.0882), (-0.0000, 0.0000, -1.1805), (-0.0000, 0.0000, -2.2000), (-0.0000, 0.0000, 2.2000), (0.0000, 0.0000, 1.1805), (-0.4179, 0.0000, 1.0882), (-0.7722, 0.0000, 0.8515), (0.7722, 0.0000, 0.8515), (0.4179, 0.0000, 1.0882), (0.6592, 0.0000, 1.3381), (0.3718, 0.0000, 1.8058), (-0.6592, 0.0000, 1.3381), (-0.3718, 0.0000, 1.8058)]
                 edges = [(1, 0), (2, 1), (3, 2), (4, 3), (5, 4), (6, 5), (7, 6), (8, 7), (9, 8), (10, 9), (11, 10), (12, 11), (13, 12), (14, 13), (15, 14), (0, 15), (16, 25), (17, 22), (18, 25), (19, 21), (17, 16), (19, 18), (24, 20), (20, 21), (22, 23), (23, 24), (28, 27), (31, 30), (27, 31), (34, 35), (29, 28), (32, 33), (32, 30), (33, 26), (34, 29), (35, 26)]
-                
+
 
             object.data.from_pydata(vertices, edges, faces)
 
@@ -2074,10 +2074,10 @@ def bake(mode):
         else:
             name = action.name
             action.name = '_' + action.name
-        
+
         #Original armature's NLA tracks
         nla_track2 = armature2.animation_data.nla_tracks
-        
+
         #Creates new action to store baked data in, or overrides existing one
 
         #Recontructs actions, strips (And tracks if in bulk) to account for any change made in the animation armature track
@@ -2087,7 +2087,7 @@ def bake(mode):
             action2 = bpy.data.actions.new(name)
         except:
             action2 = bpy.data.actions.new(name)
-            
+
         try:
             bake_track = nla_track2[name]
             if mode == 1:
@@ -2097,19 +2097,19 @@ def bake(mode):
         except:
             bake_track = nla_track2.new()
             bake_track.name = name
-            
+
         try:
             bake_strip = bake_track.strips[name]
             bake_track.strips.remove(bake_strip)
             bake_strip = bake_track.strips.new(name, 0, action2)
         except:
             bake_strip = bake_track.strips.new(name, 0, action2)
-        
+
         #Selection, tweak mode and bake
         bake_track.select = True
         bake_strip.select = True
         armature2.animation_data.use_tweak_mode = True
-        
+
         if not satproperties.bake_helper_bones or utils.arm.other_bones.get('ik'):
             bpy.ops.pose.select_all(action='SELECT')
 
@@ -2136,7 +2136,7 @@ def bake(mode):
         else:
             bpy.ops.nla.bake(frame_start=action.frame_range[0], frame_end=action.frame_range[1], only_selected=False, visual_keying=True, use_current_action=True, bake_types={'POSE'})
 
-        
+
         armature2.animation_data.use_tweak_mode = False
 
         if mode == 1:
@@ -2148,7 +2148,7 @@ def bake(mode):
 
     armature = utils.arm.animation_armature
     armature2 = utils.arm.armature
-        
+
     #Gets current mode to set it back after operation completion
     current_mode = bpy.context.object.mode
     selected_objects = bpy.context.selected_objects
@@ -2184,7 +2184,7 @@ def bake(mode):
         armature2.animation_data_create()
 
     bpy.ops.object.mode_set(mode='POSE')
-    
+
     if armature2.animation_data.use_tweak_mode == True:
         armature2.animation_data.use_tweak_mode = False
 
@@ -2233,9 +2233,9 @@ def export():
     if armature.hide_get() or not armature.select_get():
         armature.hide_set(False)
         armature.select_set(True)
-        
+
     bpy.context.view_layer.objects.active = armature
-        
+
     if armature.animation_data.use_tweak_mode == True:
         armature.animation_data.use_tweak_mode = False
 
@@ -2258,11 +2258,11 @@ def export():
 
         bpy.ops.export_scene.smd()
         armature = utils.arm.armature
-        
+
         armature.animation_data.use_tweak_mode = False
         track.select = False
         strip.select = False
-    
+
     bpy.ops.object.mode_set(mode=current_mode)
 
 def retarget_constraints(self, context):
@@ -2305,7 +2305,7 @@ def retarget_constraints(self, context):
                         armature.pose.bones[prefix + bone].constraints['Retarget Rotation'].mute = value
                     except:
                         pass
-        
+
         for cat in utils.arm.helper_bones.keys():
             for container, bone in utils.arm.helper_bones[cat].items():
                 for bone in bone:
@@ -2350,7 +2350,7 @@ def retarget_constraints(self, context):
                         armature.pose.bones[prefix + bone].constraints['Retarget Rotation'].mute = value
                     except:
                         pass
-        
+
         if armature.animation_data:
             for track in armature.animation_data.nla_tracks:
                 if satproperties.retarget_constraints:

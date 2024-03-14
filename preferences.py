@@ -1,5 +1,7 @@
 import bpy
+
 from . import addon_updater_ops
+
 
 @addon_updater_ops.make_annotations
 class SAT_preferences(bpy.types.AddonPreferences):
