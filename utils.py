@@ -2434,8 +2434,9 @@ def generate_armature(type, action): #Creates or deletes the weight armature
 
         if type == 'weight':
             armature.data.show_bone_custom_shapes = False
-            for i in range(0, 10):
-                armature.data.layers[i] = True
+            if hasattr(armature.pose, "bone_groups"):
+                for i in range(0, 10):
+                    armature.data.layers[i] = True
 
         elif type == 'anim':
             armature.data.rigify_advanced_generation = True
