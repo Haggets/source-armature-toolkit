@@ -1500,6 +1500,20 @@ def convert_armature_to_source():
     satproperties = bpy.context.scene.satproperties
     pass
 
+def select_bone(armature, bone_name):
+    bpy.context.view_layer.objects.active = armature
+    armature.select_set(True)
+
+    if bpy.context.mode != "POSE":
+        bpy.ops.object.mode_set(mode='POSE')
+
+    if bpy.app.version >= (5, 0, 0):
+        pose_bone = armature.pose.bones[bone_name]
+        pose_bone.select = True
+    else:
+        bone = armature.data.bones[bone_name]
+        bone.select = True
+
 def generate_armature(type, action): #Creates or deletes the weight armature
     satinfo = bpy.context.scene.satinfo
 
@@ -2168,8 +2182,7 @@ def generate_armature(type, action): #Creates or deletes the weight armature
                             pgluteus.rotation_quaternion[3] = -1
                             pgluteus.scale.xyz = 25,25,25
 
-                            bpy.ops.object.mode_set(mode='POSE')
-                            armature.data.bones[prefix2 + bone2].select = True
+                            select_bone(armature, prefix2 + bone2)
                             bpy.ops.pose.armature_apply(selected=True)
                             bpy.ops.pose.select_all(action='DESELECT')
                             bpy.ops.object.mode_set(mode='EDIT')
